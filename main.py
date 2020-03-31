@@ -3,11 +3,14 @@
 This NApp creates maintenance windows, allowing the maintenance of network
 devices (a switch, a board, a link) without receiving alerts.
 """
+import datetime
 from flask import jsonify, request
 from kytos.core import KytosNApp, log
 from kytos.core.helpers import listen_to, rest
 
 from napps.kytos.maintenance import settings
+from napps.kytos.maintenance.models \
+    import MaintenanceWindow as MW, Scheduler
 
 
 class Main(KytosNApp):
@@ -25,6 +28,7 @@ class Main(KytosNApp):
         So, if you have any setup routine, insert it here.
         """
         self.maintenances = {}
+        self.scheduler = Scheduler()
 
     def execute(self):
         """Run after the setup method execution.
@@ -58,5 +62,32 @@ class Main(KytosNApp):
             result = [mw.as_dict() for mw in self.maintenances.values()]
             status = 200
 
+        return jsonify(result), status
+
+    @rest('/', methods=['POST'])
+    def create_mw(self):
+        """Create a new maintenance window"""
+        now = datetime.datetime.now()
+        data = request.get_json()
+        if not data:
+            result = "Bad request: The request do not have a json."
+            status = 415
+            log.debug('create_mw result %s %s', result, status)
+        else:
+            mw = MW.from_dict(data, self.controller)
+            if mw is None:
+                result = 'One or more items are invalid'
+                status = 400
+            elif mw.start < now:
+                result = 'Start in the past not allowed'
+                status = 400
+            elif mw.end <= mw.start:
+                result = 'End before start not allowed'
+                status = 400
+            else:
+                self.scheduler.add(mw)
+                self.maintenances[mw.id] = mw
+                result = {'mw_id': mw.id}
+                status = 201
         return jsonify(result), status
 

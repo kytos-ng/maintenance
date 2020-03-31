@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from datetime import datetime, timedelta
 import json
 from tests.helpers import get_controller_mock
@@ -24,6 +24,142 @@ class TestMain(TestCase):
         """Return a flask api test client."""
         napp.controller.api_server.register_napp_endpoints(napp)
         return napp.controller.api_server.app.test_client()
+
+    @patch('napps.kytos.maintenance.models.Scheduler.add')
+    @patch('napps.kytos.maintenance.models.MaintenanceWindow.from_dict')
+    def test_create_mw_case_1(self, from_dict_mock, sched_add_mock):
+        """Test a successful case of the REST to create a maintenance
+        window
+        """
+        url = f'{self.server_name_url}'
+        start = datetime.now() + timedelta(days=1)
+        end = start + timedelta(hours=2)
+        from_dict_mock.return_value.id = '1234'
+        from_dict_mock.return_value.start = start
+        from_dict_mock.return_value.end = end
+        from_dict_mock.return_value.items = [
+            "00:00:00:00:00:00:02",
+            MagicMock(interface=MagicMock(), tag=MagicMock())
+        ]
+        payload = {
+            "start": start.strftime(TIME_FMT),
+            "end": end.strftime(TIME_FMT),
+            "items": [
+                {
+                    "interface_id": "00:00:00:00:00:00:00:03:3",
+                    "tag": {
+                        "tag_type": "VLAN",
+                        "value": 241
+                    }
+                },
+                "00:00:00:00:00:00:02"
+            ]
+        }
+        response = self.api.post(url, data=json.dumps(payload),
+                                 content_type='application/json')
+        current_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(current_data, {'mw_id': '1234'})
+        sched_add_mock.assert_called_once_with(from_dict_mock.return_value)
+
+    @patch('napps.kytos.maintenance.models.Scheduler.add')
+    @patch('napps.kytos.maintenance.models.MaintenanceWindow.from_dict')
+    def test_create_mw_case_2(self, from_dict_mock, sched_add_mock):
+        """Test a fail case of the REST to create a maintenance window"""
+        url = f'{self.server_name_url}'
+        start = datetime.now() + timedelta(days=1)
+        end = start + timedelta(hours=2)
+        from_dict_mock.return_value = None
+        payload = {
+            "start": start.strftime(TIME_FMT),
+            "end": end.strftime(TIME_FMT),
+            "items": [
+                {
+                    "interface_id": "00:00:00:00:00:00:00:03:3",
+                    "tag": {
+                        "tag_type": "VLAN",
+                        "value": 241
+                    }
+                },
+                "00:00:00:00:00:00:02"
+            ]
+        }
+        response = self.api.post(url, data=json.dumps(payload),
+                                 content_type='application/json')
+        current_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(current_data, 'One or more items are invalid')
+        sched_add_mock.assert_not_called()
+
+    @patch('napps.kytos.maintenance.models.Scheduler.add')
+    @patch('napps.kytos.maintenance.models.MaintenanceWindow.from_dict')
+    def test_create_mw_case_3(self, from_dict_mock, sched_add_mock):
+        """Test a fail case of the REST to create a maintenance window"""
+        url = f'{self.server_name_url}'
+        start = datetime.now() - timedelta(days=1)
+        end = start + timedelta(hours=2)
+        from_dict_mock.return_value.id = '1234'
+        from_dict_mock.return_value.start = start
+        from_dict_mock.return_value.end = end
+        from_dict_mock.return_value.items = [
+            "00:00:00:00:00:00:02",
+            MagicMock(interface=MagicMock(), tag=MagicMock())
+        ]
+        payload = {
+            "start": start.strftime(TIME_FMT),
+            "end": end.strftime(TIME_FMT),
+            "items": [
+                {
+                    "interface_id": "00:00:00:00:00:00:00:03:3",
+                    "tag": {
+                        "tag_type": "VLAN",
+                        "value": 241
+                    }
+                },
+                "00:00:00:00:00:00:02"
+            ]
+        }
+        response = self.api.post(url, data=json.dumps(payload),
+                                 content_type='application/json')
+        current_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(current_data, 'Start in the past not allowed')
+        sched_add_mock.assert_not_called()
+
+    @patch('napps.kytos.maintenance.models.Scheduler.add')
+    @patch('napps.kytos.maintenance.models.MaintenanceWindow.from_dict')
+    def test_create_mw_case_4(self, from_dict_mock, sched_add_mock):
+        """Test a fail case of the REST to create a maintenance window"""
+        url = f'{self.server_name_url}'
+        start = datetime.now() + timedelta(days=1)
+        end = start - timedelta(hours=2)
+        from_dict_mock.return_value.id = '1234'
+        from_dict_mock.return_value.start = start
+        from_dict_mock.return_value.end = end
+        from_dict_mock.return_value.items = [
+            "00:00:00:00:00:00:02",
+            MagicMock(interface=MagicMock(), tag=MagicMock())
+        ]
+        payload = {
+            "start": start.strftime(TIME_FMT),
+            "end": end.strftime(TIME_FMT),
+            "items": [
+                {
+                    "interface_id": "00:00:00:00:00:00:00:03:3",
+                    "tag": {
+                        "tag_type": "VLAN",
+                        "value": 241
+                    }
+                },
+                "00:00:00:00:00:00:02"
+            ]
+        }
+        response = self.api.post(url, data=json.dumps(payload),
+                                 content_type='application/json')
+        current_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(current_data, 'End before start not allowed')
+        sched_add_mock.assert_not_called()
 
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.as_dict')
     def test_get_mw_case_1(self, mw_as_dict_mock):
@@ -129,3 +265,4 @@ class TestMain(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(current_data, mw_dict)
         mw_as_dict_mock.assert_called_once()
+
