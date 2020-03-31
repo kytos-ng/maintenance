@@ -18,7 +18,7 @@ class MaintenanceWindow:
         Args:
             start(datetime): when the maintenance will begin
             end(datetime): when the maintenance will finish
-            items: list of items that will be mainteined;
+            items: list of items that will be maintained;
                 each item can be either a switch, a link or a client interface
         """
         if items is None:

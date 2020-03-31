@@ -3,8 +3,9 @@
 This NApp creates maintenance windows, allowing the maintenance of network
 devices (a switch, a board, a link) without receiving alerts.
 """
-
+from flask import jsonify, request
 from kytos.core import KytosNApp, log
+from kytos.core.helpers import listen_to, rest
 
 from napps.kytos.maintenance import settings
 
@@ -41,3 +42,21 @@ class Main(KytosNApp):
         If you have some cleanup procedure, insert it here.
         """
         pass
+
+    @rest('/', methods=['GET'])
+    @rest('/<mw_id>', methods=['GET'])
+    def get_mw(self, mw_id=None):
+        """Return one or all maintenance windows"""
+        if mw_id:
+            try:
+                result = self.maintenances[mw_id].as_dict()
+                status = 200
+            except KeyError:
+                result = {'response': f'Maintenance with id {mw_id} not found'}
+                status = 404
+        else:
+            result = [mw.as_dict() for mw in self.maintenances.values()]
+            status = 200
+
+        return jsonify(result), status
+
