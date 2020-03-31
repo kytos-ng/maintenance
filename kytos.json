@@ -1,0 +1,11 @@
+{
+  "author": "kytos",
+  "username": "kytos",
+  "name": "maintenance",
+  "description": "This NApp creates maintenance windows, allowing the maintenance of network devices (a switch, a board, a link) without receiving alerts. The circuits u",
+  "version": "0.1",
+  "napp_dependencies": [],
+  "license": "",
+  "tags": [],
+  "url": ""
+}
