@@ -91,3 +91,17 @@ class Main(KytosNApp):
                 status = 201
         return jsonify(result), status
 
+    @rest('/<mw_id>', methods=['DELETE'])
+    def remove_mw(self, mw_id):
+        """Delete a maintenance window"""
+        try:
+            mw = self.maintenances[mw_id]
+            self.scheduler.remove(mw)
+            del self.maintenances[mw_id]
+            result = {'response': f'Maintenance with id {mw_id} successfully '
+                                  f'removed'}
+            status = 200
+        except KeyError:
+            result = {'response': f'Maintenance with id {mw_id} not found'}
+            status = 404
+        return jsonify(result), status
