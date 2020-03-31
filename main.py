@@ -1,6 +1,7 @@
 """Main module of kytos/maintenance Kytos Network Application.
 
-This NApp creates maintenance windows, allowing the maintenance of network devices (a switch, a board, a link) without receiving alerts. The circuits u
+This NApp creates maintenance windows, allowing the maintenance of network
+devices (a switch, a board, a link) without receiving alerts.
 """
 
 from kytos.core import KytosNApp, log
@@ -22,7 +23,7 @@ class Main(KytosNApp):
 
         So, if you have any setup routine, insert it here.
         """
-        pass
+        self.maintenances = {}
 
     def execute(self):
         """Run after the setup method execution.
