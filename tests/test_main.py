@@ -16,7 +16,8 @@ class TestMain(TestCase):
         """Initialization before tests are executed."""
         self.server_name_url = \
             'http://localhost:8181/api/kytos/maintenance'
-        self.napp = Main(get_controller_mock())
+        self.controller = get_controller_mock()
+        self.napp = Main(self.controller)
         self.api = self.get_app_test_client(self.napp)
 
     @staticmethod
@@ -309,3 +310,81 @@ class TestMain(TestCase):
                                                     'successfully removed'})
         sched_remove_mock.assert_called_once()
         self.assertEqual(len(self.napp.maintenances), 1)
+
+    def test_update_mw_case_1(self):
+        """Test update non-existent id."""
+        start1 = datetime.now() + timedelta(days=1)
+        end1 = start1 + timedelta(hours=6)
+        start2 = datetime.now() + timedelta(hours=5)
+        end2 = start2 + timedelta(hours=1, minutes=30)
+        self.napp.maintenances = {
+            '1234': MW(start1, end1, items=[
+                '00:00:00:00:00:00:12:23'
+            ]),
+            '4567': MW(start2, end2, items=[
+                '12:34:56:78:90:ab:cd:ef'
+            ])
+        }
+        payload = {
+            "start": start1.strftime(TIME_FMT),
+        }
+        url = f'{self.server_name_url}/2345'
+        response = self.api.patch(url, data=json.dumps(payload),
+                                  content_type='application/json')
+        current_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(current_data, {'response': 'Maintenance with id 2345 '
+                                                    'not found'})
+
+    def test_update_mw_case_2(self):
+        """Test update no data."""
+        start1 = datetime.now() + timedelta(days=1)
+        end1 = start1 + timedelta(hours=6)
+        start2 = datetime.now() + timedelta(hours=5)
+        end2 = start2 + timedelta(hours=1, minutes=30)
+        self.napp.maintenances = {
+            '1234': MW(start1, end1, items=[
+                '00:00:00:00:00:00:12:23'
+            ]),
+            '4567': MW(start2, end2, items=[
+                '12:34:56:78:90:ab:cd:ef'
+            ])
+        }
+        payload = {
+            "start": start1.strftime(TIME_FMT),
+        }
+        url = f'{self.server_name_url}/1234'
+        response = self.api.patch(url, data=json.dumps(payload),
+                                  content_type='text/plain')
+        current_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 415)
+        self.assertEqual(current_data,
+                         'Bad request: The request do not have a json.')
+
+    @patch('napps.kytos.maintenance.models.MaintenanceWindow.update')
+    def test_update_mw_case_3(self, mw_update_mock):
+        """Test successful update."""
+        start1 = datetime.now() + timedelta(days=1)
+        end1 = start1 + timedelta(hours=6)
+        start2 = datetime.now() + timedelta(hours=5)
+        end2 = start2 + timedelta(hours=1, minutes=30)
+        self.napp.maintenances = {
+            '1234': MW(start1, end1, items=[
+                '00:00:00:00:00:00:12:23'
+            ]),
+            '4567': MW(start2, end2, items=[
+                '12:34:56:78:90:ab:cd:ef'
+            ])
+        }
+        start_new = datetime.now() + timedelta(days=1, hours=3)
+        payload = {
+            "start": start_new.strftime(TIME_FMT),
+        }
+        url = f'{self.server_name_url}/1234'
+        response = self.api.patch(url, data=json.dumps(payload),
+                                  content_type='application/json')
+        current_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(current_data,
+                         {'response': 'Maintenance 1234 updated'})
+        mw_update_mock.assert_called_once_with(payload, self.controller)

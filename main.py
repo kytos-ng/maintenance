@@ -91,6 +91,25 @@ class Main(KytosNApp):
                 status = 201
         return jsonify(result), status
 
+    @rest('/<mw_id>', methods=['PATCH'])
+    def update_mw(self, mw_id):
+        """Update a maintenance window."""
+        data = request.get_json()
+        if not data:
+            result = "Bad request: The request do not have a json."
+            status = 415
+            log.debug('update_mw result %s %s', result, status)
+        else:
+            try:
+                mw = self.maintenances[mw_id]
+                mw.update(data, self.controller)
+                result = {'response': f'Maintenance {mw_id} updated'}
+                status = 201
+            except KeyError:
+                result = {'response': f'Maintenance with id {mw_id} not found'}
+                status = 404
+        return jsonify(result), status
+
     @rest('/<mw_id>', methods=['DELETE'])
     def remove_mw(self, mw_id):
         """Delete a maintenance window"""
