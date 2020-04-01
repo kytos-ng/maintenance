@@ -1,3 +1,5 @@
+"""Tests for the main madule."""
+
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
 from datetime import datetime, timedelta
@@ -29,8 +31,7 @@ class TestMain(TestCase):
     @patch('napps.kytos.maintenance.models.Scheduler.add')
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.from_dict')
     def test_create_mw_case_1(self, from_dict_mock, sched_add_mock):
-        """Test a successful case of the REST to create a maintenance
-        window
+        """Test a successful case of the REST to create.
         """
         url = f'{self.server_name_url}'
         start = datetime.now() + timedelta(days=1)
@@ -66,7 +67,7 @@ class TestMain(TestCase):
     @patch('napps.kytos.maintenance.models.Scheduler.add')
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.from_dict')
     def test_create_mw_case_2(self, from_dict_mock, sched_add_mock):
-        """Test a fail case of the REST to create a maintenance window"""
+        """Test a fail case of the REST to create a maintenance window."""
         url = f'{self.server_name_url}'
         start = datetime.now() + timedelta(days=1)
         end = start + timedelta(hours=2)
@@ -95,7 +96,7 @@ class TestMain(TestCase):
     @patch('napps.kytos.maintenance.models.Scheduler.add')
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.from_dict')
     def test_create_mw_case_3(self, from_dict_mock, sched_add_mock):
-        """Test a fail case of the REST to create a maintenance window"""
+        """Test a fail case of the REST to create a maintenance window."""
         url = f'{self.server_name_url}'
         start = datetime.now() - timedelta(days=1)
         end = start + timedelta(hours=2)
@@ -130,7 +131,7 @@ class TestMain(TestCase):
     @patch('napps.kytos.maintenance.models.Scheduler.add')
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.from_dict')
     def test_create_mw_case_4(self, from_dict_mock, sched_add_mock):
-        """Test a fail case of the REST to create a maintenance window"""
+        """Test a fail case of the REST to create a maintenance window."""
         url = f'{self.server_name_url}'
         start = datetime.now() + timedelta(days=1)
         end = start - timedelta(hours=2)
@@ -164,7 +165,7 @@ class TestMain(TestCase):
 
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.as_dict')
     def test_get_mw_case_1(self, mw_as_dict_mock):
-        """Test get all maintenance windows, empty list"""
+        """Test get all maintenance windows, empty list."""
         url = f'{self.server_name_url}'
         response = self.api.get(url)
         current_data = json.loads(response.data)
@@ -174,7 +175,7 @@ class TestMain(TestCase):
 
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.as_dict')
     def test_get_mw_case_2(self, mw_as_dict_mock):
-        """Test get all maintenance windows"""
+        """Test get all maintenance windows."""
         start1 = datetime.now() + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
         start2 = datetime.now() + timedelta(hours=5)
@@ -215,7 +216,7 @@ class TestMain(TestCase):
 
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.as_dict')
     def test_get_mw_case_3(self, mw_as_dict_mock):
-        """Test get non-existent id"""
+        """Test get non-existent id."""
         start1 = datetime.now() + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
         start2 = datetime.now() + timedelta(hours=5)
@@ -238,7 +239,7 @@ class TestMain(TestCase):
 
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.as_dict')
     def test_get_mw_case_4(self, mw_as_dict_mock):
-        """Test get existent id"""
+        """Test get existent id."""
         start1 = datetime.now() + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
         start2 = datetime.now() + timedelta(hours=5)
@@ -268,7 +269,7 @@ class TestMain(TestCase):
         mw_as_dict_mock.assert_called_once()
 
     def test_remove_mw_case_1(self):
-        """Test remove non-existent id"""
+        """Test remove non-existent id."""
         start1 = datetime.now() + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
         start2 = datetime.now() + timedelta(hours=5)
@@ -290,6 +291,7 @@ class TestMain(TestCase):
 
     @patch('napps.kytos.maintenance.models.Scheduler.remove')
     def test_remove_mw_case_2(self, sched_remove_mock):
+        """Test remove existent id."""
         start1 = datetime.now() + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
         start2 = datetime.now() + timedelta(hours=5)

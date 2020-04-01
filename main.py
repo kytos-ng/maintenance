@@ -4,13 +4,13 @@ This NApp creates maintenance windows, allowing the maintenance of network
 devices (a switch, a board, a link) without receiving alerts.
 """
 import datetime
-from flask import jsonify, request
-from kytos.core import KytosNApp, log
-from kytos.core.helpers import listen_to, rest
 
-from napps.kytos.maintenance import settings
-from napps.kytos.maintenance.models \
-    import MaintenanceWindow as MW, Scheduler
+from flask import jsonify, request
+from napps.kytos.maintenance.models import MaintenanceWindow as MW
+from napps.kytos.maintenance.models import Scheduler
+
+from kytos.core import KytosNApp, log
+from kytos.core.helpers import rest
 
 
 class Main(KytosNApp):
@@ -50,7 +50,7 @@ class Main(KytosNApp):
     @rest('/', methods=['GET'])
     @rest('/<mw_id>', methods=['GET'])
     def get_mw(self, mw_id=None):
-        """Return one or all maintenance windows"""
+        """Return one or all maintenance windows."""
         if mw_id:
             try:
                 result = self.maintenances[mw_id].as_dict()
@@ -66,7 +66,7 @@ class Main(KytosNApp):
 
     @rest('/', methods=['POST'])
     def create_mw(self):
-        """Create a new maintenance window"""
+        """Create a new maintenance window."""
         now = datetime.datetime.now()
         data = request.get_json()
         if not data:
@@ -112,7 +112,7 @@ class Main(KytosNApp):
 
     @rest('/<mw_id>', methods=['DELETE'])
     def remove_mw(self, mw_id):
-        """Delete a maintenance window"""
+        """Delete a maintenance window."""
         try:
             mw = self.maintenances[mw_id]
             self.scheduler.remove(mw)

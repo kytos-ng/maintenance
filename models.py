@@ -1,3 +1,8 @@
+"""Models used by the maintenance NApp,
+
+This module define models for the maintenance window itself and the
+scheduler.
+"""
 from uuid import uuid4
 import datetime
 
@@ -9,11 +14,12 @@ from kytos.core.link import Link
 
 TIME_FMT = "%Y-%m-%dT%H:%M:%S"
 
+
 class MaintenanceWindow:
     """Class to store a maintenance window."""
 
-    def __init__(self, start, end, items=None, id=None):
-        """Create an instance of MaintenanceWindow
+    def __init__(self, start, end, items=None, mw_id=None):
+        """Create an instance of MaintenanceWindow.
 
         Args:
             start(datetime): when the maintenance will begin
@@ -23,13 +29,13 @@ class MaintenanceWindow:
         """
         if items is None:
             items = list()
-        self.id = id if id else uuid4().hex
+        self.id = mw_id if mw_id else uuid4().hex
         self.start = start
         self.end = end
         self.items = items
 
     def as_dict(self):
-        """Return this maintenance window as a dictionary"""
+        """Return this maintenance window as a dictionary."""
         mw_dict = dict()
         mw_dict['id'] = self.id
         mw_dict['start'] = self.start.strftime(TIME_FMT)
@@ -45,8 +51,8 @@ class MaintenanceWindow:
 
     @classmethod
     def from_dict(cls, mw_dict, controller):
-        """Create a maintenance window from a dictionary of attributes"""
-        id = mw_dict.get('id')
+        """Create a maintenance window from a dictionary of attributes."""
+        mw_id = mw_dict.get('id')
         start = datetime.datetime.strptime(mw_dict['start'], TIME_FMT)
         end = datetime.datetime.strptime(mw_dict['end'], TIME_FMT)
         items = list()
@@ -60,9 +66,10 @@ class MaintenanceWindow:
             if item is None:
                 return None
             items.append(item)
-        return cls(start, end, items, id)
+        return cls(start, end, items, mw_id)
 
     def update(self, mw_dict, controller):
+        """Update a maintenance window with the data from a dictionary."""
         if 'start' in mw_dict:
             self.start = datetime.datetime.strptime(mw_dict['start'], TIME_FMT)
         if 'end' in mw_dict:
@@ -82,11 +89,13 @@ class MaintenanceWindow:
 
     @staticmethod
     def intf_from_dict(intf_id, controller):
+        """Get the Interface instance with intf_id."""
         intf = controller.get_interface_by_id(intf_id)
         return intf
 
     @staticmethod
     def uni_from_dict(uni_dict, controller):
+        """Create UNI instance from a dictionary."""
         intf = MaintenanceWindow.intf_from_dict(uni_dict['interface_id'],
                                                 controller)
         tag = TAG.from_dict(uni_dict['tag'])
@@ -96,8 +105,11 @@ class MaintenanceWindow:
 
     @staticmethod
     def link_from_dict(link_dict, controller):
-        endpoint_a = controller.get_interface_by_id(link_dict['endpoint_a']['id'])
-        endpoint_b = controller.get_interface_by_id(link_dict['endpoint_b']['id'])
+        """Create a link instance from a dictionary."""
+        endpoint_a = controller.get_interface_by_id(
+            link_dict['endpoint_a']['id'])
+        endpoint_b = controller.get_interface_by_id(
+            link_dict['endpoint_b']['id'])
 
         link = Link(endpoint_a, endpoint_b)
         if 'metadata' in link_dict:
@@ -109,25 +121,30 @@ class MaintenanceWindow:
         return link
 
     def start_mw(self):
+        """Actions taken when a maintenance window starts."""
         pass
 
     def end_mw(self):
+        """Actions taken when a maintenance window finishes."""
         pass
 
 
 class Scheduler:
-    """Scheduler for a maintenance window"""
+    """Scheduler for a maintenance window."""
 
     def __init__(self):
+        """Initialize a new scheduler."""
         self.scheduler = BackgroundScheduler(timezone=utc)
         self.scheduler.start()
 
     def add(self, mw):
+        """Add jobs to start and end a maintenance window."""
         self.scheduler.add_job(mw.start_mw, 'date', id=f'{mw.id}-start',
                                run_date=mw.start)
         self.scheduler.add_job(mw.end_mw, 'date', id=f'{mw.id}-end',
                                run_date=mw.end)
 
     def remove(self, mw):
+        """Remove jobs that start and end a maintenance window."""
         self.scheduler.remove_job(f'{mw.id}-start')
         self.scheduler.remove_job(f'{mw.id}-end')
