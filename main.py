@@ -67,7 +67,7 @@ class Main(KytosNApp):
     @rest('/', methods=['POST'])
     def create_mw(self):
         """Create a new maintenance window."""
-        now = datetime.datetime.now()
+        now = datetime.datetime.utcnow()
         data = request.get_json()
         if not data:
             result = "Bad request: The request do not have a json."
@@ -123,4 +123,30 @@ class Main(KytosNApp):
         except KeyError:
             result = {'response': f'Maintenance with id {mw_id} not found'}
             status = 404
+        return jsonify(result), status
+
+    @rest('/<mw_id>/end', methods=['PATCH'])
+    def end_mw(self, mw_id):
+        """Finish a maintenance window right now."""
+        try:
+            mw = self.maintenances[mw_id]
+        except KeyError:
+            result = {'response': f'Maintenance with id {mw_id} not found'}
+            status = 404
+        else:
+            now = datetime.datetime.utcnow()
+            log.info(f'Agora {now}')
+            if now < mw.start:
+                result = {'response': f'Maintenance window {mw_id} has not '
+                                      f'yet started.'}
+                status = 400
+            elif now > mw.end:
+                result = {'response': f'Maintenance window {mw_id} has '
+                                      f'already finished.'}
+                status = 400
+            else:
+                self.scheduler.remove(mw)
+                mw.end_mw()
+                result = {'response': f'Maintenance window {mw_id} finished.'}
+                status = 200
         return jsonify(result), status

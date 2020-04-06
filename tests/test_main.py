@@ -34,7 +34,7 @@ class TestMain(TestCase):
         """Test a successful case of the REST to create.
         """
         url = f'{self.server_name_url}'
-        start = datetime.now() + timedelta(days=1)
+        start = datetime.utcnow() + timedelta(days=1)
         end = start + timedelta(hours=2)
         from_dict_mock.return_value.id = '1234'
         from_dict_mock.return_value.start = start
@@ -69,7 +69,7 @@ class TestMain(TestCase):
     def test_create_mw_case_2(self, from_dict_mock, sched_add_mock):
         """Test a fail case of the REST to create a maintenance window."""
         url = f'{self.server_name_url}'
-        start = datetime.now() + timedelta(days=1)
+        start = datetime.utcnow() + timedelta(days=1)
         end = start + timedelta(hours=2)
         from_dict_mock.return_value = None
         payload = {
@@ -98,7 +98,7 @@ class TestMain(TestCase):
     def test_create_mw_case_3(self, from_dict_mock, sched_add_mock):
         """Test a fail case of the REST to create a maintenance window."""
         url = f'{self.server_name_url}'
-        start = datetime.now() - timedelta(days=1)
+        start = datetime.utcnow() - timedelta(days=1)
         end = start + timedelta(hours=2)
         from_dict_mock.return_value.id = '1234'
         from_dict_mock.return_value.start = start
@@ -133,7 +133,7 @@ class TestMain(TestCase):
     def test_create_mw_case_4(self, from_dict_mock, sched_add_mock):
         """Test a fail case of the REST to create a maintenance window."""
         url = f'{self.server_name_url}'
-        start = datetime.now() + timedelta(days=1)
+        start = datetime.utcnow() + timedelta(days=1)
         end = start - timedelta(hours=2)
         from_dict_mock.return_value.id = '1234'
         from_dict_mock.return_value.start = start
@@ -176,15 +176,15 @@ class TestMain(TestCase):
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.as_dict')
     def test_get_mw_case_2(self, mw_as_dict_mock):
         """Test get all maintenance windows."""
-        start1 = datetime.now() + timedelta(days=1)
+        start1 = datetime.utcnow() + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now() + timedelta(hours=5)
+        start2 = datetime.utcnow() + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, items=[
+            '1234': MW(start1, end1, self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, items=[
+            '4567': MW(start2, end2, self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -217,15 +217,15 @@ class TestMain(TestCase):
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.as_dict')
     def test_get_mw_case_3(self, mw_as_dict_mock):
         """Test get non-existent id."""
-        start1 = datetime.now() + timedelta(days=1)
+        start1 = datetime.utcnow() + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now() + timedelta(hours=5)
+        start2 = datetime.utcnow() + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, items=[
+            '1234': MW(start1, end1, self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, items=[
+            '4567': MW(start2, end2, self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -240,15 +240,15 @@ class TestMain(TestCase):
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.as_dict')
     def test_get_mw_case_4(self, mw_as_dict_mock):
         """Test get existent id."""
-        start1 = datetime.now() + timedelta(days=1)
+        start1 = datetime.utcnow() + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now() + timedelta(hours=5)
+        start2 = datetime.utcnow() + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, items=[
+            '1234': MW(start1, end1, self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, items=[
+            '4567': MW(start2, end2, self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -270,15 +270,15 @@ class TestMain(TestCase):
 
     def test_remove_mw_case_1(self):
         """Test remove non-existent id."""
-        start1 = datetime.now() + timedelta(days=1)
+        start1 = datetime.utcnow() + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now() + timedelta(hours=5)
+        start2 = datetime.utcnow() + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, items=[
+            '1234': MW(start1, end1, self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, items=[
+            '4567': MW(start2, end2, self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -292,15 +292,15 @@ class TestMain(TestCase):
     @patch('napps.kytos.maintenance.models.Scheduler.remove')
     def test_remove_mw_case_2(self, sched_remove_mock):
         """Test remove existent id."""
-        start1 = datetime.now() + timedelta(days=1)
+        start1 = datetime.utcnow() + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now() + timedelta(hours=5)
+        start2 = datetime.utcnow() + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, items=[
+            '1234': MW(start1, end1, self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, items=[
+            '4567': MW(start2, end2, self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -315,15 +315,15 @@ class TestMain(TestCase):
 
     def test_update_mw_case_1(self):
         """Test update non-existent id."""
-        start1 = datetime.now() + timedelta(days=1)
+        start1 = datetime.utcnow() + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now() + timedelta(hours=5)
+        start2 = datetime.utcnow() + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, items=[
+            '1234': MW(start1, end1, self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, items=[
+            '4567': MW(start2, end2, self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -340,15 +340,15 @@ class TestMain(TestCase):
 
     def test_update_mw_case_2(self):
         """Test update no data."""
-        start1 = datetime.now() + timedelta(days=1)
+        start1 = datetime.utcnow() + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now() + timedelta(hours=5)
+        start2 = datetime.utcnow() + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, items=[
+            '1234': MW(start1, end1, self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, items=[
+            '4567': MW(start2, end2, self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -366,19 +366,19 @@ class TestMain(TestCase):
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.update')
     def test_update_mw_case_3(self, mw_update_mock):
         """Test successful update."""
-        start1 = datetime.now() + timedelta(days=1)
+        start1 = datetime.utcnow() + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now() + timedelta(hours=5)
+        start2 = datetime.utcnow() + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, items=[
+            '1234': MW(start1, end1, self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, items=[
+            '4567': MW(start2, end2, self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
-        start_new = datetime.now() + timedelta(days=1, hours=3)
+        start_new = datetime.utcnow() + timedelta(days=1, hours=3)
         payload = {
             "start": start_new.strftime(TIME_FMT),
         }
@@ -390,3 +390,91 @@ class TestMain(TestCase):
         self.assertEqual(current_data,
                          {'response': 'Maintenance 1234 updated'})
         mw_update_mock.assert_called_once_with(payload, self.controller)
+
+    def test_end_mw_case_1(self):
+        """Test method that finishes the maintenance now."""
+        start1 = datetime.utcnow() + timedelta(days=1)
+        end1 = start1 + timedelta(hours=6)
+        start2 = datetime.utcnow() + timedelta(hours=5)
+        end2 = start2 + timedelta(hours=1, minutes=30)
+        self.napp.maintenances = {
+            '1234': MW(start1, end1, self.controller, items=[
+                '00:00:00:00:00:00:12:23'
+            ]),
+            '4567': MW(start2, end2, self.controller, items=[
+                '12:34:56:78:90:ab:cd:ef'
+            ])
+        }
+        url = f'{self.server_name_url}/2345/end'
+        response = self.api.patch(url)
+        current_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(current_data,
+                         {'response': 'Maintenance with id 2345 not found'})
+
+    @patch('napps.kytos.maintenance.models.MaintenanceWindow.end_mw')
+    def test_end_mw_case_2(self, end_mw_mock):
+        """Test method that finishes the maintenance now."""
+        start1 = datetime.utcnow() - timedelta(hours=1)
+        end1 = start1 + timedelta(hours=6)
+        start2 = datetime.utcnow() + timedelta(hours=5)
+        end2 = start2 + timedelta(hours=1, minutes=30)
+        self.napp.maintenances = {
+            '1234': MW(start1, end1, self.controller, items=[
+                '00:00:00:00:00:00:12:23'
+            ]),
+            '4567': MW(start2, end2, self.controller, items=[
+                '12:34:56:78:90:ab:cd:ef'
+            ])
+        }
+        url = f'{self.server_name_url}/1234/end'
+        response = self.api.patch(url)
+        current_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(current_data,
+                         {'response': 'Maintenance window 1234 finished.'})
+        end_mw_mock.assert_called_once()
+
+    def test_end_mw_case_3(self):
+        """Test method that finishes the maintenance now."""
+        start1 = datetime.utcnow() + timedelta(hours=1)
+        end1 = start1 + timedelta(hours=6)
+        start2 = datetime.utcnow() + timedelta(hours=5)
+        end2 = start2 + timedelta(hours=1, minutes=30)
+        self.napp.maintenances = {
+            '1234': MW(start1, end1, self.controller, items=[
+                '00:00:00:00:00:00:12:23'
+            ]),
+            '4567': MW(start2, end2, self.controller, items=[
+                '12:34:56:78:90:ab:cd:ef'
+            ])
+        }
+        url = f'{self.server_name_url}/1234/end'
+        response = self.api.patch(url)
+        current_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(current_data,
+                         {'response': 'Maintenance window 1234 has not yet '
+                                      'started.'})
+
+    def test_end_mw_case_4(self):
+        """Test method that finishes the maintenance now."""
+        start1 = datetime.utcnow() - timedelta(hours=5)
+        end1 = start1 + timedelta(hours=4)
+        start2 = datetime.utcnow() + timedelta(hours=5)
+        end2 = start2 + timedelta(hours=1, minutes=30)
+        self.napp.maintenances = {
+            '1234': MW(start1, end1, self.controller, items=[
+                '00:00:00:00:00:00:12:23'
+            ]),
+            '4567': MW(start2, end2, self.controller, items=[
+                '12:34:56:78:90:ab:cd:ef'
+            ])
+        }
+        url = f'{self.server_name_url}/1234/end'
+        response = self.api.patch(url)
+        current_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(current_data,
+                         {'response': 'Maintenance window 1234 has already '
+                                      'finished.'})

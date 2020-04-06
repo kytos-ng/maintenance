@@ -7,8 +7,9 @@ from uuid import uuid4
 import datetime
 
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.jobstores.base import JobLookupError
 from pytz import utc
-from kytos.core import log
+from kytos.core import log, KytosEvent
 from kytos.core.interface import TAG, UNI
 from kytos.core.link import Link
 
@@ -18,7 +19,7 @@ TIME_FMT = "%Y-%m-%dT%H:%M:%S"
 class MaintenanceWindow:
     """Class to store a maintenance window."""
 
-    def __init__(self, start, end, items=None, mw_id=None):
+    def __init__(self, start, end, controller, items=None, mw_id=None):
         """Create an instance of MaintenanceWindow.
 
         Args:
@@ -33,6 +34,7 @@ class MaintenanceWindow:
         self.start = start
         self.end = end
         self.items = items
+        self.controller = controller
 
     def as_dict(self):
         """Return this maintenance window as a dictionary."""
@@ -66,7 +68,7 @@ class MaintenanceWindow:
             if item is None:
                 return None
             items.append(item)
-        return cls(start, end, items, mw_id)
+        return cls(start, end, controller, items, mw_id)
 
     def update(self, mw_dict, controller):
         """Update a maintenance window with the data from a dictionary."""
@@ -146,5 +148,11 @@ class Scheduler:
 
     def remove(self, mw):
         """Remove jobs that start and end a maintenance window."""
-        self.scheduler.remove_job(f'{mw.id}-start')
-        self.scheduler.remove_job(f'{mw.id}-end')
+        try:
+            self.scheduler.remove_job(f'{mw.id}-start')
+        except JobLookupError:
+            log.info(f'Job to start {mw.id} already removed.')
+        try:
+            self.scheduler.remove_job(f'{mw.id}-end')
+        except JobLookupError:
+            log.info(f'Job to end {mw.id} already removed.')
