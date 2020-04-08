@@ -6,6 +6,7 @@ scheduler.
 from uuid import uuid4
 import datetime
 
+import pytz
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.base import JobLookupError
 from pytz import utc
@@ -13,7 +14,7 @@ from kytos.core import log, KytosEvent
 from kytos.core.interface import TAG, UNI
 from kytos.core.link import Link
 
-TIME_FMT = "%Y-%m-%dT%H:%M:%S"
+TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
 
 
 class MaintenanceWindow:
@@ -48,15 +49,15 @@ class MaintenanceWindow:
                 mw_dict['items'].append(i.as_dict())
             except (AttributeError, TypeError):
                 mw_dict['items'].append(i)
-
         return mw_dict
 
     @classmethod
     def from_dict(cls, mw_dict, controller):
         """Create a maintenance window from a dictionary of attributes."""
         mw_id = mw_dict.get('id')
-        start = datetime.datetime.strptime(mw_dict['start'], TIME_FMT)
-        end = datetime.datetime.strptime(mw_dict['end'], TIME_FMT)
+
+        start = datetime.datetime.strptime(mw_dict['start'], TIME_FMT).astimezone(pytz.utc)
+        end = datetime.datetime.strptime(mw_dict['end'], TIME_FMT).astimezone(pytz.utc)
         items = list()
         for i in mw_dict['items']:
             try:
@@ -73,9 +74,9 @@ class MaintenanceWindow:
     def update(self, mw_dict, controller):
         """Update a maintenance window with the data from a dictionary."""
         if 'start' in mw_dict:
-            self.start = datetime.datetime.strptime(mw_dict['start'], TIME_FMT)
+            self.start = datetime.datetime.strptime(mw_dict['start'], TIME_FMT).astimezone(pytz.utc)
         if 'end' in mw_dict:
-            self.end = datetime.datetime.strptime(mw_dict['end'], TIME_FMT)
+            self.end = datetime.datetime.strptime(mw_dict['end'], TIME_FMT).astimezone(pytz.utc)
         if 'items' in mw_dict:
             items = list()
             for i in mw_dict['items']:

@@ -5,6 +5,7 @@ devices (a switch, a board, a link) without receiving alerts.
 """
 import datetime
 
+import pytz
 from flask import jsonify, request
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
 from napps.kytos.maintenance.models import Scheduler
@@ -67,7 +68,7 @@ class Main(KytosNApp):
     @rest('/', methods=['POST'])
     def create_mw(self):
         """Create a new maintenance window."""
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(pytz.utc)
         data = request.get_json()
         if not data:
             result = "Bad request: The request do not have a json."
@@ -134,7 +135,7 @@ class Main(KytosNApp):
             result = {'response': f'Maintenance with id {mw_id} not found'}
             status = 404
         else:
-            now = datetime.datetime.utcnow()
+            now = datetime.datetime.now(pytz.utc)
             log.info(f'Agora {now}')
             if now < mw.start:
                 result = {'response': f'Maintenance window {mw_id} has not '
