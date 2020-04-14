@@ -32,8 +32,7 @@ ENABLED_PATH = VAR_PATH / 'napps'
 INSTALLED_PATH = VAR_PATH / 'napps' / '.installed'
 CURRENT_DIR = Path('.').resolve()
 
-# NApps enabled by default
-CORE_NAPPS = ['of_core']
+CORE_NAPPS = []
 
 
 class SimpleCommand(Command):
