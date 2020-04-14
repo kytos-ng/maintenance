@@ -1,16 +1,16 @@
-"""Models used by the maintenance NApp,
+"""Models used by the maintenance NApp.
 
 This module define models for the maintenance window itself and the
 scheduler.
 """
-from uuid import uuid4
 import datetime
+from uuid import uuid4
 
 import pytz
-from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.base import JobLookupError
-from pytz import utc
-from kytos.core import log, KytosEvent
+from apscheduler.schedulers.background import BackgroundScheduler
+
+from kytos.core import log
 from kytos.core.interface import TAG, UNI
 from kytos.core.link import Link
 
@@ -20,7 +20,7 @@ TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
 class MaintenanceWindow:
     """Class to store a maintenance window."""
 
-    def __init__(self, start, end, controller, items=None, mw_id=None):
+    def __init__(self, start, end, controller, **kwargs):
         """Create an instance of MaintenanceWindow.
 
         Args:
@@ -29,8 +29,11 @@ class MaintenanceWindow:
             items: list of items that will be maintained;
                 each item can be either a switch, a link or a client interface
         """
+        # pylint: disable=invalid-name
+        items = kwargs.get('items')
         if items is None:
             items = list()
+        mw_id = kwargs.get('mw_id')
         self.id = mw_id if mw_id else uuid4().hex
         self.start = start
         self.end = end
@@ -138,23 +141,25 @@ class Scheduler:
 
     def __init__(self):
         """Initialize a new scheduler."""
-        self.scheduler = BackgroundScheduler(timezone=utc)
+        self.scheduler = BackgroundScheduler(timezone=pytz.utc)
         self.scheduler.start()
 
-    def add(self, mw):
+    def add(self, maintenance):
         """Add jobs to start and end a maintenance window."""
-        self.scheduler.add_job(mw.start_mw, 'date', id=f'{mw.id}-start',
-                               run_date=mw.start)
-        self.scheduler.add_job(mw.end_mw, 'date', id=f'{mw.id}-end',
-                               run_date=mw.end)
+        self.scheduler.add_job(maintenance.start_mw, 'date',
+                               id=f'{maintenance.id}-start',
+                               run_date=maintenance.start)
+        self.scheduler.add_job(maintenance.end_mw, 'date',
+                               id=f'{maintenance.id}-end',
+                               run_date=maintenance.end)
 
-    def remove(self, mw):
+    def remove(self, maintenance):
         """Remove jobs that start and end a maintenance window."""
         try:
-            self.scheduler.remove_job(f'{mw.id}-start')
+            self.scheduler.remove_job(f'{maintenance.id}-start')
         except JobLookupError:
-            log.info(f'Job to start {mw.id} already removed.')
+            log.info(f'Job to start {maintenance.id} already removed.')
         try:
-            self.scheduler.remove_job(f'{mw.id}-end')
+            self.scheduler.remove_job(f'{maintenance.id}-end')
         except JobLookupError:
-            log.info(f'Job to end {mw.id} already removed.')
+            log.info(f'Job to end {maintenance.id} already removed.')

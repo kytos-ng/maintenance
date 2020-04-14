@@ -7,11 +7,11 @@ import datetime
 
 import pytz
 from flask import jsonify, request
+
+from kytos.core import KytosNApp
+from kytos.core.helpers import rest
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
 from napps.kytos.maintenance.models import Scheduler
-
-from kytos.core import KytosNApp, log
-from kytos.core.helpers import rest
 
 
 class Main(KytosNApp):

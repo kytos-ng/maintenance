@@ -93,7 +93,7 @@ class Linter(SimpleCommand):
         """Run Yala."""
         print('Yala is running. It may take several seconds...')
         try:
-            cmd = 'yala *.py tests/*.py tests/models/*.py'
+            cmd = 'yala *.py tests/*.py'
             check_call(cmd, shell=True)
             print('No linter error found.')
         except RuntimeError as error:

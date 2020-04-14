@@ -18,7 +18,7 @@ class TestMain(TestCase):
     """Test the Main class of this NApp."""
 
     def setUp(self):
-        """Initialization before tests are executed."""
+        """Initialize before tests are executed."""
         self.server_name_url = \
             'http://localhost:8181/api/kytos/maintenance'
         self.controller = get_controller_mock()
@@ -34,8 +34,7 @@ class TestMain(TestCase):
     @patch('napps.kytos.maintenance.models.Scheduler.add')
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.from_dict')
     def test_create_mw_case_1(self, from_dict_mock, sched_add_mock):
-        """Test a successful case of the REST to create.
-        """
+        """Test a successful case of the REST to create."""
         url = f'{self.server_name_url}'
         start = datetime.now(pytz.utc) + timedelta(days=1)
         end = start + timedelta(hours=2)
