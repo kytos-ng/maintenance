@@ -19,10 +19,7 @@ if 'bdist_wheel' in sys.argv:
     raise RuntimeError("This setup.py does not support wheels")
 
 # Paths setup with virtualenv detection
-if 'VIRTUAL_ENV' in os.environ:
-    BASE_ENV = Path(os.environ['VIRTUAL_ENV'])
-else:
-    BASE_ENV = Path('/')
+BASE_ENV = Path(os.environ.get('VIRTUAL_ENV', '/'))
 
 NAPP_NAME = 'maintenance'
 NAPP_VERSION = '0.1'
