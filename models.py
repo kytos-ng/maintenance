@@ -56,39 +56,19 @@ class MaintenanceWindow:
         """Create a maintenance window from a dictionary of attributes."""
         mw_id = mw_dict.get('id')
 
-        start = datetime.datetime.strptime(mw_dict['start'], TIME_FMT).astimezone(pytz.utc)
-        end = datetime.datetime.strptime(mw_dict['end'], TIME_FMT).astimezone(pytz.utc)
-        items = list()
-        for i in mw_dict['items']:
-            try:
-                item = cls.uni_from_dict(i, controller)
-            except KeyError:
-                item = cls.link_from_dict(i, controller)
-            except TypeError:
-                item = i
-            if item is None:
-                return None
-            items.append(item)
-        return cls(start, end, controller, items, mw_id)
+        start = cls.str_to_datetime(mw_dict['start'])
+        end = cls.str_to_datetime(mw_dict['end'])
+        items = cls.get_items(mw_dict['items'], controller)
+        return cls(start, end, controller, items=items, mw_id=mw_id)
 
     def update(self, mw_dict, controller):
         """Update a maintenance window with the data from a dictionary."""
         if 'start' in mw_dict:
-            self.start = datetime.datetime.strptime(mw_dict['start'], TIME_FMT).astimezone(pytz.utc)
+            self.start = self.str_to_datetime(mw_dict['start'])
         if 'end' in mw_dict:
-            self.end = datetime.datetime.strptime(mw_dict['end'], TIME_FMT).astimezone(pytz.utc)
+            self.end = self.str_to_datetime(mw_dict['end'])
         if 'items' in mw_dict:
-            items = list()
-            for i in mw_dict['items']:
-                try:
-                    item = self.uni_from_dict(i, controller)
-                except KeyError:
-                    item = self.link_from_dict(i, controller)
-                except TypeError:
-                    item = i
-                if item:
-                    items.append(item)
-            self.items = items
+            self.items = self.get_items(mw_dict['items'], controller)
 
     @staticmethod
     def intf_from_dict(intf_id, controller):
@@ -122,6 +102,27 @@ class MaintenanceWindow:
             tag = TAG.from_dict(s_vlan)
             link.update_metadata('s_vlan', tag)
         return link
+
+    @staticmethod
+    def str_to_datetime(str_date):
+        """Convert a string representing a date and time to datetime."""
+        date = datetime.datetime.strptime(str_date, TIME_FMT)
+        return date.astimezone(pytz.utc)
+
+    @staticmethod
+    def get_items(item_list, controller):
+        """Convert a list of items to the right types."""
+        return_list = []
+        for i in item_list:
+            try:
+                item = MaintenanceWindow.uni_from_dict(i, controller)
+            except KeyError:
+                item = MaintenanceWindow.link_from_dict(i, controller)
+            except TypeError:
+                item = i
+            if item:
+                return_list.append(item)
+        return return_list
 
     def start_mw(self):
         """Actions taken when a maintenance window starts."""
