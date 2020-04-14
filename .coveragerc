@@ -1,6 +1,6 @@
 [run]
 source = .
-omit = *tests*,.tox/*
+omit = *tests*,.tox/*,setup.py
 
 [xml]
 output=coverage.xml
