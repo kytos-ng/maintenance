@@ -1,0 +1,211 @@
+openapi: '3.0.0'
+info:
+  title: kytos/maintenance_window
+  version: '0.1'
+  description: >-
+    **Warning**: *This documentation is experimental and may change soon.*
+
+
+    Create maintenance windows to allow the maintenance of items in the network
+    without error notifications and keeping, where possible, the network circuits
+    operating.
+
+servers:
+  - url: '<KYTOS_URL>/api/kytos'
+    description: 'Test server'
+tags:
+  - name: List
+  - name: Add
+  - name: Update
+  - name: Delete
+paths:
+  '/maintenance_window':
+    get:
+      tags:
+        - List
+      summary: Retrieve a list of all maintenance windows.
+      responses:
+        '200':
+          description: Operation Successful.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MaintenanceWindow'
+    post:
+      tags:
+        - Add
+      summary: Insert a new maintenance window
+      requestBody:
+        description: Maintenance window to be created.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceWindow'
+      responses:
+        '201':
+           description: Maintenance window created.
+           content:
+             application/json:
+               schema:
+                type: object
+                properties:
+                  mw_id:
+                    type: string
+        '400':
+           description: Invalid JSON.
+  '/maintenance_window/{mw_id}':
+    get:
+      tags:
+        - List
+      summary: Retrive the Maintenance window with the given id
+      parameters:
+        - name: mw_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Maintenance window ID
+      responses:
+        '200':
+          description: Operation Successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceWindow'
+        '404':
+          description: Maintenance window not found.
+    patch:
+      tags:
+        - Update
+      summary: Update the Maintenance window with the given id
+      parameters:
+        - name: mw_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Maintenance window ID
+      requestBody:
+        description: Maintenance window fields to be modified.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceWindow'
+      responses:
+        '200':
+          description: Maintenance window sucessfully updated
+        '400':
+          description: Malformed request body
+        '404':
+          description: Maintenance window not found.
+    delete:
+      tags:
+        - Delete
+      summary: Remove the Maintenance window with given id
+      parameters:
+        - name: mw_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Maintenance window ID
+      responses:
+        '204':
+          description: Maintenance window deleted.
+        '400':
+          description: Invalid JSON.
+        '404':
+          description: Maintenance window not found.
+  '/maintenance_window/{mw_id}/end':
+    patch:
+      tags:
+        - Update
+      summary: Finish a maintenance window right now
+      responses:
+        '200':
+          description: Maintenance window succesfully finished
+
+        '404':
+          description: Maintenance window not found.
+  '/maintenance_window/report':
+    post:
+      tags:
+        - List
+      summary: Simulate a maintenance and return a report with affected .
+      requestBody:
+        description: Maintenance window to be simulated
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceWindow'
+      responses:
+        '200':
+           description: Report.
+           content:
+             application/json:
+               schema:
+                type: object
+                properties:
+                  mw_id:
+                    type: string
+        '400':
+           description: Invalid JSON.
+components:
+  schemas:
+    MaintenanceWindow:
+      type: object
+      properties:
+        id:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            oneOf:
+              - type: string
+                format: '00:00:00:00:00:00:00:00'
+              - $ref: '#/components/schemas/Endpoint'
+              - $ref: '#/components/schemas/Link'
+    Tag: # Can be referenced via '#/components/schemas/Tag'
+      type: object
+      required:
+        - tag_type
+        - value
+      properties:
+        tag_type:
+          type: string
+        value:
+          type: string
+    Endpoint: # Can be referenced via '#/components/schemas/Endpoint'
+      type: object
+      required:
+        - interface_id
+      properties:
+        interface_id:
+          type: string
+          format: '00:00:00:00:00:00:00:00:0'
+        tag:
+          $ref: '#/components/schemas/Tag'
+    Link: # Can be referenced via '#/components/schemas/Link'
+      type: object
+      required:
+        - id
+        - endpoint_a
+        - endpoint_b
+      properties:
+        id:
+          type: string
+        endpoint_a:
+          $ref: '#/components/schemas/Endpoint'
+        endpoint_b:
+          $ref: '#/components/schemas/Endpoint'
