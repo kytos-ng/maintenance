@@ -91,7 +91,10 @@ class Main(KytosNApp):
         except KeyError:
             return jsonify({'response': f'Maintenance with id {mw_id} not '
                                         f'found'}), 404
-        maintenance.update(data, self.controller)
+        try:
+            maintenance.update(data, self.controller)
+        except ValueError as error:
+            return jsonify(f'{error}'), 400
         return jsonify({'response': f'Maintenance {mw_id} updated'}), 201
 
     @rest('/<mw_id>', methods=['DELETE'])
