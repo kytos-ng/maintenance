@@ -66,10 +66,21 @@ class MaintenanceWindow:
 
     def update(self, mw_dict, controller):
         """Update a maintenance window with the data from a dictionary."""
-        if 'start' in mw_dict:
-            self.start = self.str_to_datetime(mw_dict['start'])
-        if 'end' in mw_dict:
-            self.end = self.str_to_datetime(mw_dict['end'])
+        try:
+            start = self.str_to_datetime(mw_dict['start'])
+        except KeyError:
+            start = self.start
+        try:
+            end = self.str_to_datetime(mw_dict['end'])
+        except KeyError:
+            end = self.end
+        now = datetime.datetime.now(pytz.utc)
+        if start < now:
+            raise ValueError('Start in the past not allowed.')
+        if end < start:
+            raise ValueError('End before start not allowed.')
+        self.start = start
+        self.end = end
         if 'items' in mw_dict:
             self.items = self.get_items(mw_dict['items'], controller)
 
