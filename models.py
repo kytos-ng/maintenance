@@ -10,7 +10,7 @@ import pytz
 from apscheduler.jobstores.base import JobLookupError
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from kytos.core import log
+from kytos.core import log, KytosEvent
 from kytos.core.interface import TAG, UNI
 from kytos.core.link import Link
 
@@ -138,9 +138,40 @@ class MaintenanceWindow:
                 return_list.append(item)
         return return_list
 
+    def split_items(self):
+        switches = []
+        unis = []
+        links = []
+        for i in self.items:
+            if isinstance(i, UNI):
+                unis.append(i)
+            elif isinstance(i, Link):
+                links.append(i)
+            else:
+                try:
+                    switch = self.controller.switches[i]
+                except KeyError:
+                    pass
+                else:
+                    switches.append(switch)
+        return switches, unis, links
+
     def start_mw(self):
         """Actions taken when a maintenance window starts."""
-        pass
+        switches, unis, links = self.split_items()
+        if switches:
+            event = KytosEvent(name='kytos/maintenance.start_switch',
+                               content={'switches': switches})
+            self.controller.buffers.app.put(event)
+        if unis:
+            event = KytosEvent(name='kytos/maintenance.start_uni',
+                               content={'unis': unis})
+            self.controller.buffers.app.put(event)
+        if links:
+            event = KytosEvent(name='kytos/maintenance.start_link',
+                               content={'links': links})
+            self.controller.buffers.app.put(event)
+        # notifications for the items must also be disabled
 
     def end_mw(self):
         """Actions taken when a maintenance window finishes."""

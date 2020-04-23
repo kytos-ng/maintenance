@@ -1,8 +1,10 @@
 """Tests for the models module."""
 import datetime
 from unittest import TestCase
+from unittest.mock import patch, MagicMock, call
 
 import pytz
+from kytos.core import KytosEvent
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
 from tests.helpers import get_controller_mock
 
@@ -48,3 +50,34 @@ class TestMW(TestCase):
         items = ["09:87:65:43:21:fe:dc:ba"]
         self.maintenance.update({'items': items}, self.controller)
         self.assertEqual(self.maintenance.items, items)
+
+    @patch('kytos.core.buffers.KytosEventBuffer.put')
+    @patch('napps.kytos.maintenance.models.MaintenanceWindow.split_items')
+    def test_start_mw_case_1(self, split_items_mock, buffer_put_mock):
+        """Test the method that starts a maintenance."""
+        switch1 = MagicMock()
+        split_items_mock.return_value = [switch1], [], []
+        self.maintenance.start_mw()
+        buffer_put_mock.assert_called_once()
+
+    @patch('kytos.core.buffers.KytosEventBuffer.put')
+    @patch('napps.kytos.maintenance.models.MaintenanceWindow.split_items')
+    def test_start_mw_case_2(self, split_items_mock, buffer_put_mock):
+        """Test the method that starts a maintenance."""
+        switch1 = MagicMock()
+        switch2 = MagicMock()
+        uni1 = MagicMock()
+        split_items_mock.return_value = [switch1, switch2], [uni1], []
+        self.maintenance.start_mw()
+        self.assertEqual(buffer_put_mock.call_count, 2)
+
+    @patch('kytos.core.buffers.KytosEventBuffer.put')
+    @patch('napps.kytos.maintenance.models.MaintenanceWindow.split_items')
+    def test_start_mw_case_3(self, split_items_mock, buffer_put_mock):
+        """Test the method that starts a maintenance."""
+        uni1 = MagicMock()
+        link1 = MagicMock()
+        link2 = MagicMock()
+        split_items_mock.return_value = [], [uni1], [link1, link2]
+        self.maintenance.start_mw()
+        self.assertEqual(buffer_put_mock.call_count, 2)
