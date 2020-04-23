@@ -1,10 +1,9 @@
 """Tests for the models module."""
 import datetime
 from unittest import TestCase
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 
 import pytz
-from kytos.core import KytosEvent
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
 from tests.helpers import get_controller_mock
 

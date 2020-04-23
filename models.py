@@ -10,7 +10,7 @@ import pytz
 from apscheduler.jobstores.base import JobLookupError
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from kytos.core import log, KytosEvent
+from kytos.core import KytosEvent, log
 from kytos.core.interface import TAG, UNI
 from kytos.core.link import Link
 
@@ -139,6 +139,11 @@ class MaintenanceWindow:
         return return_list
 
     def split_items(self):
+        """Split the list of items per type.
+
+        :returns Three lists, each of them with the items
+                 of one type (switch, UNI or link)
+        """
         switches = []
         unis = []
         links = []
