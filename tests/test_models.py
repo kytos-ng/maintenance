@@ -81,3 +81,34 @@ class TestMW(TestCase):
         split_items_mock.return_value = [], [uni1], [link1, link2]
         self.maintenance.start_mw()
         self.assertEqual(buffer_put_mock.call_count, 2)
+
+    @patch('kytos.core.buffers.KytosEventBuffer.put')
+    @patch('napps.kytos.maintenance.models.MaintenanceWindow.split_items')
+    def test_end_mw_case_1(self, split_items_mock, buffer_put_mock):
+        """Test the method that starts a maintenance."""
+        switch1 = MagicMock()
+        split_items_mock.return_value = [switch1], [], []
+        self.maintenance.end_mw()
+        buffer_put_mock.assert_called_once()
+
+    @patch('kytos.core.buffers.KytosEventBuffer.put')
+    @patch('napps.kytos.maintenance.models.MaintenanceWindow.split_items')
+    def test_end_mw_case_2(self, split_items_mock, buffer_put_mock):
+        """Test the method that starts a maintenance."""
+        switch1 = MagicMock()
+        switch2 = MagicMock()
+        uni1 = MagicMock()
+        split_items_mock.return_value = [switch1, switch2], [uni1], []
+        self.maintenance.end_mw()
+        self.assertEqual(buffer_put_mock.call_count, 2)
+
+    @patch('kytos.core.buffers.KytosEventBuffer.put')
+    @patch('napps.kytos.maintenance.models.MaintenanceWindow.split_items')
+    def test_end_mw_case_3(self, split_items_mock, buffer_put_mock):
+        """Test the method that starts a maintenance."""
+        uni1 = MagicMock()
+        link1 = MagicMock()
+        link2 = MagicMock()
+        split_items_mock.return_value = [], [uni1], [link1, link2]
+        self.maintenance.end_mw()
+        self.assertEqual(buffer_put_mock.call_count, 2)

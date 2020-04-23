@@ -175,7 +175,19 @@ class MaintenanceWindow:
 
     def end_mw(self):
         """Actions taken when a maintenance window finishes."""
-        pass
+        switches, unis, links = self.split_items()
+        if switches:
+            event = KytosEvent(name='kytos/maintenance.end_switch',
+                               content={'switches': switches})
+            self.controller.buffers.app.put(event)
+        if unis:
+            event = KytosEvent(name='kytos/maintenance.end_uni',
+                               content={'unis': unis})
+            self.controller.buffers.app.put(event)
+        if links:
+            event = KytosEvent(name='kytos/maintenance.end_link',
+                               content={'links': links})
+            self.controller.buffers.app.put(event)
 
 
 class Scheduler:
