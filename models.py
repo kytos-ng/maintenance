@@ -30,6 +30,7 @@ class MaintenanceWindow:
                 each item can be either a switch, a link or a client interface
         """
         # pylint: disable=invalid-name
+        self.controller = controller
         items = kwargs.get('items')
         if items is None:
             items = list()
@@ -37,8 +38,29 @@ class MaintenanceWindow:
         self.id = mw_id if mw_id else uuid4().hex
         self.start = start
         self.end = end
+        self._switches = list()
+        self._links = list()
+        self._unis = list()
         self.items = items
-        self.controller = controller
+
+    @property
+    def items(self):
+        """Items getter."""
+        return self._switches + self._links + self._unis
+
+    @items.setter
+    def items(self, items):
+        """Items setter."""
+        self._switches = list()
+        self._unis = list()
+        self._links = list()
+        for i in items:
+            if isinstance(i, UNI):
+                self._unis.append(i)
+            elif isinstance(i, Link):
+                self._links.append(i)
+            else:
+                self._switches.append(i)
 
     def as_dict(self):
         """Return this maintenance window as a dictionary."""
@@ -61,10 +83,10 @@ class MaintenanceWindow:
 
         start = cls.str_to_datetime(mw_dict['start'])
         end = cls.str_to_datetime(mw_dict['end'])
-        items = cls.get_items(mw_dict['items'], controller)
+        items = mw_dict['items']
         return cls(start, end, controller, items=items, mw_id=mw_id)
 
-    def update(self, mw_dict, controller):
+    def update(self, mw_dict):
         """Update a maintenance window with the data from a dictionary."""
         try:
             start = self.str_to_datetime(mw_dict['start'])
@@ -82,7 +104,7 @@ class MaintenanceWindow:
         self.start = start
         self.end = end
         if 'items' in mw_dict:
-            self.items = self.get_items(mw_dict['items'], controller)
+            self.items = mw_dict['items']
 
     @staticmethod
     def intf_from_dict(intf_id, controller):
@@ -123,76 +145,33 @@ class MaintenanceWindow:
         date = datetime.datetime.strptime(str_date, TIME_FMT)
         return date.astimezone(pytz.utc)
 
-    @staticmethod
-    def get_items(item_list, controller):
-        """Convert a list of items to the right types."""
-        return_list = []
-        for i in item_list:
-            try:
-                item = MaintenanceWindow.uni_from_dict(i, controller)
-            except KeyError:
-                item = MaintenanceWindow.link_from_dict(i, controller)
-            except TypeError:
-                item = i
-            if item:
-                return_list.append(item)
-        return return_list
-
-    def split_items(self):
-        """Split the list of items per type.
-
-        :returns Three lists, each of them with the items
-                 of one type (switch, UNI or link)
-        """
-        switches = []
-        unis = []
-        links = []
-        for i in self.items:
-            if isinstance(i, UNI):
-                unis.append(i)
-            elif isinstance(i, Link):
-                links.append(i)
-            else:
-                try:
-                    switch = self.controller.switches[i]
-                except KeyError:
-                    pass
-                else:
+    def maintenance_event(self, operation):
+        """Create events to start/end a maintenance."""
+        if self._switches:
+            switches = []
+            for dpid in self._switches:
+                switch = self.controller.switches.get(dpid, None)
+                if switch:
                     switches.append(switch)
-        return switches, unis, links
+            event = KytosEvent(name=f'kytos/maintenance.{operation}_switch',
+                               content={'switches': switches})
+            self.controller.buffers.app.put(event)
+        if self._unis:
+            event = KytosEvent(name=f'kytos/maintenance.{operation}_uni',
+                               content={'unis': self._unis})
+            self.controller.buffers.app.put(event)
+        if self._links:
+            event = KytosEvent(name=f'kytos/maintenance.{operation}_link',
+                               content={'links': self._links})
+            self.controller.buffers.app.put(event)
 
     def start_mw(self):
         """Actions taken when a maintenance window starts."""
-        switches, unis, links = self.split_items()
-        if switches:
-            event = KytosEvent(name='kytos/maintenance.start_switch',
-                               content={'switches': switches})
-            self.controller.buffers.app.put(event)
-        if unis:
-            event = KytosEvent(name='kytos/maintenance.start_uni',
-                               content={'unis': unis})
-            self.controller.buffers.app.put(event)
-        if links:
-            event = KytosEvent(name='kytos/maintenance.start_link',
-                               content={'links': links})
-            self.controller.buffers.app.put(event)
-        # notifications for the items must also be disabled
+        self.maintenance_event('start')
 
     def end_mw(self):
         """Actions taken when a maintenance window finishes."""
-        switches, unis, links = self.split_items()
-        if switches:
-            event = KytosEvent(name='kytos/maintenance.end_switch',
-                               content={'switches': switches})
-            self.controller.buffers.app.put(event)
-        if unis:
-            event = KytosEvent(name='kytos/maintenance.end_uni',
-                               content={'unis': unis})
-            self.controller.buffers.app.put(event)
-        if links:
-            event = KytosEvent(name='kytos/maintenance.end_link',
-                               content={'links': links})
-            self.controller.buffers.app.put(event)
+        self.maintenance_event('end')
 
 
 class Scheduler:

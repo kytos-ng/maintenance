@@ -393,7 +393,7 @@ class TestMain(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(current_data,
                          {'response': 'Maintenance 1234 updated'})
-        mw_update_mock.assert_called_once_with(payload, self.controller)
+        mw_update_mock.assert_called_once_with(payload)
 
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.update')
     def test_update_mw_case_4(self, mw_update_mock):
@@ -422,7 +422,7 @@ class TestMain(TestCase):
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(current_data, 'Start in the past not allowed.')
-        mw_update_mock.assert_called_once_with(payload, self.controller)
+        mw_update_mock.assert_called_once_with(payload)
 
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.update')
     def test_update_mw_case_5(self, mw_update_mock):
@@ -453,7 +453,7 @@ class TestMain(TestCase):
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(current_data, 'End before start not allowed.')
-        mw_update_mock.assert_called_once_with(payload, self.controller)
+        mw_update_mock.assert_called_once_with(payload)
 
     def test_end_mw_case_1(self):
         """Test method that finishes the maintenance now."""
