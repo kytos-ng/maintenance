@@ -31,6 +31,7 @@ class TestMW(TestCase):
         """Test as_dict method."""
         mw_dict = self.maintenance.as_dict()
         expected_dict = {
+            'description': '',
             'start': self.start.strftime(TIME_FMT),
             'end': self.end.strftime(TIME_FMT),
             'id': self.maintenance.id,
