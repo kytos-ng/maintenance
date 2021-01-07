@@ -36,6 +36,7 @@ class MaintenanceWindow:
             items = list()
         mw_id = kwargs.get('mw_id')
         self.id = mw_id if mw_id else uuid4().hex
+        self.description = kwargs.get('description')
         self.start = start
         self.end = end
         self._switches = list()
@@ -66,6 +67,7 @@ class MaintenanceWindow:
         """Return this maintenance window as a dictionary."""
         mw_dict = dict()
         mw_dict['id'] = self.id
+        mw_dict['description'] = self.description if self.description else ''
         mw_dict['start'] = self.start.strftime(TIME_FMT)
         mw_dict['end'] = self.end.strftime(TIME_FMT)
         mw_dict['items'] = []
@@ -84,7 +86,9 @@ class MaintenanceWindow:
         start = cls.str_to_datetime(mw_dict['start'])
         end = cls.str_to_datetime(mw_dict['end'])
         items = mw_dict['items']
-        return cls(start, end, controller, items=items, mw_id=mw_id)
+        description = mw_dict['description'] or None
+        return cls(start, end, controller, items=items, mw_id=mw_id,
+                   description=description)
 
     def update(self, mw_dict):
         """Update a maintenance window with the data from a dictionary."""
@@ -105,6 +109,8 @@ class MaintenanceWindow:
         self.end = end
         if 'items' in mw_dict:
             self.items = mw_dict['items']
+        if 'description' in mw_dict:
+            self.description = mw_dict['description']
 
     @staticmethod
     def intf_from_dict(intf_id, controller):

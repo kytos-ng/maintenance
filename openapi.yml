@@ -162,6 +162,8 @@ components:
       properties:
         id:
           type: string
+        description:
+          type: string
         start:
           type: string
           format: date-time
