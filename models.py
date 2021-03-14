@@ -86,7 +86,7 @@ class MaintenanceWindow:
         start = cls.str_to_datetime(mw_dict['start'])
         end = cls.str_to_datetime(mw_dict['end'])
         items = mw_dict['items']
-        description = mw_dict['description'] or None
+        description = mw_dict.get('description')
         return cls(start, end, controller, items=items, mw_id=mw_id,
                    description=description)
 
