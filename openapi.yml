@@ -19,7 +19,7 @@ tags:
   - name: Update
   - name: Delete
 paths:
-  '/maintenance_window':
+  '/maintenance':
     get:
       tags:
         - List
@@ -56,7 +56,7 @@ paths:
                     type: string
         '400':
            description: Invalid JSON.
-  '/maintenance_window/{mw_id}':
+  '/maintenance/{mw_id}':
     get:
       tags:
         - List
@@ -120,7 +120,7 @@ paths:
           description: Invalid JSON.
         '404':
           description: Maintenance window not found.
-  '/maintenance_window/{mw_id}/end':
+  '/maintenance/{mw_id}/end':
     patch:
       tags:
         - Update
@@ -131,7 +131,7 @@ paths:
 
         '404':
           description: Maintenance window not found.
-  '/maintenance_window/report':
+  '/maintenance/report':
     post:
       tags:
         - List
