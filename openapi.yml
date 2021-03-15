@@ -141,6 +141,13 @@ paths:
       tags:
         - Update
       summary: Finish a maintenance window right now
+      parameters:
+        - name: mw_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Maintenance window ID
       responses:
         '201':
           description: Maintenance window succesfully finished
