@@ -55,7 +55,23 @@ paths:
                   mw_id:
                     type: string
         '400':
-           description: Invalid JSON.
+           description: Invalid JSON or invalid start/end dates.
+           content:
+             application/json:
+               schema:
+                type: object
+                properties:
+                  mw_id:
+                    type: string
+        '415':
+           description: No JSON in request.
+           content:
+             application/json:
+               schema:
+                type: object
+                properties:
+                  mw_id:
+                    type: string
   '/maintenance/{mw_id}':
     get:
       tags:
@@ -114,7 +130,7 @@ paths:
             type: string
           description: Maintenance window ID
       responses:
-        '204':
+        '200':
           description: Maintenance window deleted.
         '400':
           description: Invalid JSON.
@@ -126,11 +142,14 @@ paths:
         - Update
       summary: Finish a maintenance window right now
       responses:
-        '200':
+        '201':
           description: Maintenance window succesfully finished
-
+        '400':
+          description: Invalid data.
         '404':
           description: Maintenance window not found.
+        '415':
+          description: No JSON in request.
   '/maintenance/report':
     post:
       tags:
