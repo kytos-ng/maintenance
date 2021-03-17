@@ -4,6 +4,7 @@ This module define models for the maintenance window itself and the
 scheduler.
 """
 import datetime
+from enum import Enum
 from uuid import uuid4
 
 import pytz
@@ -15,6 +16,14 @@ from kytos.core.interface import TAG, UNI
 from kytos.core.link import Link
 
 TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
+
+
+class Status(Enum):
+    """Maintenance windows status."""
+
+    PENDING = 0
+    RUNNING = 1
+    FINISHED = 2
 
 
 class MaintenanceWindow:
@@ -43,6 +52,7 @@ class MaintenanceWindow:
         self._links = list()
         self._unis = list()
         self.items = items
+        self.status = kwargs.get('status', Status.PENDING)
 
     @property
     def items(self):
@@ -68,6 +78,7 @@ class MaintenanceWindow:
         mw_dict = dict()
         mw_dict['id'] = self.id
         mw_dict['description'] = self.description if self.description else ''
+        mw_dict['status'] = self.status
         mw_dict['start'] = self.start.strftime(TIME_FMT)
         mw_dict['end'] = self.end.strftime(TIME_FMT)
         mw_dict['items'] = []
@@ -87,8 +98,9 @@ class MaintenanceWindow:
         end = cls.str_to_datetime(mw_dict['end'])
         items = mw_dict['items']
         description = mw_dict.get('description')
+        status = mw_dict.get('status', Status.PENDING)
         return cls(start, end, controller, items=items, mw_id=mw_id,
-                   description=description)
+                   description=description, status=status)
 
     def update(self, mw_dict):
         """Update a maintenance window with the data from a dictionary."""
@@ -173,10 +185,12 @@ class MaintenanceWindow:
 
     def start_mw(self):
         """Actions taken when a maintenance window starts."""
+        self.status = Status.RUNNING
         self.maintenance_event('start')
 
     def end_mw(self):
         """Actions taken when a maintenance window finishes."""
+        self.status = Status.FINISHED
         self.maintenance_event('end')
 
 

@@ -4,7 +4,7 @@ from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
 import pytz
-from napps.kytos.maintenance.models import MaintenanceWindow as MW
+from napps.kytos.maintenance.models import MaintenanceWindow as MW, Status
 from tests.helpers import get_controller_mock
 
 TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
@@ -35,7 +35,8 @@ class TestMW(TestCase):
             'start': self.start.strftime(TIME_FMT),
             'end': self.end.strftime(TIME_FMT),
             'id': self.maintenance.id,
-            'items': self.items
+            'items': self.items,
+            'status': Status.PENDING
         }
         self.assertEqual(mw_dict, expected_dict)
 
@@ -83,6 +84,7 @@ class TestMW(TestCase):
         self.maintenance._links = [link1, link2]
         self.maintenance.start_mw()
         self.assertEqual(buffer_put_mock.call_count, 2)
+        self.assertEqual(self.maintenance.status, Status.RUNNING)
 
     @patch('kytos.core.buffers.KytosEventBuffer.put')
     def test_end_mw_case_1(self, buffer_put_mock):
