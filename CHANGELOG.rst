@@ -4,6 +4,24 @@ Changelog
 All notable changes to the Maintenance NApp will be documented in this file.
 
 
+[1.1.0] - 2021-03-31
+********************
+
+Added
+=====
+- Added ``description`` and ``status`` attributes to maintenance window.
+
+Changed
+=======
+- Changed ``setup.py`` to alert when Travis fails.
+- Updated dependencies' versions.
+
+Fixed
+=====
+- Fixed REST API URLs and HTTP status code in the documentation.
+- Added missing parameter "Maintenance Window ID" to the REST API documentation.
+
+
 [1.0.1] - 2020-07-07
 ********************
 
