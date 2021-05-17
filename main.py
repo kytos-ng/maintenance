@@ -39,14 +39,12 @@ class Main(KytosNApp):
 
             self.execute_as_loop(30)  # 30-second interval.
         """
-        pass
 
     def shutdown(self):
         """Run when your napp is unloaded.
 
         If you have some cleanup procedure, insert it here.
         """
-        pass
 
     @rest('/', methods=['GET'])
     @rest('/<mw_id>', methods=['GET'])
