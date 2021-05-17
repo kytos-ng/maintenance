@@ -95,7 +95,8 @@ class TestMain(TestCase):
                                  content_type='application/json')
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(current_data, 'One or more items are invalid')
+        self.assertEqual(current_data['description'],
+                         'One or more items are invalid')
         sched_add_mock.assert_not_called()
 
     @patch('napps.kytos.maintenance.models.Scheduler.add')
@@ -130,7 +131,8 @@ class TestMain(TestCase):
                                  content_type='application/json')
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(current_data, 'Start in the past not allowed')
+        self.assertEqual(current_data['description'],
+                         'Start in the past not allowed')
         sched_add_mock.assert_not_called()
 
     @patch('napps.kytos.maintenance.models.Scheduler.add')
@@ -165,7 +167,8 @@ class TestMain(TestCase):
                                  content_type='application/json')
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(current_data, 'End before start not allowed')
+        self.assertEqual(current_data['description'],
+                         'End before start not allowed')
         sched_add_mock.assert_not_called()
 
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.as_dict')
@@ -238,8 +241,8 @@ class TestMain(TestCase):
         response = self.api.get(url)
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(current_data, {'response': 'Maintenance with id 2345 '
-                                                    'not found'})
+        self.assertEqual(current_data['description'],
+                         'Maintenance with id 2345 not found')
         mw_as_dict_mock.assert_not_called()
 
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.as_dict')
@@ -291,8 +294,8 @@ class TestMain(TestCase):
         response = self.api.delete(url)
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(current_data, {'response': 'Maintenance with id 2345 '
-                                                    'not found'})
+        self.assertEqual(current_data['description'],
+                         'Maintenance with id 2345 not found')
 
     @patch('napps.kytos.maintenance.models.Scheduler.remove')
     def test_remove_mw_case_2(self, sched_remove_mock):
@@ -361,8 +364,8 @@ class TestMain(TestCase):
                                   content_type='application/json')
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(current_data, {'response': 'Maintenance with id 2345 '
-                                                    'not found'})
+        self.assertEqual(current_data['description'],
+                         'Maintenance with id 2345 not found')
 
     def test_update_mw_case_2(self):
         """Test update no data."""
@@ -386,8 +389,8 @@ class TestMain(TestCase):
                                   content_type='text/plain')
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 415)
-        self.assertEqual(current_data,
-                         'Bad request: The request do not have a json.')
+        self.assertEqual(current_data['description'],
+                         'The request does not have a json.')
 
     @patch('napps.kytos.maintenance.models.Scheduler.add')
     @patch('napps.kytos.maintenance.models.Scheduler.remove')
@@ -448,7 +451,8 @@ class TestMain(TestCase):
                                   content_type='application/json')
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(current_data, 'Start in the past not allowed.')
+        self.assertEqual(current_data['description'],
+                         'Start in the past not allowed.')
         mw_update_mock.assert_called_once_with(payload)
 
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.update')
@@ -479,7 +483,8 @@ class TestMain(TestCase):
                                   content_type='application/json')
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(current_data, 'End before start not allowed.')
+        self.assertEqual(current_data['description'],
+                         'End before start not allowed.')
         mw_update_mock.assert_called_once_with(payload)
 
     def test_end_mw_case_1(self):
@@ -500,8 +505,8 @@ class TestMain(TestCase):
         response = self.api.patch(url)
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(current_data,
-                         {'response': 'Maintenance with id 2345 not found'})
+        self.assertEqual(current_data['description'],
+                         'Maintenance with id 2345 not found')
 
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.end_mw')
     def test_end_mw_case_2(self, end_mw_mock):
@@ -544,9 +549,8 @@ class TestMain(TestCase):
         response = self.api.patch(url)
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(current_data,
-                         {'response': 'Maintenance window 1234 has not yet '
-                                      'started.'})
+        self.assertEqual(current_data['description'],
+                         'Maintenance window 1234 has not yet started.')
 
     def test_end_mw_case_4(self):
         """Test method that finishes the maintenance now."""
@@ -566,6 +570,5 @@ class TestMain(TestCase):
         response = self.api.patch(url)
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(current_data,
-                         {'response': 'Maintenance window 1234 has already '
-                                      'finished.'})
+        self.assertEqual(current_data['description'],
+                         'Maintenance window 1234 has already finished.')

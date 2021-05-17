@@ -69,7 +69,7 @@ class Main(KytosNApp):
         if not data:
             raise UnsupportedMediaType('The request does not have a json.')
         try:
-        maintenance = MW.from_dict(data, self.controller)
+            maintenance = MW.from_dict(data, self.controller)
         except ValueError as err:
             raise BadRequest(f'{err}')
         if maintenance is None:
@@ -87,19 +87,17 @@ class Main(KytosNApp):
         """Update a maintenance window."""
         data = request.get_json()
         if not data:
-            return jsonify("Bad request: The request do not have a json."), 415
+            raise UnsupportedMediaType('The request does not have a json.')
         try:
             maintenance = self.maintenances[mw_id]
         except KeyError:
-            return jsonify({'response': f'Maintenance with id {mw_id} not '
-                                        f'found'}), 404
+            raise NotFound(f'Maintenance with id {mw_id} not found')
         if maintenance.status == Status.RUNNING:
-            return jsonify({'response': 'Updating a running maintenance is '
-                                        'not allowed'}), 400
+            raise BadRequest('Updating a running maintenance is not allowed')
         try:
             maintenance.update(data)
         except ValueError as error:
-            return jsonify(f'{error}'), 400
+            raise BadRequest(f'{error}')
         self.scheduler.remove(maintenance)
         self.scheduler.add(maintenance)
         return jsonify({'response': f'Maintenance {mw_id} updated'}), 201
@@ -110,11 +108,9 @@ class Main(KytosNApp):
         try:
             maintenance = self.maintenances[mw_id]
         except KeyError:
-            return jsonify({'response': f'Maintenance with id {mw_id} not '
-                                        f'found'}), 404
+            raise NotFound(f'Maintenance with id {mw_id} not found')
         if maintenance.status == Status.RUNNING:
-            return jsonify({'response': 'Deleting a running maintenance is '
-                                        'not allowed'}), 400
+            raise BadRequest('Deleting a running maintenance is not allowed')
         self.scheduler.remove(maintenance)
         del self.maintenances[mw_id]
         return jsonify({'response': f'Maintenance with id {mw_id} '
@@ -126,15 +122,14 @@ class Main(KytosNApp):
         try:
             maintenance = self.maintenances[mw_id]
         except KeyError:
-            return jsonify({'response': f'Maintenance with id '
-                                        f'{mw_id} not found'}), 404
+            raise NotFound(f'Maintenance with id {mw_id} not found')
         now = datetime.datetime.now(pytz.utc)
         if now < maintenance.start:
-            return jsonify({'response': f'Maintenance window {mw_id} has not '
-                                        f'yet started.'}), 400
+            raise BadRequest(f'Maintenance window {mw_id} has not yet '
+                             'started.')
         if now > maintenance.end:
-            return jsonify({'response': f'Maintenance window {mw_id} has '
-                                        f'already finished.'}), 400
+            raise BadRequest(f'Maintenance window {mw_id} has already '
+                             'finished.')
         self.scheduler.remove(maintenance)
         maintenance.end_mw()
         return jsonify({'response': f'Maintenance window {mw_id} '
