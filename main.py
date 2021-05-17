@@ -7,6 +7,7 @@ import datetime
 
 import pytz
 from flask import jsonify, request
+from werkzeug.exceptions import BadRequest, NotFound, UnsupportedMediaType
 
 from kytos.core import KytosNApp, rest
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
@@ -58,8 +59,7 @@ class Main(KytosNApp):
         try:
             return jsonify(self.maintenances[mw_id].as_dict()), 200
         except KeyError:
-            return jsonify({'response': f'Maintenance with id {mw_id} not '
-                                        f'found'}), 404
+            raise NotFound(f'Maintenance with id {mw_id} not found')
 
     @rest('/', methods=['POST'])
     def create_mw(self):
@@ -67,14 +67,17 @@ class Main(KytosNApp):
         now = datetime.datetime.now(pytz.utc)
         data = request.get_json()
         if not data:
-            return jsonify("Bad request: The request do not have a json."), 415
+            raise UnsupportedMediaType('The request does not have a json.')
+        try:
         maintenance = MW.from_dict(data, self.controller)
+        except ValueError as err:
+            raise BadRequest(f'{err}')
         if maintenance is None:
-            return jsonify('One or more items are invalid'), 400
+            raise BadRequest('One or more items are invalid')
         if maintenance.start < now:
-            return jsonify('Start in the past not allowed'), 400
+            raise BadRequest('Start in the past not allowed')
         if maintenance.end <= maintenance.start:
-            return jsonify('End before start not allowed'), 400
+            raise BadRequest('End before start not allowed')
         self.scheduler.add(maintenance)
         self.maintenances[maintenance.id] = maintenance
         return jsonify({'mw_id': maintenance.id}), 201
