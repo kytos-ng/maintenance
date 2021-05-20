@@ -367,8 +367,11 @@ class TestMain(TestCase):
         self.assertEqual(current_data,
                          'Bad request: The request do not have a json.')
 
+    @patch('napps.kytos.maintenance.models.Scheduler.add')
+    @patch('napps.kytos.maintenance.models.Scheduler.remove')
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.update')
-    def test_update_mw_case_3(self, mw_update_mock):
+    def test_update_mw_case_3(self, mw_update_mock, sched_remove_mock,
+                              sched_add_mock):
         """Test successful update."""
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
@@ -394,6 +397,8 @@ class TestMain(TestCase):
         self.assertEqual(current_data,
                          {'response': 'Maintenance 1234 updated'})
         mw_update_mock.assert_called_once_with(payload)
+        sched_add_mock.assert_called_once()
+        sched_remove_mock.assert_called_once()
 
     @patch('napps.kytos.maintenance.models.MaintenanceWindow.update')
     def test_update_mw_case_4(self, mw_update_mock):

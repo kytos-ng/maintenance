@@ -94,6 +94,8 @@ class Main(KytosNApp):
             maintenance.update(data)
         except ValueError as error:
             return jsonify(f'{error}'), 400
+        self.scheduler.remove(maintenance)
+        self.scheduler.add(maintenance)
         return jsonify({'response': f'Maintenance {mw_id} updated'}), 201
 
     @rest('/<mw_id>', methods=['DELETE'])
