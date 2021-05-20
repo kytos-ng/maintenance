@@ -10,6 +10,7 @@ import pytz
 from tests.helpers import get_controller_mock
 from napps.kytos.maintenance.main import Main
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
+from napps.kytos.maintenance.models import Status
 
 TIME_FMT = "%Y-%m-%dT%H:%M:%S"
 
@@ -296,7 +297,7 @@ class TestMain(TestCase):
     @patch('napps.kytos.maintenance.models.Scheduler.remove')
     def test_remove_mw_case_2(self, sched_remove_mock):
         """Test remove existent id."""
-        start1 = datetime.now(pytz.utc) + timedelta(days=1)
+        start1 = datetime.now(pytz.utc) + timedelta(hours=1)
         end1 = start1 + timedelta(hours=6)
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
@@ -314,8 +315,29 @@ class TestMain(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(current_data, {'response': 'Maintenance with id 1234 '
                                                     'successfully removed'})
+
         sched_remove_mock.assert_called_once()
         self.assertEqual(len(self.napp.maintenances), 1)
+
+    def test_remove_mw_case_3(self):
+        """Test remove existent id."""
+        start1 = datetime.now(pytz.utc) - timedelta(days=1)
+        end1 = start1 + timedelta(hours=6)
+        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
+        end2 = start2 + timedelta(hours=1, minutes=30)
+        self.napp.maintenances = {
+            '1234': MW(start1, end1, self.controller, status=Status.RUNNING,
+                       items=['00:00:00:00:00:00:12:23']),
+            '4567': MW(start2, end2, self.controller, items=[
+                '12:34:56:78:90:ab:cd:ef'
+            ])
+        }
+        url = f'{self.server_name_url}/1234'
+        response = self.api.delete(url)
+        current_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(current_data, {'response': 'Deleting a running mainte'
+                                                    'nance is not allowed'})
 
     def test_update_mw_case_1(self):
         """Test update non-existent id."""
