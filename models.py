@@ -4,7 +4,7 @@ This module define models for the maintenance window itself and the
 scheduler.
 """
 import datetime
-from enum import Enum
+from enum import IntEnum
 from uuid import uuid4
 
 import pytz
@@ -18,7 +18,7 @@ from kytos.core.link import Link
 TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
 
 
-class Status(Enum):
+class Status(IntEnum):
     """Maintenance windows status."""
 
     PENDING = 0
