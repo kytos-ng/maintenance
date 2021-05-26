@@ -3,6 +3,46 @@ Changelog
 #########
 All notable changes to the Maintenance NApp will be documented in this file.
 
+[UNRELEASED] - Under development
+********************************
+Added
+=====
+
+Changed
+=======
+
+Deprecated
+==========
+
+Removed
+=======
+
+Fixed
+=====
+
+Security
+========
+
+Changed
+=======
+
+
+[1.1.1] - 2021-05-26
+********************
+
+Added
+=====
+- Added verification to not delete/modify maintenances that are running.
+
+Fixed
+=====
+- Fixed an issue where the scheduler was not updated on maintenance update.
+
+Changed
+=======
+- Updated class ``Status`` to be JSON Serializable.
+
+
 
 [1.1.0] - 2021-03-31
 ********************
