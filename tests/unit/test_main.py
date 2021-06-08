@@ -339,8 +339,8 @@ class TestMain(TestCase):
         response = self.api.delete(url)
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(current_data, {'response': 'Deleting a running mainte'
-                                                    'nance is not allowed'})
+        self.assertEqual(current_data['description'],
+                         'Deleting a running maintenance is not allowed')
 
     def test_update_mw_case_1(self):
         """Test update non-existent id."""
