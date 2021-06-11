@@ -124,7 +124,7 @@ class MaintenanceWindow:
             raise ValueError('End before start not allowed.')
         self.start = start
         self.end = end
-        if 'items' in mw_dict:
+        if 'items' in mw_dict and mw_dict['items']:
             self.items = mw_dict['items']
         if 'description' in mw_dict:
             self.description = mw_dict['description']

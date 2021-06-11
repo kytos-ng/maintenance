@@ -155,8 +155,6 @@ paths:
           description: Invalid data.
         '404':
           description: Maintenance window not found.
-        '415':
-          description: No JSON in request.
   '/maintenance/report':
     post:
       tags:
