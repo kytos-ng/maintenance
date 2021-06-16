@@ -120,6 +120,8 @@ class MaintenanceWindow:
         self.start = start
         self.end = end
         if 'items' in mw_dict:
+            if not mw_dict['items']:
+                raise ValueError('At least one item must be provided')
             self.items = mw_dict['items']
         if 'description' in mw_dict:
             self.description = mw_dict['description']
