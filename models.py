@@ -117,12 +117,12 @@ class MaintenanceWindow:
             raise ValueError('Start in the past not allowed.')
         if end < start:
             raise ValueError('End before start not allowed.')
-        self.start = start
-        self.end = end
         if 'items' in mw_dict:
             if not mw_dict['items']:
                 raise ValueError('At least one item must be provided')
             self.items = mw_dict['items']
+        self.start = start
+        self.end = end
         if 'description' in mw_dict:
             self.description = mw_dict['description']
 
