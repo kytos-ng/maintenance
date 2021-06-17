@@ -509,6 +509,8 @@ class TestMain(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(current_data, 'At least one item must be provided')
         mw_update_mock.assert_called_once_with(payload)
+        self.assertEqual(self.napp.maintenances['1234'].start, start1)
+        self.assertEqual(self.napp.maintenances['1234'].end, end1)
 
     def test_end_mw_case_1(self):
         """Test method that finishes the maintenance now."""
