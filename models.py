@@ -96,7 +96,12 @@ class MaintenanceWindow:
 
         start = cls.str_to_datetime(mw_dict['start'])
         end = cls.str_to_datetime(mw_dict['end'])
-        items = mw_dict['items']
+        try:
+            items = mw_dict['items']
+        except KeyError:
+            raise ValueError('At least one item must be provided')
+        if not items:
+            raise ValueError('At least one item must be provided')
         description = mw_dict.get('description')
         status = mw_dict.get('status', Status.PENDING)
         return cls(start, end, controller, items=items, mw_id=mw_id,
@@ -119,7 +124,7 @@ class MaintenanceWindow:
             raise ValueError('End before start not allowed.')
         self.start = start
         self.end = end
-        if 'items' in mw_dict:
+        if 'items' in mw_dict and mw_dict['items']:
             self.items = mw_dict['items']
         if 'description' in mw_dict:
             self.description = mw_dict['description']
