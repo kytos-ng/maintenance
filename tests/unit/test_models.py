@@ -52,6 +52,11 @@ class TestMW(TestCase):
         self.maintenance.update({'items': []})
         self.assertEqual(self.maintenance.items, self.items)
 
+    def test_update_empty_items_2(self):
+        """Test failed update."""
+        with self.assertRaises(ValueError):
+            self.maintenance.update({'items': []})
+
     def test_update_items(self):
         """Test update items parameter."""
         items = ["09:87:65:43:21:fe:dc:ba"]
