@@ -47,6 +47,11 @@ class TestMW(TestCase):
         self.maintenance.update({'start': start.strftime(TIME_FMT)})
         self.assertEqual(self.maintenance.start, start)
 
+    def test_update_empty_items(self):
+        """Test failed update."""
+        self.maintenance.update({'items': []})
+        self.assertEqual(self.maintenance.items, self.items)
+
     def test_update_empty_items_2(self):
         """Test failed update."""
         with self.assertRaises(ValueError):
