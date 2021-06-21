@@ -502,6 +502,8 @@ class TestMain(TestCase):
             "start": start_new.strftime(TIME_FMT),
             "items": []
         }
+        mw_update_mock.side_effect = ValueError('At least one item must be provided')
+
         url = f'{self.server_name_url}/1234'
         response = self.api.patch(url, data=json.dumps(payload),
                                   content_type='application/json')
