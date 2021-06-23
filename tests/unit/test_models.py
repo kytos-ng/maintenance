@@ -49,8 +49,8 @@ class TestMW(TestCase):
 
     def test_update_empty_items(self):
         """Test failed update."""
-        self.maintenance.update({'items': []})
-        self.assertEqual(self.maintenance.items, self.items)
+        with self.assertRaises(ValueError):
+            self.maintenance.update({'items': []})
 
     def test_update_items(self):
         """Test update items parameter."""

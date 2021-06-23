@@ -487,6 +487,39 @@ class TestMain(TestCase):
                          'End before start not allowed.')
         mw_update_mock.assert_called_once_with(payload)
 
+    @patch('napps.kytos.maintenance.models.MaintenanceWindow.update')
+    def test_update_mw_case_6(self, mw_update_mock):
+        """Test successful update."""
+        start1 = datetime.now(pytz.utc) + timedelta(days=1)
+        end1 = start1 + timedelta(hours=6)
+        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
+        end2 = start2 + timedelta(hours=1, minutes=30)
+        self.napp.maintenances = {
+            '1234': MW(start1, end1, self.controller, items=[
+                '00:00:00:00:00:00:12:23'
+            ]),
+            '4567': MW(start2, end2, self.controller, items=[
+                '12:34:56:78:90:ab:cd:ef'
+            ])
+        }
+        start_new = datetime.utcnow() + timedelta(days=1, hours=3)
+        payload = {
+            "start": start_new.strftime(TIME_FMT),
+            "items": []
+        }
+        mw_update_mock.side_effect = ValueError('At least one item must be provided')
+
+        url = f'{self.server_name_url}/1234'
+        response = self.api.patch(url, data=json.dumps(payload),
+                                  content_type='application/json')
+        current_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(current_data['description'],
+                         'At least one item must be provided')
+        mw_update_mock.assert_called_once_with(payload)
+        self.assertEqual(self.napp.maintenances['1234'].start, start1)
+        self.assertEqual(self.napp.maintenances['1234'].end, end1)
+
     def test_end_mw_case_1(self):
         """Test method that finishes the maintenance now."""
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
