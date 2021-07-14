@@ -132,3 +132,31 @@ class Main(KytosNApp):
         maintenance.end_mw()
         return jsonify({'response': f'Maintenance window {mw_id} '
                                     f'finished.'}), 200
+
+    @rest('/<mw_id>/extend', methods=['PATCH'])
+    def extend_mw(self, mw_id):
+        """Extend a running maintenance window."""
+        data = request.get_json()
+        if not data:
+            raise UnsupportedMediaType('The request does not have a json')
+        try:
+            maintenance = self.maintenances[mw_id]
+        except KeyError:
+            raise NotFound(f'Maintenance with id {mw_id} not found')
+        if 'minutes' not in data:
+            raise BadRequest(f'Minutes of extension must be sent')
+        now = datetime.datetime.now(pytz.utc)
+        if now < maintenance.start:
+            raise BadRequest(f'Maintenance window {mw_id} has not yet '
+                             'started')
+        if now > maintenance.end:
+            raise BadRequest(f'Maintenance window {mw_id} has already '
+                             'finished')
+        try:
+            maintenance.end = maintenance.end + \
+                datetime.timedelta(minutes=data['minutes'])
+        except TypeError:
+            raise BadRequest(f'Minutes of extension must be integer')
+        self.scheduler.remove(maintenance)
+        self.scheduler.add(maintenance)
+        return jsonify({'response': f'Maintenance {mw_id} extended'}), 200

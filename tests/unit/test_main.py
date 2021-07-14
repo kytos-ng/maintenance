@@ -605,3 +605,173 @@ class TestMain(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(current_data['description'],
                          'Maintenance window 1234 has already finished.')
+
+    def test_extend_case_1(self):
+        """Test successful extension."""
+        start1 = datetime.now(pytz.utc) - timedelta(hours=3)
+        end1 = start1 + timedelta(hours=4)
+        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
+        end2 = start2 + timedelta(hours=1, minutes=30)
+        self.napp.maintenances = {
+            '1234': MW(start1, end1, self.controller, items=[
+                '00:00:00:00:00:00:12:23'
+            ]),
+            '4567': MW(start2, end2, self.controller, items=[
+                '12:34:56:78:90:ab:cd:ef'
+            ])
+        }
+        url = f'{self.server_name_url}/1234/extend'
+        payload = {
+            'minutes': 45
+        }
+        response = self.api.patch(url, data=json.dumps(payload),
+                                  content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        maintenance = self.napp.maintenances['1234']
+        self.assertEqual(maintenance.end, end1 + timedelta(minutes=45))
+
+    def test_extend_case_2(self):
+        """Test no payload error."""
+        start1 = datetime.now(pytz.utc) - timedelta(hours=3)
+        end1 = start1 + timedelta(hours=4)
+        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
+        end2 = start2 + timedelta(hours=1, minutes=30)
+        self.napp.maintenances = {
+            '1234': MW(start1, end1, self.controller, items=[
+                '00:00:00:00:00:00:12:23'
+            ]),
+            '4567': MW(start2, end2, self.controller, items=[
+                '12:34:56:78:90:ab:cd:ef'
+            ])
+        }
+        url = f'{self.server_name_url}/1234/extend'
+        response = self.api.patch(url)
+        self.assertEqual(response.status_code, 415)
+        current_data = json.loads(response.data)
+        self.assertEqual(current_data['description'],
+                         'The request does not have a json')
+
+    def test_extend_case_3(self):
+        """Test payload without minutes."""
+        start1 = datetime.now(pytz.utc) - timedelta(hours=3)
+        end1 = start1 + timedelta(hours=4)
+        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
+        end2 = start2 + timedelta(hours=1, minutes=30)
+        self.napp.maintenances = {
+            '1234': MW(start1, end1, self.controller, items=[
+                '00:00:00:00:00:00:12:23'
+            ]),
+            '4567': MW(start2, end2, self.controller, items=[
+                '12:34:56:78:90:ab:cd:ef'
+            ])
+        }
+        url = f'{self.server_name_url}/1234/extend'
+        payload = {
+            'seconds': 240
+        }
+        response = self.api.patch(url, data=json.dumps(payload),
+                                  content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        current_data = json.loads(response.data)
+        self.assertEqual(current_data['description'],
+                         'Minutes of extension must be sent')
+
+    def test_extend_case_4(self):
+        """Test no integer extension minutes."""
+        start1 = datetime.now(pytz.utc) - timedelta(hours=3)
+        end1 = start1 + timedelta(hours=4)
+        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
+        end2 = start2 + timedelta(hours=1, minutes=30)
+        self.napp.maintenances = {
+            '1234': MW(start1, end1, self.controller, items=[
+                '00:00:00:00:00:00:12:23'
+            ]),
+            '4567': MW(start2, end2, self.controller, items=[
+                '12:34:56:78:90:ab:cd:ef'
+            ])
+        }
+        url = f'{self.server_name_url}/1234/extend'
+        payload = {
+            'minutes': '240'
+        }
+        response = self.api.patch(url, data=json.dumps(payload),
+                                  content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        current_data = json.loads(response.data)
+        self.assertEqual(current_data['description'],
+                         'Minutes of extension must be integer')
+
+    def test_extend_case_5(self):
+        """Test maintenance did not start."""
+        start1 = datetime.now(pytz.utc) + timedelta(hours=3)
+        end1 = start1 + timedelta(hours=4)
+        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
+        end2 = start2 + timedelta(hours=1, minutes=30)
+        self.napp.maintenances = {
+            '1234': MW(start1, end1, self.controller, items=[
+                '00:00:00:00:00:00:12:23'
+            ]),
+            '4567': MW(start2, end2, self.controller, items=[
+                '12:34:56:78:90:ab:cd:ef'
+            ])
+        }
+        url = f'{self.server_name_url}/1234/extend'
+        payload = {
+            'minutes': 240
+        }
+        response = self.api.patch(url, data=json.dumps(payload),
+                                  content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        current_data = json.loads(response.data)
+        self.assertEqual(current_data['description'],
+                         'Maintenance window 1234 has not yet started')
+
+    def test_extend_case_6(self):
+        """Test maintenance already finished."""
+        start1 = datetime.now(pytz.utc) - timedelta(hours=3)
+        end1 = start1 + timedelta(hours=2)
+        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
+        end2 = start2 + timedelta(hours=1, minutes=30)
+        self.napp.maintenances = {
+            '1234': MW(start1, end1, self.controller, items=[
+                '00:00:00:00:00:00:12:23'
+            ]),
+            '4567': MW(start2, end2, self.controller, items=[
+                '12:34:56:78:90:ab:cd:ef'
+            ])
+        }
+        url = f'{self.server_name_url}/1234/extend'
+        payload = {
+            'minutes': 240
+        }
+        response = self.api.patch(url, data=json.dumps(payload),
+                                  content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        current_data = json.loads(response.data)
+        self.assertEqual(current_data['description'],
+                         'Maintenance window 1234 has already finished')
+
+    def test_extend_case_7(self):
+        """Test no maintenace found."""
+        start1 = datetime.now(pytz.utc) - timedelta(hours=3)
+        end1 = start1 + timedelta(hours=4)
+        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
+        end2 = start2 + timedelta(hours=1, minutes=30)
+        self.napp.maintenances = {
+            '1234': MW(start1, end1, self.controller, items=[
+                '00:00:00:00:00:00:12:23'
+            ]),
+            '4567': MW(start2, end2, self.controller, items=[
+                '12:34:56:78:90:ab:cd:ef'
+            ])
+        }
+        url = f'{self.server_name_url}/1235/extend'
+        payload = {
+            'minutes': 240
+        }
+        response = self.api.patch(url, data=json.dumps(payload),
+                                  content_type='application/json')
+        self.assertEqual(response.status_code, 404)
+        current_data = json.loads(response.data)
+        self.assertEqual(current_data['description'],
+                         'Maintenance with id 1235 not found')

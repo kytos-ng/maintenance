@@ -1,7 +1,7 @@
 openapi: '3.0.0'
 info:
   title: kytos/maintenance_window
-  version: '0.1'
+  version: '0.2'
   description: >-
     **Warning**: *This documentation is experimental and may change soon.*
 
@@ -155,6 +155,46 @@ paths:
           description: Invalid data.
         '404':
           description: Maintenance window not found.
+        '415':
+          description: No JSON in request.
+  '/maintenance/{mw_id}/extend':
+    patch:
+      tags:
+        - Update
+      summary: Extend the duration of a running maintenance
+      parameters:
+        - name: mw_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Maintenance window ID
+      requestBody:
+        description: Minutes to extend the maintenance
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                minutes:
+                  type: integer        
+      responses:
+        '200':
+          description: Maintenance window succesfully extended
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
   '/maintenance/report':
     post:
       tags:
@@ -180,9 +220,43 @@ paths:
         '400':
            description: Invalid JSON.
 components:
+  responses:
+    NotFound:
+      description: The specified resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+    BadRequest:
+      description: Received data is invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+    UnsupportedMediaType:
+      description: The content-type is not supported
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
   schemas:
+    ErrorMessage:
+      additionalProperties: false
+      type: object
+      properties:
+        code:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+      required:
+        - code
+        - name
+        - description
     MaintenanceWindow:
       type: object
+      additionalProperties: false
       properties:
         id:
           type: string
@@ -204,6 +278,7 @@ components:
               - $ref: '#/components/schemas/Link'
     Tag: # Can be referenced via '#/components/schemas/Tag'
       type: object
+      additionalProperties: false
       required:
         - tag_type
         - value
@@ -214,6 +289,7 @@ components:
           type: string
     Endpoint: # Can be referenced via '#/components/schemas/Endpoint'
       type: object
+      additionalProperties: false
       required:
         - interface_id
       properties:
@@ -224,6 +300,7 @@ components:
           $ref: '#/components/schemas/Tag'
     Link: # Can be referenced via '#/components/schemas/Link'
       type: object
+      additionalProperties: false
       required:
         - id
         - endpoint_a
