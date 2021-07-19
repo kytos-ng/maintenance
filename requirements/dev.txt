@@ -27,6 +27,6 @@ snowballstemmer==1.2.1    # via pydocstyle
 tox==3.2.1
 typed-ast==1.4.0          # via astroid
 virtualenv==16.0.0        # via tox
-wrapt==1.10.11            # via astroid
+wrapt==1.11.2             # via astroid
 requests==2.21.0
 yala==2.2.0
