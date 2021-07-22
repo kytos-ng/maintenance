@@ -45,7 +45,7 @@ paths:
             schema:
               $ref: '#/components/schemas/MaintenanceWindow'
       responses:
-        '200':
+        '201':
            description: Maintenance window created.
            content:
              application/json:
