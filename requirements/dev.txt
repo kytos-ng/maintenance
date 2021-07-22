@@ -4,9 +4,9 @@
 #
 #    pip-compile --output-file requirements/dev.txt requirements/dev.in
 #
--e git+https://github.com/kytos/kytos.git#egg=kytos
+-e git+https://github.com/kytos-ng/kytos.git#egg=kytos
 -e .
--e git+https://github.com/kytos/python-openflow.git#egg=python-openflow
+-e git+https://github.com/kytos-ng/python-openflow.git#egg=python-openflow
 astroid==2.3.3            # via pylint
 click==7.1.1              # via pip-tools
 coverage==5.0.4
@@ -27,6 +27,6 @@ snowballstemmer==1.2.1    # via pydocstyle
 tox==3.2.1
 typed-ast==1.4.0          # via astroid
 virtualenv==16.0.0        # via tox
-wrapt==1.10.11            # via astroid
+wrapt==1.11.2             # via astroid
 requests==2.21.0
 yala==2.2.0
