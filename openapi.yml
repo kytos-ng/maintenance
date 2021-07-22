@@ -45,7 +45,7 @@ paths:
             schema:
               $ref: '#/components/schemas/MaintenanceWindow'
       responses:
-        '201':
+        '200':
            description: Maintenance window created.
            content:
              application/json:
@@ -180,7 +180,7 @@ paths:
                 minutes:
                   type: integer        
       responses:
-        '200':
+        '201':
           description: Maintenance window succesfully extended
           content:
             application/json:
