@@ -112,7 +112,7 @@ paths:
             schema:
               $ref: '#/components/schemas/MaintenanceWindow'
       responses:
-        '200':
+        '201':
           description: Maintenance window sucessfully updated
         '400':
           description: Malformed request body
@@ -182,7 +182,7 @@ paths:
                 minutes:
                   type: integer        
       responses:
-        '200':
+        '201':
           description: Maintenance window succesfully extended
           content:
             application/json:
