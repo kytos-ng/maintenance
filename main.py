@@ -131,7 +131,7 @@ class Main(KytosNApp):
         self.scheduler.remove(maintenance)
         maintenance.end_mw()
         return jsonify({'response': f'Maintenance window {mw_id} '
-                                    f'finished.'}), 200
+                                    f'finished.'}), 201
 
     @rest('/<mw_id>/extend', methods=['PATCH'])
     def extend_mw(self, mw_id):
