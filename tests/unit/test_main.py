@@ -559,7 +559,7 @@ class TestMain(TestCase):
         url = f'{self.server_name_url}/1234/end'
         response = self.api.patch(url)
         current_data = json.loads(response.data)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
         self.assertEqual(current_data,
                          {'response': 'Maintenance window 1234 finished.'})
         end_mw_mock.assert_called_once()
