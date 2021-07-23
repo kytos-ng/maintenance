@@ -112,12 +112,14 @@ paths:
             schema:
               $ref: '#/components/schemas/MaintenanceWindow'
       responses:
-        '200':
+        '201':
           description: Maintenance window sucessfully updated
         '400':
           description: Malformed request body
         '404':
           description: Maintenance window not found.
+        '415':
+          description: No JSON in request.
     delete:
       tags:
         - Delete
