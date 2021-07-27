@@ -118,6 +118,8 @@ paths:
           description: Malformed request body
         '404':
           description: Maintenance window not found.
+        '415':
+          description: No JSON in request.
     delete:
       tags:
         - Delete
@@ -149,7 +151,7 @@ paths:
             type: string
           description: Maintenance window ID
       responses:
-        '201':
+        '200':
           description: Maintenance window succesfully finished
         '400':
           description: Invalid data.
