@@ -418,7 +418,7 @@ class TestMain(TestCase):
         response = self.api.patch(url, data=json.dumps(payload),
                                   content_type='application/json')
         current_data = json.loads(response.data)
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(current_data,
                          {'response': 'Maintenance 1234 updated'})
         mw_update_mock.assert_called_once_with(payload)
