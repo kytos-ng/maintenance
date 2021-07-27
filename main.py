@@ -98,7 +98,7 @@ class Main(KytosNApp):
             raise BadRequest(f'{error}')
         self.scheduler.remove(maintenance)
         self.scheduler.add(maintenance)
-        return jsonify({'response': f'Maintenance {mw_id} updated'}), 201
+        return jsonify({'response': f'Maintenance {mw_id} updated'}), 200
 
     @rest('/<mw_id>', methods=['DELETE'])
     def remove_mw(self, mw_id):
