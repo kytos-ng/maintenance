@@ -70,8 +70,15 @@ class MaintenanceWindow:
                 self._unis.append(i)
             elif isinstance(i, Link):
                 self._links.append(i)
-            else:
+            elif isinstance(i, str):
                 self._switches.append(i)
+            elif isinstance(i, dict):
+                if self.uni_from_dict(i, self.controller):
+                    self._unis.append(self.uni_from_dict(i, self.controller))
+                elif self.link_from_dict(i, self.controller):
+                    self._links.append(self.link_from_dict(i, self.controller))
+            else:
+                raise ValueError(f'Item not allowed: {i}')
 
     def as_dict(self):
         """Return this maintenance window as a dictionary."""
@@ -140,20 +147,29 @@ class MaintenanceWindow:
     @staticmethod
     def uni_from_dict(uni_dict, controller):
         """Create UNI instance from a dictionary."""
-        intf = MaintenanceWindow.intf_from_dict(uni_dict['interface_id'],
-                                                controller)
-        tag = TAG.from_dict(uni_dict['tag'])
-        if intf and tag:
+        try:
+            intf = MaintenanceWindow.intf_from_dict(uni_dict['interface_id'],
+                                                    controller)
+        except KeyError:
+            return None
+        try:
+            tag = TAG.from_dict(uni_dict['tag'])
+        except KeyError:
+            tag = None
+        if intf:
             return UNI(intf, tag)
         return None
 
     @staticmethod
     def link_from_dict(link_dict, controller):
         """Create a link instance from a dictionary."""
-        endpoint_a = controller.get_interface_by_id(
-            link_dict['endpoint_a']['id'])
-        endpoint_b = controller.get_interface_by_id(
-            link_dict['endpoint_b']['id'])
+        try:
+            endpoint_a = controller.get_interface_by_id(
+                link_dict['endpoint_a']['id'])
+            endpoint_b = controller.get_interface_by_id(
+                link_dict['endpoint_b']['id'])
+        except KeyError:
+            return None
 
         link = Link(endpoint_a, endpoint_b)
         if 'metadata' in link_dict:
