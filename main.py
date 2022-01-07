@@ -7,11 +7,11 @@ import datetime
 
 import pytz
 from flask import jsonify, request
+from napps.kytos.maintenance.models import MaintenanceWindow as MW
+from napps.kytos.maintenance.models import Scheduler, Status
 from werkzeug.exceptions import BadRequest, NotFound, UnsupportedMediaType
 
 from kytos.core import KytosNApp, rest
-from napps.kytos.maintenance.models import MaintenanceWindow as MW
-from napps.kytos.maintenance.models import Scheduler, Status
 
 
 class Main(KytosNApp):
@@ -144,7 +144,7 @@ class Main(KytosNApp):
         except KeyError:
             raise NotFound(f'Maintenance with id {mw_id} not found')
         if 'minutes' not in data:
-            raise BadRequest(f'Minutes of extension must be sent')
+            raise BadRequest('Minutes of extension must be sent')
         now = datetime.datetime.now(pytz.utc)
         if now < maintenance.start:
             raise BadRequest(f'Maintenance window {mw_id} has not yet '
@@ -156,7 +156,7 @@ class Main(KytosNApp):
             maintenance.end = maintenance.end + \
                 datetime.timedelta(minutes=data['minutes'])
         except TypeError:
-            raise BadRequest(f'Minutes of extension must be integer')
+            raise BadRequest('Minutes of extension must be integer')
         self.scheduler.remove(maintenance)
         self.scheduler.add(maintenance)
         return jsonify({'response': f'Maintenance {mw_id} extended'}), 200

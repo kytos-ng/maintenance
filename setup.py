@@ -68,7 +68,7 @@ class TestCommand(Command):
 
     def get_args(self):
         """Return args to be used in test command."""
-        return '--size %s --type %s' % (self.size, self.type)
+        return f'--size {self.size} --type {self.type}'
 
     def initialize_options(self):
         """Set default size and type args."""
@@ -109,12 +109,12 @@ class Test(TestCommand):
         markers = self.size
         if markers == "small":
             markers = 'not medium and not large'
-        size_args = "" if self.size == "all" else "-m '%s'" % markers
-        return '--addopts="tests/%s %s"' % (self.type, size_args)
+        size_args = "" if self.size == "all" else f"-m '{markers}'"
+        return f'--addopts="tests/{self.type} {size_args}"'
 
     def run(self):
         """Run tests."""
-        cmd = 'python setup.py pytest %s' % self.get_args()
+        cmd = f'python setup.py pytest {self.get_args()}'
         try:
             check_call(cmd, shell=True)
         except CalledProcessError as exc:
@@ -130,7 +130,7 @@ class TestCoverage(Test):
 
     def run(self):
         """Run tests quietly and display coverage report."""
-        cmd = 'coverage3 run setup.py pytest %s' % self.get_args()
+        cmd = f'coverage3 run setup.py pytest {self.get_args()}'
         cmd += '&& coverage3 report'
         try:
             check_call(cmd, shell=True)
@@ -165,9 +165,9 @@ class CITest(TestCommand):
 
     def run(self):
         """Run unit tests with coverage, doc tests and linter."""
-        coverage_cmd = 'python3.6 setup.py coverage %s' % self.get_args()
+        coverage_cmd = f'python3.6 setup.py coverage {self.get_args()}'
         lint_cmd = 'python3.6 setup.py lint'
-        cmd = '%s && %s' % (coverage_cmd, lint_cmd)
+        cmd = f'{coverage_cmd} && {lint_cmd}'
         check_call(cmd, shell=True)
 
 
