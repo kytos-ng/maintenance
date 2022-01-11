@@ -42,15 +42,15 @@ class MaintenanceWindow:
         self.controller = controller
         items = kwargs.get('items')
         if items is None:
-            items = list()
+            items = []
         mw_id = kwargs.get('mw_id')
         self.id = mw_id if mw_id else uuid4().hex
         self.description = kwargs.get('description')
         self.start = start
         self.end = end
-        self._switches = list()
-        self._links = list()
-        self._unis = list()
+        self._switches = []
+        self._links = []
+        self._unis = []
         self.items = items
         self.status = kwargs.get('status', Status.PENDING)
 
@@ -62,9 +62,9 @@ class MaintenanceWindow:
     @items.setter
     def items(self, items):
         """Items setter."""
-        self._switches = list()
-        self._unis = list()
-        self._links = list()
+        self._switches = []
+        self._unis = []
+        self._links = []
         for i in items:
             if isinstance(i, UNI):
                 self._unis.append(i)
@@ -75,7 +75,7 @@ class MaintenanceWindow:
 
     def as_dict(self):
         """Return this maintenance window as a dictionary."""
-        mw_dict = dict()
+        mw_dict = {}
         mw_dict['id'] = self.id
         mw_dict['description'] = self.description if self.description else ''
         mw_dict['status'] = self.status
