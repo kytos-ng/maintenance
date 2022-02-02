@@ -11,8 +11,7 @@ info:
     operating.
 
 servers:
-  - url: '<KYTOS_URL>/api/kytos'
-    description: 'Test server'
+  - url: /api/kytos/maintenance
 tags:
   - name: List
   - name: Add
@@ -32,7 +31,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/MaintenanceWindow'
+                  $ref: '#/components/schemas/MaintenanceWindowGet'
     post:
       tags:
         - Add
@@ -90,7 +89,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MaintenanceWindow'
+                $ref: '#/components/schemas/MaintenanceWindowGet'
         '404':
           description: Maintenance window not found.
     patch:
@@ -278,6 +277,17 @@ components:
                 format: '00:00:00:00:00:00:00:00'
               - $ref: '#/components/schemas/Endpoint'
               - $ref: '#/components/schemas/Link'
+    MaintenanceWindowGet:
+      allOf:
+        - $ref: '#/components/schemas/MaintenanceWindow'
+        - properties:
+            status:
+              type: integer
+              description: 'Status of the MaintenanceWindow. 0: pending, 1: running, 2: finished'
+              enum:
+                - 0
+                - 1
+                - 2
     Tag: # Can be referenced via '#/components/schemas/Tag'
       type: object
       additionalProperties: false
