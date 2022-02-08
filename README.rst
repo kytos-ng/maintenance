@@ -5,7 +5,7 @@
   <div align="center">
     <h1><code>kytos/maintenance</code></h1>
 
-    <strong>NApp that finds network paths</strong>
+    <strong>NApp that manages maintenance windows</strong>
 
     <h3><a href="https://kytos-ng.github.io/api/maintenance.html">OpenAPI Docs</a></h3>
   </div>
