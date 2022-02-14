@@ -26,6 +26,20 @@ Security
 Changed
 =======
 
+[2022.1.0] - 2022-02-14
+***********************
+
+Fixed
+=====
+- Fixed GET responses in the OpenAPI spec to include ``status``
+- Updated requirements to fix conflict error with wrapt and use kytos-ng repository
+- Fixed request status code and messages in case of a payload with empty items
+
+Added
+=====
+- Extend maintenance feature
+- Enhanced and standardized setup.py `install_requires` to install pinned dependencies
+
 
 [1.1.1] - 2021-05-26
 ********************
