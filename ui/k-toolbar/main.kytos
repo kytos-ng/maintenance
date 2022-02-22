@@ -1,0 +1,46 @@
+<template>
+    <k-toolbar-item icon="gear" tooltip="Maintenace">
+                <k-button tooltip="Maintenance Windows" 
+                          title="List Maintenance Windows" 
+                          icon="desktop"
+                          :on_click="list_windows">
+                </k-button>
+    </k-toolbar-item>
+</template>
+
+<script>
+    module.exports = {
+        methods: {
+            /*
+                Shows the maintenance windows in the k-info-panel.
+            */
+            list_windows: function() {
+                var _this = this
+                this.hideInfoPanel()
+                // Show the info panel after 50ms.
+                setTimeout(function() {
+                    _this.showInfoPanel()
+                }, 50)
+            },
+            /*
+                Hides the k-info-panel.
+            */
+            hideInfoPanel: function() {
+                this.$kytos.$emit("hideInfoPanel")
+            },
+            /*
+                Shows the k-info-panel.
+            */
+            showInfoPanel: function() {
+                let listWindows = {
+                    "component": 'kytos-maintenance-k-info-panel-list_maintenance',
+                    "content": {},
+                    "icon": "desktop",
+                    "title": "View Windows",
+                    "subtitle": "by kytos/Maintenance"
+                }
+                this.$kytos.$emit("showInfoPanel", listWindows)
+            },
+        }
+    }
+</script>

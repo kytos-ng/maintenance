@@ -1,0 +1,363 @@
+<template>
+    <div v-if="render_value > 0">
+        <div class="maintenance_container">
+            <div class="maintenance-table no-compact">
+                <div class="maintenance-table-divisor">
+                    <table id="maintenance-table-list-windows">
+                        <thead>
+                            <tr>
+                                <template v-for="(header, index) in table_headers">
+                                    <th scope="col" class="header" @click="sort(index)">
+                                        {{ header }}
+                                        <span class="order-dir" v-if="current_sort === index">
+                                            {{ spanDir(index) }}
+                                        </span>
+                                    </th>
+                                </template>
+                            </tr>
+                            <tr class="header-filter">
+                                <template v-for="header in table_headers">
+                                    <th scope="col">
+                                        <input :id="header + '_search'" v-model="search_terms[header]"></input>
+                                    </th>
+                                </template>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="row in rowsOfPage">
+                                <template v-for="column in row">
+                                    <td>{{column}}</td>
+                                </template>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div v-else>
+        <div class="maintenance_container">
+            <p class='empty-window-list' v-if='loading'>Loading maintenace windows. Please wait...</p>
+            <p class='empty-window-list' v-else>No maintenance windows available.<p>
+        </div>
+    </div>
+</template>
+
+<script>
+ module.exports = {
+   data () {
+     return {
+       table_headers: ['Id', 'Start', 'End', 'Description', 'Links', 'Switches', 'Interfaces', 'Status'],
+       current_sort: 1,
+       current_sort_dir: [],
+       table_rows: [],
+       search_terms: [],
+       render_value: 0,
+       loading: false
+     }
+   },
+   methods: {
+     /*
+         Set the sort direction for the given column index.
+     */
+     sort: function(new_sort) {
+        // If the new sorted property (id, start, end, etc.) is the same as the current
+        if(new_sort == this.current_sort) {
+            // Switch the sorting order.
+            let sort_dir = (this.current_sort_dir[new_sort] === 'asc') ? 'desc' : 'asc'
+            this.$set(this.current_sort_dir, new_sort, sort_dir)
+        }
+        this.current_sort = new_sort
+     },
+     /*
+         Return a marker symbol of the current sorting direction for the given column index.
+     */
+     spanDir: function(index) {
+        if(this.current_sort_dir[index] === 'desc') {
+            return '▾'
+        }
+        return '▴'
+     },
+     /*
+         Gets the maintenance windows data by using the /kytos/maintenance endpoint.
+     */
+     listMaintenanceWindows: function(topology) {
+        var _this = this
+        var data_rows = []
+        this.render_value = 0
+        this.loading = true
+
+        var request = $.ajax({
+            url: this.$kytos_server_api + "kytos/maintenance",
+            type: "GET",
+            dataType: "json",
+            contentType: "application/json"
+        })
+        request.done(function(data) {
+          $.each(data, function(i, window) {
+              if(window) {
+                  // Convert numberic status (0,1,2) to their correspoding words. 
+                  // If an status is not 0,1,2 then it will display it as a number (default).
+                  let status = window.status
+                  if(window.status == '0') {
+                      status = 'Pending'
+                  } else if(window.status == '1') {
+                      status = 'Running'
+                  } else if(window.status == '2') {
+                      status = 'Finished'
+                  }
+
+                  // Get the items formatted with metadata or id.
+                  items = _this.formatItems(window.items, topology)
+                  
+                  let row = {
+                      "Id": window.id,
+                      "Start": window.start,
+                      "End": window.end,
+                      "Description": window.description,
+                      "Links": items[0].join("\n"),
+                      "Switches": items[1].join("\n"),
+                      "Interfaces": items[2].join("\n"),
+                      "Status": status,
+                  }
+                  data_rows.push(row)
+              }
+          })
+          _this.table_rows = data_rows
+          _this.loading = false
+          // If there is maintenance windows to display, do so.
+          if(_this.table_rows.length > 0) {
+              _this.forceRender()
+          }
+        })
+        request.fail(function(jqXHR, status) {
+            alert("Request failed: " + status + ".")
+            _this.loading = false
+        })
+        return data_rows
+     },
+     /*
+        Tries to get the topology for the maintenance window. 
+        Displays maintenance windows regardless of success or failure.
+     */
+     getTopologyForWindows: function() {
+         _this = this
+         this.loading = true
+         var request = $.ajax({
+            url: this.$kytos_server_api + "kytos/topology/v3",
+            type: "GET",
+            dataType: "json",
+            contentType: "application/json"
+        })
+        request.done(function(data) {
+            // If success, display the mainteinace windows with the current topology.
+            _this.listMaintenanceWindows(data.topology)
+        })
+        request.fail(function(jqXHR, status) {
+            // If failure, display the maintenance windows without topology.
+            _this.listMaintenanceWindows(null)
+        })
+     },
+     /*
+         Format the items into a list of links, switches, and interfaces.
+         The ids will be displayed if the correspoding metadata doesn't exist or
+         there is no topology. Otherwise, it will be the correspoding metadata.
+     */
+     formatItems: function(items, topology) {
+         // List of links, interfaces, and switches.
+         links_list = []
+         interfaces_list = []
+         switches_list = []
+
+         // For every item in the list
+         for(let i = 0; i < items.length; i++) {
+             if(items[i].hasOwnProperty('id')) {
+                 // LINK
+                 data = items[i].id
+
+                 try {
+                     linkMetadata = topology.links[data].metadata
+                     // Check to avoid 'undefined' data
+                     if(linkMetadata.hasOwnProperty('link_name')) {
+                         data = linkMetadata.link_name
+                     }
+                 } catch(error) {
+                     // Show Id
+                 }
+                 links_list.push(data)
+             } else if((typeof items[i]) == "string") {
+                 // SWITCH
+                 data = items[i]
+
+                 try {
+                     switchMetadata = topology.switches[data].metadata
+                     // Check to avoid 'undefined' data
+                     if(switchMetadata.hasOwnProperty('node_name')) {
+                         data = switchMetadata.node_name
+                     }
+                 } catch(error) {
+                     // Show Id
+                 }
+                 switches_list.push(data)
+             } else if(items[i].hasOwnProperty('interface_id')) {
+                 // INTERFACE
+                 data = items[i].interface_id
+
+                 switch_id = this.correspondingSwitch(data)
+                 try {
+                    interfaceMetadata = topology.switches[switch_id].interfaces[data].metadata
+                    // Check to avoid 'undefined' data
+                    if(interfaceMetadata.hasOwnProperty('port_name')) {
+                        data = interfaceMetadata.port_name
+                    }
+                 } catch(error) {
+                     // Show Id
+                 }
+                 interfaces_list.push(data)
+             } 
+         }
+         return [links_list, switches_list, interfaces_list] 
+     },
+     correspondingSwitch: function(interface) {
+         portIndex = interface.lastIndexOf(':')
+         if(portIndex < 0) {
+             return interface
+         }
+         return interface.substring(0, portIndex)
+     },
+     /*
+         Activates the re-rendering of the table.
+     */
+     forceRender: function() {
+         this.render_value += 1
+     },
+   },
+   computed: {
+     /*
+         Orders a column in asceding or descending order.
+     */
+     rowsOfPage: function() {
+        let properties = Object.keys(this.search_terms);
+
+        let filtered = this.table_rows.filter((item)=>
+        {
+          let checks = properties.map(i => !this.search_terms[i] || 
+                    item[i].toUpperCase().includes(this.search_terms[i].toUpperCase()))
+          return !checks.includes(false);
+        })
+
+         return filtered.sort((a,b) => {
+             // Return negative value, a goes before b.
+             // Return positive value, b goes before a.
+             // Return 0, no change.
+
+             let modifier = 1
+             let key_a = Object.keys(a)
+             let key_b = Object.keys(b)
+
+             if(this.current_sort_dir[this.current_sort] === 'desc') {
+                 modifier = -1
+             }
+             if(a[key_a[this.current_sort]] < b[key_b[this.current_sort]]) {
+                 return -1 * modifier
+             }
+             if(a[key_a[this.current_sort]] > b[key_b[this.current_sort]]) {
+                 return modifier
+             }
+             return 0
+         })
+     },
+   },
+   created() {
+       // Get the topology before listing the maintenance windows.
+       this.getTopologyForWindows()
+       // Initialize list sort direction
+       this.current_sort_dir = Array(this.table_headers.length).fill('asc');
+       this.search_terms = this.table_headers.reduce((obj, item) => (obj[item] = "", obj), {});
+   },
+   mounted() {
+       $('.k-info-panel:has(.maintenance_container)').addClass('maintenance-k-info-panel');
+   },
+   destroyed() {
+       $('.k-info-panel').removeClass('maintenance-k-info-panel');
+   }
+ }
+</script>
+
+<style type="text/css">
+    .maintenance-k-info-panel {
+        width: calc(100% - 300px);
+    }
+
+    .empty-window-list {
+        margin-top: 0.2 rem;
+        color: #ccc;
+        font-size: 1rem;
+    }
+
+    .maintenance-table {
+        color: #ccc;
+        max-height: 250px;
+        text-align: center;
+        margin: 0 auto;
+        display: block;
+        padding: 0.5em 0 1em 0.3em;
+        font-size: 1em;
+        height: 190px;
+    }
+    .maintenance-table table {
+        display: table;
+        width: 120%;
+    }
+    .maintenance-table thead {
+        font-weight: bold;
+        background: #554077;
+    }
+    .maintenance-table th {
+        padding: 0.6em 0 0.6em  0;
+    }
+    .maintenance-table tr {
+        color: lightgray;
+    }
+    .maintenance-table td {
+        vertical-align: middle;
+        padding-bottom: 0.5em;
+        line-height: 150%;
+    }
+    .maintenance-table .header {
+        cursor: pointer;
+    }
+    .maintenance-table .header-filter th {
+        padding: 0 0 0.5em 0;
+        background: #554077;
+    }
+    .maintenance-table .header-filter input {
+        background: lightgray;
+        border: 1px solid gray;
+        border-radius: 3px;
+        font-size: 1em;
+        margin: 0 0.2em 0 0.2em;
+        width: 100%;
+    }
+    .maintenance-table #Status_search {
+        width: 90%;
+    }
+    .maintenance-table tbody tr:nth-child(even) {
+        background: #313131;
+    }
+    .maintenance-table tbody tr:hover {
+        color: #eee;
+        background-color: #666;
+    }
+    .maintenance-table tbody tr.inactive {
+        background-color: #600000;
+    }
+    .maintenance-table-divisor {
+        height: 190px;
+    }
+
+    .order-dir {
+        display: inline-block;
+        width: 12px;
+    }
+</style>
