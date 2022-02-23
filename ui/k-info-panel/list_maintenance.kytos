@@ -47,7 +47,7 @@
  module.exports = {
    data () {
      return {
-       table_headers: ['Id', 'Start', 'End', 'Description', 'Links', 'Switches', 'Interfaces', 'Status'],
+       table_headers: ['Id', 'Start', 'End', 'Description', 'Status', 'Links', 'Switches', 'Interfaces'],
        current_sort: 1,
        current_sort_dir: [],
        table_rows: [],
@@ -115,10 +115,10 @@
                       "Start": window.start,
                       "End": window.end,
                       "Description": window.description,
+                      "Status": status,
                       "Links": items[0].join("\n"),
                       "Switches": items[1].join("\n"),
                       "Interfaces": items[2].join("\n"),
-                      "Status": status,
                   }
                   data_rows.push(row)
               }
@@ -292,7 +292,7 @@
     .empty-window-list {
         margin-top: 0.2 rem;
         color: #ccc;
-        font-size: 1rem;
+        font-size: 0.8rem;
     }
 
     .maintenance-table {
@@ -302,12 +302,12 @@
         margin: 0 auto;
         display: block;
         padding: 0.5em 0 1em 0.3em;
-        font-size: 1em;
+        font-size: 0.8em;
         height: 190px;
     }
     .maintenance-table table {
         display: table;
-        width: 120%;
+        width: 100%;
     }
     .maintenance-table thead {
         font-weight: bold;
@@ -335,12 +335,12 @@
         background: lightgray;
         border: 1px solid gray;
         border-radius: 3px;
-        font-size: 1em;
+        font-size: 0.9em;
         margin: 0 0.2em 0 0.2em;
         width: 100%;
     }
-    .maintenance-table #Status_search {
-        width: 90%;
+    .maintenance-table #Interfaces_search {
+        width: 95%;
     }
     .maintenance-table tbody tr:nth-child(even) {
         background: #313131;
