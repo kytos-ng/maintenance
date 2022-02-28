@@ -7,6 +7,8 @@ All notable changes to the Maintenance NApp will be documented in this file.
 ********************************
 Added
 =====
+- Added UI `k-toolbar` component to list maintenance windows.
+- Added UI `k-info-panel` component to list maintenance windows in a sortable and filterable table.
 
 Changed
 =======
