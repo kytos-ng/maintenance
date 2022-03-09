@@ -194,9 +194,16 @@
                     _this.loadMaintenanceWindow(_this.window_data.Id)
                 })
                 request.fail(function(jqXHR, status, error ) {
+		    error_message = JSON.parse(jqXHR.responseText)
+                    if (error_message.hasOwnProperty('response')) {
+                        error_message = error_message.response
+                    } else if (error_message.hasOwnProperty('description')) {
+                        error_message = error_message.description
+                    }
+
                     let notification = {
                         title: 'Updated Window failed.',
-                        description: 'Error updating window "' + _this.window_data.Id + '". ' + _this.capitalize(status) + ': ' +  JSON.parse(jqXHR.responseText).response
+                        description: 'Error updating window "' + _this.window_data.Id + '". ' + _this.capitalize(status) + ': ' +  error_message
                     }
                     // Notify on failure.
                     _this.$kytos.$emit("setNotification", notification)
