@@ -5,6 +5,19 @@
                           icon="desktop"
                           :on_click="list_windows">
                 </k-button>
+      <k-accordion>
+        <k-accordion-item title = "Create Maintenance Window">
+                <k-input placeholder = "Id" :value.sync ="id"></k-input>
+                <k-input placeholder = "Description" :value.sync = "description"></k-input>
+                <k-input placeholder = "Start time" :value.sync = "start"></k-input>
+                <k-input placeholder = "End time" :value.sync = "end"></k-input>
+                <k-select icon = "link" title = "List of Switches" :options = "dpid_names" :value.sync = "items"></k-select>
+                <k-select icon = "link" title = "List of Interfaces" :options = "interface_names" :value.sync = "interface_items"></k-select>
+                <k-select icon = "link" title = "List of Links" :options = "link_names" :value.sync = "link_items"></k-select>
+                <k-input placeholder = "Status, Input 0, 1, or 2" :value.sync = "status" ></k-input>
+                <k-button title = "Post" :on_click = "post_window"></k-button>
+        </k-accordion-item>
+     </k-accordion>
     </k-toolbar-item>
 </template>
 
@@ -41,6 +54,161 @@
                 }
                 this.$kytos.$emit("showInfoPanel", listWindows)
             },
-        }
+            /*
+                Gets the data fields after button click and consumes POST api to post maintenace window.
+            */
+            post_window(){
+                var self = this
+                this.formatInfo();
+                $.ajax({
+                    async: true,
+                    dataType: "json",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({"id": self.id,
+                                          "description": self.description,
+                                          "start": self.start,
+                                          "end": self.end,
+                                          "items": self.merged_list,         
+                                          "status": self.status,
+                    }),
+                url:this.$kytos_server_api + "kytos/maintenance",
+                success: function(data) {
+                    let notification = {
+                        icon: 'gear',
+                        title: 'Maintenance Window Created',
+                        description: 'Maintenance Window with id ' + self.id + ' was created.'
+                    }
+                    self.$kytos.$emit("setNotification", notification);
+                },
+                error: function(data) {
+                    let notification = {
+                        icon: 'gear',
+                        title: 'Maintenance Window not created',
+                        description: 'Maintenance Window with id ' + self.id + ' was not created.'
+                    }
+                   self.$kytos.$emit("setNotification", notification);
+               },
+             });
+             self.merged_list = [];
+            },
+            /*
+                Gets the Switch and Interface information using the GET api call from topology. 
+            */
+            loadNames: function() {
+                let _dpid_names = [];
+                let _interface_names = [];
+                var _this = this;
+
+                var request = $.ajax({
+                    url: this.$kytos_server_api + "kytos/topology/v3/switches",
+                    type: "GET",
+                    data: JSON.stringify(),
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8"
+               });
+
+               request.done(function(data) {
+                   let switches = data.switches;
+                   $.each(switches, function(i, sw) {
+                       if(sw.metadata.node_name){
+                           _dpid_names.push({"value": sw.id, "description": sw.metadata.node_name})
+                       }
+                       else{
+                           _dpid_names.push({"value": sw.id, "description": sw.id})
+                       }
+                       if(sw.interfaces){
+                           $.each(sw.interfaces, function(j, interface){
+                           if(Object.keys(interface.metadata).length == 0){
+                               _interface_names.push({"value": interface.id, "description": interface.id})
+                           }
+                           else{
+                               _interface_names.push({"value": interface.id, "description": interface.port_number})
+                           }
+                           });
+                      }
+                  });
+                  _this.dpid_names = _dpid_names;
+                  _this.interface_names = _interface_names;
+              });
+
+              request.fail(function( jqXHR, textStatus ) {
+                  alert("Request failed: " + textStatus);
+              });
+            },  
+            /*
+                Gets the Link information using the Get api call from the topology api.
+            */
+            loadLinks: function(){
+                let _link_names = [];
+                var _this = this;
+                var request = $.ajax({
+                    url: this.$kytos_server_api + "kytos/topology/v3/links",
+                    type: "GET",
+                    dataType: "json",
+                    contentType: "application/json"
+                });
+                request.done(function(data) {
+                    let links = data.links;
+                    $.each(links, function(i, li) {
+                        if(li.metadata.link_name){
+                            _link_names.push({"value": li.id, "description": li.metadata.link_name})
+                        }
+                        else{
+                            _link_names.push({"value": li.id, "description": li.id})
+                        }
+                    });
+                    _this.link_names = _link_names;
+                });
+               request.fail(function( jqXHR, textStatus) {
+                   alert("Request failed: " + textStatus)
+               });
+            },
+            /*
+                This method takes the various lists with switch, link, and interface information 
+                and combines the options the user selected to JSON format.
+            */
+            formatInfo: function(){
+                var lengthOne = this.link_items.length;
+                for(let i = 0; i < lengthOne; i++){
+                    var item = this.link_items[i]
+                    let links = {
+                        "id": item
+                    }
+                    this.merged_list.push(links)
+                }
+
+                var lengthTwo = this.interface_items.length;
+                for(let i = 0; i < lengthTwo; i++){
+                    var itemTwo = this.interface_items[i]
+                    let interfaces = {
+                        "interface_id": itemTwo
+                    }
+                   this.merged_list.push(interfaces)
+                }
+                this.merged_list = this.merged_list.concat(this.items)
+           }
+        },       
+        data() {
+            return{
+                id: "",
+                description: "",
+                start: "",
+                end: "",
+                items: [],
+                interface_items: [],
+                status: "",
+                dpid_names: [],
+                interface_names: [],
+                link_names: [],
+                link_items: [],
+                merged_list: [],
+           }
+       },
+       mounted(){
+           this.loadNames();
+           this.loadLinks();
+       }
     }
 </script>
+
