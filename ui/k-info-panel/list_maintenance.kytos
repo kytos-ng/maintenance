@@ -24,7 +24,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="row in rowsOfPage">
+                            <tr v-for="row in rowsOfPage"
+			    @click="rowClicked(row['Id'])">
                                 <template v-for="column in row">
                                     <td>{{column}}</td>
                                 </template>
@@ -231,6 +232,25 @@
      forceRender: function() {
          this.render_value += 1
      },
+     /*
+         Decide what happens when a row is clicked.
+     */
+     rowClicked: function(id) {
+         this.openWindow(id)
+     },
+     /*
+         Open a k-info-panel given a maintenance window id.
+     */
+     openWindow: function(id) {
+         var content = {
+            "component": 'kytos-maintenance-k-info-panel-edit_window',
+            "content": {'id':id},
+            "icon": "gear",
+            "title": "Maintenance Window Details",
+            "subtitle": "by kytos/maintenance"
+         }
+         this.$kytos.$emit("showInfoPanel", content);
+     }
    },
    computed: {
      /*
