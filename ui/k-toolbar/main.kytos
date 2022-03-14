@@ -1,10 +1,5 @@
 <template>
     <k-toolbar-item icon="gear" tooltip="Maintenace">
-                <k-button tooltip="Maintenance Windows" 
-                          title="List Maintenance Windows" 
-                          icon="desktop"
-                          :on_click="list_windows">
-                </k-button>
       <k-accordion>
         <k-accordion-item title = "Create Maintenance Window">
                 <k-input placeholder = "Id" :value.sync ="id"></k-input>
@@ -14,9 +9,15 @@
                 <k-select icon = "link" title = "List of Switches" :options = "dpid_names" :value.sync = "items"></k-select>
                 <k-select icon = "link" title = "List of Interfaces" :options = "interface_names" :value.sync = "interface_items"></k-select>
                 <k-select icon = "link" title = "List of Links" :options = "link_names" :value.sync = "link_items"></k-select>
-                <k-input placeholder = "Status, Input 0, 1, or 2" :value.sync = "status" ></k-input>
-                <k-button title = "Post" :on_click = "post_window"></k-button>
+                <k-button title = "Create Maintenance Window" :on_click = "post_window"></k-button>
         </k-accordion-item>
+         <k-accordion-item title = "List Maintenance Windows">
+                <k-button tooltip="Maintenance Windows"
+                          title="List Maintenance Windows"
+                          icon="desktop"
+                          :on_click="list_windows">
+                </k-button>
+         </k-accordion-item>         
      </k-accordion>
     </k-toolbar-item>
 </template>
@@ -60,7 +61,7 @@
             post_window(){
                 var self = this
                 this.formatInfo();
-                $.ajax({
+                var request = $.ajax({
                     async: true,
                     dataType: "json",
                     type: "POST",
@@ -70,26 +71,34 @@
                                           "start": self.start,
                                           "end": self.end,
                                           "items": self.merged_list,         
-                                          "status": self.status,
                     }),
-                url:this.$kytos_server_api + "kytos/maintenance",
-                success: function(data) {
+                    url:this.$kytos_server_api + "kytos/maintenance",
+                });
+
+                request.done(function() {
                     let notification = {
                         icon: 'gear',
                         title: 'Maintenance Window Created',
                         description: 'Maintenance Window with id ' + self.id + ' was created.'
                     }
                     self.$kytos.$emit("setNotification", notification);
-                },
-                error: function(data) {
+                }),
+                request.fail(function(jqXHR, status, error) {
+
+                    error_message = JSON.parse(jqXHR.responseText)
+                    if (error_message.hasOwnProperty('response')) {
+                        error_message = error_message.response
+                    } else if (error_message.hasOwnProperty('description')) {
+                        error_message = error_message.description
+                    }
+
                     let notification = {
                         icon: 'gear',
                         title: 'Maintenance Window not created',
-                        description: 'Maintenance Window with id ' + self.id + ' was not created.'
+                        description: 'Maintenance Window with id ' + self.id + ' was not created. Error: ' + error_message
                     }
                    self.$kytos.$emit("setNotification", notification);
-               },
-             });
+               }),
              self.merged_list = [];
             },
             /*
@@ -123,7 +132,7 @@
                                _interface_names.push({"value": interface.id, "description": interface.id})
                            }
                            else{
-                               _interface_names.push({"value": interface.id, "description": interface.port_number})
+                               _interface_names.push({"value": interface.id, "description": interface.metadata.port_name})
                            }
                            });
                       }
@@ -206,8 +215,10 @@
            }
        },
        mounted(){
-           this.loadNames();
-           this.loadLinks();
+           Promise.all([this.loadNames(), this.loadLinks()])
+           .then(function() {
+                    // Finished loading links, switches, and interfaces.
+            })
        }
     }
 </script>
