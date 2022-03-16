@@ -128,7 +128,7 @@
                        }
                        if(sw.interfaces){
                            $.each(sw.interfaces, function(j, interface){
-                           if(Object.keys(interface.metadata).length == 0){
+                           if(!interface.metadata.port_name){
                                _interface_names.push({"value": interface.id, "description": interface.id})
                            }
                            else{
