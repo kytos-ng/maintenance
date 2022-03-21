@@ -68,7 +68,13 @@
                         </div>
                 </template>
             </div>
-        </div
+        <div class="window-buttons">
+            <div class="window-buttons-bottom">
+                <div class="window-finish-button">
+                    <k-button tooltip="Finish Maintenance Window" title="Finish Window" :on_click="finishMaintenanceWindow"></k-button> 
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 <script>
@@ -194,7 +200,7 @@
                     _this.loadMaintenanceWindow(_this.window_data.Id)
                 })
                 request.fail(function(jqXHR, status, error ) {
-		    error_message = JSON.parse(jqXHR.responseText)
+                    error_message = JSON.parse(jqXHR.responseText)
                     if (error_message.hasOwnProperty('response')) {
                         error_message = error_message.response
                     } else if (error_message.hasOwnProperty('description')) {
@@ -588,6 +594,46 @@
             capitalize: function(word) {
                 return word.charAt(0).toUpperCase() + word.slice(1);
             },
+            /*
+                Finishes a maintenance window.
+            */
+            finishMaintenanceWindow: function() {
+                _this = this
+
+                // Call the Maintenace API to finish the maintenance window.
+                var request = $.ajax({
+                    url: this.$kytos_server_api + "kytos/maintenance/" + _this.window_data.Id + "/end",
+                    type: "PATCH",
+                    dataType: "json",
+                    contentType: "application/json"
+                })
+                request.done(function(jqXHR, status) {
+                    let notification = {
+                        title: 'Window "' + _this.window_data.Id + '" finished.',
+                        description: ''
+                    }
+                    // Notify on success.
+                    _this.$kytos.$emit("setNotification", notification)
+                    // Refresh the window.
+                    _this.resetItemSelection()
+                    _this.loadMaintenanceWindow(_this.window_data.Id)
+                })
+                request.fail(function(jqXHR, status) {
+                    error_message = JSON.parse(jqXHR.responseText)
+                    if (error_message.hasOwnProperty('response')) {
+                        error_message = error_message.response
+                    } else if (error_message.hasOwnProperty('description')) {
+                        error_message = error_message.description
+                    }
+
+                    let notification = {
+                        title: 'Finish Window failed.',
+                        description: 'Error finishing window "' + _this.window_data.Id + '". ' + _this.capitalize(status) + ': ' +  error_message
+                    }
+                    // Notify on failure.
+                    _this.$kytos.$emit("setNotification", notification)
+                })
+            },
         },
         mounted() {
             // Loads the topology API first for editing the maintenance window.
@@ -620,6 +666,15 @@
     }
     .window-buttons .window-save-button button {
         background: #009500;
+    }
+
+    .window-buttons .window-buttons-bottom {
+        margin-top: 1em;
+    }
+    
+    .window-buttons .window-finish-button button {
+        float: right;
+        background: #372C5E;
     }
 
     .maintenance-window-container table {
