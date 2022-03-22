@@ -1,7 +1,7 @@
 <template>
     <k-toolbar-item icon="gear" tooltip="Maintenace">
       <k-accordion>
-        <k-accordion-item title = "Create Maintenance Window">
+        <k-accordion-item title = "Create Maintenance Window" :key = "componentKey">
                 <k-input placeholder = "Id" :value.sync ="id"></k-input>
                 <k-input placeholder = "Description" :value.sync = "description"></k-input>
                 <k-input placeholder = "Start time" :value.sync = "start"></k-input>
@@ -9,6 +9,7 @@
                 <k-select icon = "link" title = "List of Switches" :options = "dpid_names" :value.sync = "items"></k-select>
                 <k-select icon = "link" title = "List of Interfaces" :options = "interface_names" :value.sync = "interface_items"></k-select>
                 <k-select icon = "link" title = "List of Links" :options = "link_names" :value.sync = "link_items"></k-select>
+                <k-button title = "Reset Fields" :on_click = "forceRenderer"></k-button>
                 <k-button title = "Create Maintenance Window" :on_click = "post_window"></k-button>
         </k-accordion-item>
          <k-accordion-item title = "List Maintenance Windows">
@@ -82,6 +83,8 @@
                         description: 'Maintenance Window with id ' + self.id + ' was created.'
                     }
                     self.$kytos.$emit("setNotification", notification);
+                    // Clearing fields if POST is a success
+                    self.forceRenderer();
                 }),
                 request.fail(function(jqXHR, status, error) {
 
@@ -91,7 +94,9 @@
                     } else if (error_message.hasOwnProperty('description')) {
                         error_message = error_message.description
                     }
-
+                    if(error_message.includes('%Y-%m-%dT%H:%M:%S%z') || (error_message.includes('start')) || (error_message.includes('past'))){
+                        error_message += '. Remember that the actual format for time is year-month-dayTHour:Minutes:Seconds+0000.'
+                    }
                     let notification = {
                         icon: 'gear',
                         title: 'Maintenance Window not created',
@@ -178,25 +183,31 @@
                 and combines the options the user selected to JSON format.
             */
             formatInfo: function(){
-                var lengthOne = this.link_items.length;
-                for(let i = 0; i < lengthOne; i++){
-                    var item = this.link_items[i]
-                    let links = {
-                        "id": item
-                    }
-                    this.merged_list.push(links)
-                }
-
-                var lengthTwo = this.interface_items.length;
-                for(let i = 0; i < lengthTwo; i++){
-                    var itemTwo = this.interface_items[i]
-                    let interfaces = {
-                        "interface_id": itemTwo
-                    }
-                   this.merged_list.push(interfaces)
-                }
-                this.merged_list = this.merged_list.concat(this.items)
-           }
+               this.link_items.forEach(e=>{
+                  if(typeof e === "string")
+                     this.merged_list.push({"id":e})   
+               }); 
+               this.interface_items.forEach(e=>{
+                  if(typeof e === "string")
+                     this.merged_list.push({"interface_id":e})
+               });
+               this.merged_list = this.merged_list.concat(this.items)
+            },
+           /*
+                This method clears all fields and makes them empty.
+           */
+           forceRenderer(){
+              this.id =  "";
+              this.description = "";
+              this.start =  "";
+              this.end =  "";
+              this.status = "";
+              this.items = [];
+              this.interface_items = [];
+              this.link_items = [];
+              this.merged_list = [];   
+              this.componentKey +=1;
+           }    
         },       
         data() {
             return{
@@ -212,6 +223,7 @@
                 link_names: [],
                 link_items: [],
                 merged_list: [],
+                componentKey: ""
            }
        },
        mounted(){
