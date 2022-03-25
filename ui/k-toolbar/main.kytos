@@ -95,7 +95,7 @@
                         error_message = error_message.description
                     }
                     if(error_message.includes('%Y-%m-%dT%H:%M:%S%z') || (error_message.includes('start')) || (error_message.includes('past'))){
-                        error_message += '. Remember that the actual format for time is year-month-dayTHour:Minutes:Seconds+0000.'
+                        error_message += '. Remember that the actual format for time is YYY-MM-DDTHH:MM:SS-0000, for example, 2026-04-22T11:41:01-0000'
                     }
                     let notification = {
                         icon: 'gear',
@@ -191,7 +191,10 @@
                   if(typeof e === "string")
                      this.merged_list.push({"interface_id":e})
                });
-               this.merged_list = this.merged_list.concat(this.items)
+               this.items.forEach(e => {
+       		 if(typeof e === "string")
+            	     this.merged_list.push(e);
+   	       });
             },
            /*
                 This method clears all fields and makes them empty.
