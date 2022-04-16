@@ -646,19 +646,18 @@
             */
             extendWindow() {
                 _this = this
-
                 // Call the Maintenace API to extend the maintenance window.
                 var request = $.ajax({
                     url: this.$kytos_server_api + "kytos/maintenance/" + _this.window_data.Id + "/extend",
                     type: "PATCH",
                     dataType: "json",
                     contentType: "application/json",
-                    data: JSON.stringify({"minutes": _this.minutes,
+                    data: JSON.stringify({"minutes": parseInt(_this.minutes),
                     }),
                 })
                 request.done(function(jqXHR, status) {
                     let notification = {
-                        title: 'Window "' + _this.window_data.Id + '" has been extended.',
+                        title: 'Window "' + _this.window_data.Id + '" has been extended .',
                         description: ''
                     }
                     // Notify on success.
@@ -674,7 +673,7 @@
                     } else if (error_message.hasOwnProperty('description')) {
                         error_message = error_message.description
                     }
-
+   
                     let notification = {
                         title: 'Extending Window failed.',
                         description: 'Error extending window "' + _this.window_data.Id + '". ' + _this.capitalize(status) + ': ' +  error_message
@@ -730,7 +729,9 @@
         background: #372C5E;
     } 
     .minute-input-field {
-        width: 100px; 
+        float: right;
+        width: 200px;
+        display: flex; 
     }
 
     .maintenance-window-container table {
