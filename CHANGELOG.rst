@@ -7,12 +7,6 @@ All notable changes to the Maintenance NApp will be documented in this file.
 ********************************
 Added
 =====
-- Added UI `k-toolbar` component to list maintenance windows.
-- Added UI `k-toolbar` component to create maintenance windows.  
-- Added UI `k-info-panel` component to list maintenance windows in a sortable and filterable table.
-- Added UI `k-info-panel` component to edit and delete maintenance windows.
-- Added UI `k-info-panel` component to finish maintenance windows.
-- Added UI `k-info-panel` component to extend maintenance windows.
 
 Changed
 =======
@@ -31,6 +25,19 @@ Security
 
 Changed
 =======
+
+[2022.2.0] - 2022-08-08
+***********************
+
+Added
+=====
+- UI `k-toolbar` component to list maintenance windows.
+- UI `k-toolbar` component to create maintenance windows.  
+- UI `k-info-panel` component to list maintenance windows in a sortable and filterable table.
+- UI `k-info-panel` component to edit and delete maintenance windows.
+- UI `k-info-panel` component to finish maintenance windows.
+- UI `k-info-panel` component to extend maintenance windows.
+
 
 [2022.1.0] - 2022-02-14
 ***********************

@@ -3,7 +3,7 @@
   "username": "kytos",
   "name": "maintenance",
   "description": "This NApp creates maintenance windows, allowing the maintenance of network devices (a switch, a board, a link) without receiving alerts.",
-  "version": "2022.1.0",
+  "version": "2022.2.0",
   "napp_dependencies": [],
   "license": "MIT",
   "tags": [],
