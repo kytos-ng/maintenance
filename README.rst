@@ -20,6 +20,18 @@ using those devices will be moved to another path during the maintenance, if
 possible. Notifications about those devices will be disabled during the
 maintenance.
 
+Installing
+==========
+
+To install this NApp, make sure to have the same venv activated as you have ``kytos`` installed on:
+
+.. code:: shell
+
+   $ git clone https://github.com/kytos-ng/maintenance.git
+   $ cd maintenance
+   $ python3 setup.py develop
+
+
 Events
 ======
 
