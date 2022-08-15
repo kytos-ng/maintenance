@@ -53,7 +53,7 @@ class Main(KytosNApp):
         if mw_id is None:
             return jsonify(
                 [maintenance.as_dict()
-                 for maintenance in self.maintenances.values()]), 200
+                 for maintenance in self.maintenances.copy().values()]), 200
         try:
             return jsonify(self.maintenances[mw_id].as_dict()), 200
         except KeyError:
