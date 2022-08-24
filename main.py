@@ -46,8 +46,8 @@ class Main(KytosNApp):
         If you have some cleanup procedure, insert it here.
         """
 
-    @rest('/', methods=['GET'])
-    @rest('/<mw_id>', methods=['GET'])
+    @rest('/v1', methods=['GET'])
+    @rest('/v1/<mw_id>', methods=['GET'])
     def get_mw(self, mw_id=None):
         """Return one or all maintenance windows."""
         if mw_id is None:
@@ -59,7 +59,7 @@ class Main(KytosNApp):
         except KeyError:
             raise NotFound(f'Maintenance with id {mw_id} not found')
 
-    @rest('/', methods=['POST'])
+    @rest('/v1', methods=['POST'])
     def create_mw(self):
         """Create a new maintenance window."""
         now = datetime.datetime.now(pytz.utc)
@@ -80,7 +80,7 @@ class Main(KytosNApp):
         self.maintenances[maintenance.id] = maintenance
         return jsonify({'mw_id': maintenance.id}), 201
 
-    @rest('/<mw_id>', methods=['PATCH'])
+    @rest('/v1/<mw_id>', methods=['PATCH'])
     def update_mw(self, mw_id):
         """Update a maintenance window."""
         data = request.get_json()
@@ -100,7 +100,7 @@ class Main(KytosNApp):
         self.scheduler.add(maintenance)
         return jsonify({'response': f'Maintenance {mw_id} updated'}), 200
 
-    @rest('/<mw_id>', methods=['DELETE'])
+    @rest('/v1/<mw_id>', methods=['DELETE'])
     def remove_mw(self, mw_id):
         """Delete a maintenance window."""
         try:
@@ -114,7 +114,7 @@ class Main(KytosNApp):
         return jsonify({'response': f'Maintenance with id {mw_id} '
                                     f'successfully removed'}), 200
 
-    @rest('/<mw_id>/end', methods=['PATCH'])
+    @rest('/v1/<mw_id>/end', methods=['PATCH'])
     def end_mw(self, mw_id):
         """Finish a maintenance window right now."""
         try:
@@ -133,7 +133,7 @@ class Main(KytosNApp):
         return jsonify({'response': f'Maintenance window {mw_id} '
                                     f'finished.'}), 200
 
-    @rest('/<mw_id>/extend', methods=['PATCH'])
+    @rest('/v1/<mw_id>/extend', methods=['PATCH'])
     def extend_mw(self, mw_id):
         """Extend a running maintenance window."""
         data = request.get_json()
