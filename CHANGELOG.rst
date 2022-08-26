@@ -11,6 +11,8 @@ Added
 Changed
 =======
 
+- Updated REST API endpoints to include version numbers. Current version is `\v1`.
+
 Deprecated
 ==========
 
