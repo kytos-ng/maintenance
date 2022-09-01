@@ -73,7 +73,7 @@
                                           "end": self.end,
                                           "items": self.merged_list,         
                     }),
-                    url:this.$kytos_server_api + "kytos/maintenance",
+                    url:this.$kytos_server_api + "kytos/maintenance/v1",
                 });
 
                 request.done(function() {

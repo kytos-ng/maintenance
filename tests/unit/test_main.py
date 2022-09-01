@@ -23,7 +23,7 @@ class TestMain(TestCase):
     def setUp(self):
         """Initialize before tests are executed."""
         self.server_name_url = \
-            'http://localhost:8181/api/kytos/maintenance'
+            'http://localhost:8181/api/kytos/maintenance/v1'
         self.controller = get_controller_mock()
         self.napp = Main(self.controller)
         self.api = self.get_app_test_client(self.napp)

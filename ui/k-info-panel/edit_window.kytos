@@ -182,7 +182,7 @@
 
                 // Update the maitenance window with the new values.
                 var request = $.ajax({
-                    url: this.$kytos_server_api + "kytos/maintenance/" + _this.window_data.Id,
+                    url: this.$kytos_server_api + "kytos/maintenance/v1/" + _this.window_data.Id,
                     type: "PATCH",
                     data: JSON.stringify({
                         "id": _this.window_data.Id,
@@ -250,7 +250,7 @@
 
                 // Request the window data from the API.
                 var request = $.ajax({
-                    url: this.$kytos_server_api + "kytos/maintenance/" + id,
+                    url: this.$kytos_server_api + "kytos/maintenance/v1/" + id,
                     type: "GET",
                     dataType: "json",
                     contentType: "application/json"
@@ -366,7 +366,7 @@
 
                 // Request a deletion of the given window from the API.
                 var request = $.ajax({
-                    url: this.$kytos_server_api + "kytos/maintenance/" + _this.window_data.Id,
+                    url: this.$kytos_server_api + "kytos/maintenance/v1/" + _this.window_data.Id,
                     type:"DELETE"
                 });
                 request.done(function(data) {
@@ -609,7 +609,7 @@
 
                 // Call the Maintenace API to finish the maintenance window.
                 var request = $.ajax({
-                    url: this.$kytos_server_api + "kytos/maintenance/" + _this.window_data.Id + "/end",
+                    url: this.$kytos_server_api + "kytos/maintenance/v1/" + _this.window_data.Id + "/end",
                     type: "PATCH",
                     dataType: "json",
                     contentType: "application/json"
@@ -648,7 +648,7 @@
                 _this = this
                 // Call the Maintenace API to extend the maintenance window.
                 var request = $.ajax({
-                    url: this.$kytos_server_api + "kytos/maintenance/" + _this.window_data.Id + "/extend",
+                    url: this.$kytos_server_api + "kytos/maintenance/v1/" + _this.window_data.Id + "/extend",
                     type: "PATCH",
                     dataType: "json",
                     contentType: "application/json",

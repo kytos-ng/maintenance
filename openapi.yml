@@ -18,7 +18,7 @@ tags:
   - name: Update
   - name: Delete
 paths:
-  '/maintenance':
+  '/maintenance/v1':
     get:
       tags:
         - List
@@ -71,7 +71,7 @@ paths:
                 properties:
                   mw_id:
                     type: string
-  '/maintenance/{mw_id}':
+  '/maintenance/v1/{mw_id}':
     get:
       tags:
         - List
@@ -137,7 +137,7 @@ paths:
           description: Invalid JSON.
         '404':
           description: Maintenance window not found.
-  '/maintenance/{mw_id}/end':
+  '/maintenance/v1/{mw_id}/end':
     patch:
       tags:
         - Update
@@ -158,7 +158,7 @@ paths:
           description: Maintenance window not found.
         '415':
           description: No JSON in request.
-  '/maintenance/{mw_id}/extend':
+  '/maintenance/v1/{mw_id}/extend':
     patch:
       tags:
         - Update
@@ -196,7 +196,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '415':
           $ref: '#/components/responses/UnsupportedMediaType'
-  '/maintenance/report':
+  '/maintenance/v1/report':
     post:
       tags:
         - List
