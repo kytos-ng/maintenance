@@ -189,10 +189,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -230,10 +230,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -253,10 +253,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -283,10 +283,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -305,10 +305,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -329,9 +329,9 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, status=Status.RUNNING,
+            '1234': MW(start=start1, end=end1, controller=self.controller, status=Status.RUNNING,
                        items=['00:00:00:00:00:00:12:23']),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -349,10 +349,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -374,10 +374,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -403,10 +403,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -433,10 +433,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -463,10 +463,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -495,10 +495,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -527,10 +527,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -549,10 +549,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -571,10 +571,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -592,10 +592,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -613,10 +613,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -637,10 +637,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -658,10 +658,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -683,10 +683,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -708,10 +708,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -733,10 +733,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }
@@ -758,10 +758,10 @@ class TestMain(TestCase):
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.napp.maintenances = {
-            '1234': MW(start1, end1, self.controller, items=[
+            '1234': MW(start=start1, end=end1, controller=self.controller, items=[
                 '00:00:00:00:00:00:12:23'
             ]),
-            '4567': MW(start2, end2, self.controller, items=[
+            '4567': MW(start=start2, end=end2, controller=self.controller, items=[
                 '12:34:56:78:90:ab:cd:ef'
             ])
         }

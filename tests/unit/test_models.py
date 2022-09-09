@@ -4,6 +4,8 @@ from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
 import pytz
+from kytos.core.interface import UNI
+from kytos.core.link import Link
 from napps.kytos.maintenance.models import MaintenanceWindow as MW, Status
 from tests.helpers import get_controller_mock
 
@@ -24,16 +26,15 @@ class TestMW(TestCase):
         self.items = [
             "01:23:45:67:89:ab:cd:ef"
         ]
-        self.maintenance = MW(self.start, self.end, self.controller,
+        self.maintenance = MW(start=self.start, end=self.end, controller=self.controller,
                               items=self.items)
 
     def test_as_dict(self):
         """Test as_dict method."""
         mw_dict = self.maintenance.as_dict()
         expected_dict = {
-            'description': '',
-            'start': self.start.strftime(TIME_FMT),
-            'end': self.end.strftime(TIME_FMT),
+            'start': self.start,
+            'end': self.end,
             'id': self.maintenance.id,
             'items': self.items,
             'status': Status.PENDING
@@ -70,23 +71,20 @@ class TestMW(TestCase):
     def test_start_mw_case_2(self, buffer_put_mock):
         """Test the method that starts a maintenance."""
         switch2 = MagicMock()
-        uni1 = MagicMock()
+        uni1 = MagicMock(spec=UNI)
         self.controller.switches = {'01:23:45:67:89:ab:cd:ef': switch2}
-        self.maintenance._switches = ['01:23:45:67:89:ab:cd:ef',
-                                      '01:23:45:67:65:ab:cd:ef']
-        self.maintenance._unis = [uni1]
+        self.maintenance.items = ['01:23:45:67:89:ab:cd:ef',
+                                      '01:23:45:67:65:ab:cd:ef', uni1]
         self.maintenance.start_mw()
         self.assertEqual(buffer_put_mock.call_count, 2)
 
     @patch('kytos.core.buffers.KytosEventBuffer.put')
     def test_start_mw_case_3(self, buffer_put_mock):
         """Test the method that starts a maintenance."""
-        uni1 = MagicMock()
-        link1 = MagicMock()
-        link2 = MagicMock()
-        self.maintenance._switches = []
-        self.maintenance._unis = [uni1]
-        self.maintenance._links = [link1, link2]
+        uni1 = MagicMock(spec=UNI)
+        link1 = MagicMock(spec=Link)
+        link2 = MagicMock(spec=Link)
+        self.maintenance.items = [uni1, link1, link2]
         self.maintenance.start_mw()
         self.assertEqual(buffer_put_mock.call_count, 2)
         self.assertEqual(self.maintenance.status, Status.RUNNING)
@@ -96,7 +94,7 @@ class TestMW(TestCase):
         """Test the method that starts a maintenance."""
         switch1 = MagicMock()
         self.controller.switches = {'01:23:45:67:89:ab:cd:ef': switch1}
-        self.maintenance._switches = ['01:23:45:67:89:ab:cd:ef']
+        self.maintenance.items = ['01:23:45:67:89:ab:cd:ef']
         self.maintenance.end_mw()
         buffer_put_mock.assert_called_once()
 
@@ -104,22 +102,20 @@ class TestMW(TestCase):
     def test_end_mw_case_2(self, buffer_put_mock):
         """Test the method that starts a maintenance."""
         switch2 = MagicMock()
-        uni1 = MagicMock()
+        uni1 = MagicMock(spec=UNI)
         self.controller.switches = {'01:23:45:67:89:ab:cd:ef': switch2}
-        self.maintenance._switches = ['01:23:45:67:89:ab:cd:ef',
-                                      '01:23:45:67:65:ab:cd:ef']
-        self.maintenance._unis = [uni1]
+        self.maintenance.items = ['01:23:45:67:89:ab:cd:ef',
+                                      '01:23:45:67:65:ab:cd:ef', uni1]
         self.maintenance.end_mw()
         self.assertEqual(buffer_put_mock.call_count, 2)
 
     @patch('kytos.core.buffers.KytosEventBuffer.put')
     def test_end_mw_case_3(self, buffer_put_mock):
         """Test the method that starts a maintenance."""
-        uni1 = MagicMock()
-        link1 = MagicMock()
-        link2 = MagicMock()
-        self.maintenance._switches = []
-        self.maintenance._unis = [uni1]
-        self.maintenance._links = [link1, link2]
+        uni1 = MagicMock(spec=UNI)
+        link1 = MagicMock(spec=Link)
+        link2 = MagicMock(spec=Link)
+        self.maintenance.items = [uni1, link1, link2]
         self.maintenance.end_mw()
         self.assertEqual(buffer_put_mock.call_count, 2)
+

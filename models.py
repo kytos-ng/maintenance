@@ -5,11 +5,13 @@ scheduler.
 """
 import datetime
 from enum import IntEnum
+from typing import Any, Optional, Union
 from uuid import uuid4
 
 import pytz
 from apscheduler.jobstores.base import JobLookupError
 from apscheduler.schedulers.background import BackgroundScheduler
+from pydantic import BaseModel, Field, conlist
 
 from kytos.core import KytosEvent, log
 from kytos.core.interface import TAG, UNI
@@ -26,86 +28,32 @@ class Status(IntEnum):
     FINISHED = 2
 
 
-class MaintenanceWindow:
+class MaintenanceWindow(BaseModel):
     """Class to store a maintenance window."""
 
-    def __init__(self, start, end, controller, **kwargs):
-        """Create an instance of MaintenanceWindow.
+    items: conlist(Union[UNI, Link, str], min_items=1)
+    id: str = Field(default_factory=lambda: uuid4().hex)
+    description: Optional[str]
+    start: datetime.datetime
+    end: datetime.datetime
+    status: Status = Status.PENDING
+    controller: Any = Field(..., exclude=True)
 
-        Args:
-            start(datetime): when the maintenance will begin
-            end(datetime): when the maintenance will finish
-            items: list of items that will be maintained;
-                each item can be either a switch, a link or a client interface
-        """
-        # pylint: disable=invalid-name
-        self.controller = controller
-        items = kwargs.get('items')
-        if items is None:
-            items = []
-        mw_id = kwargs.get('mw_id')
-        self.id = mw_id if mw_id else uuid4().hex
-        self.description = kwargs.get('description')
-        self.start = start
-        self.end = end
-        self._switches = []
-        self._links = []
-        self._unis = []
-        self.items = items
-        self.status = kwargs.get('status', Status.PENDING)
-
-    @property
-    def items(self):
-        """Items getter."""
-        return self._switches + self._links + self._unis
-
-    @items.setter
-    def items(self, items):
-        """Items setter."""
-        self._switches = []
-        self._unis = []
-        self._links = []
-        for i in items:
-            if isinstance(i, UNI):
-                self._unis.append(i)
-            elif isinstance(i, Link):
-                self._links.append(i)
-            else:
-                self._switches.append(i)
+    class Config:
+        """Pydantic configuration."""
+        arbitrary_types_allowed = True
+        json_encoders = {
+            datetime: lambda dt: dt.strftime(TIME_FMT)
+        }
 
     def as_dict(self):
         """Return this maintenance window as a dictionary."""
-        mw_dict = {}
-        mw_dict['id'] = self.id
-        mw_dict['description'] = self.description if self.description else ''
-        mw_dict['status'] = self.status
-        mw_dict['start'] = self.start.strftime(TIME_FMT)
-        mw_dict['end'] = self.end.strftime(TIME_FMT)
-        mw_dict['items'] = []
-        for i in self.items:
-            try:
-                mw_dict['items'].append(i.as_dict())
-            except (AttributeError, TypeError):
-                mw_dict['items'].append(i)
-        return mw_dict
+        return self.dict(exclude_none=True)
 
     @classmethod
     def from_dict(cls, mw_dict, controller):
         """Create a maintenance window from a dictionary of attributes."""
-        mw_id = mw_dict.get('id')
-
-        start = cls.str_to_datetime(mw_dict['start'])
-        end = cls.str_to_datetime(mw_dict['end'])
-        try:
-            items = mw_dict['items']
-        except KeyError:
-            raise ValueError('At least one item must be provided')
-        if not items:
-            raise ValueError('At least one item must be provided')
-        description = mw_dict.get('description')
-        status = mw_dict.get('status', Status.PENDING)
-        return cls(start, end, controller, items=items, mw_id=mw_id,
-                   description=description, status=status)
+        return cls(controller=controller, **mw_dict)
 
     def update(self, mw_dict):
         """Update a maintenance window with the data from a dictionary."""
@@ -172,22 +120,29 @@ class MaintenanceWindow:
 
     def maintenance_event(self, operation):
         """Create events to start/end a maintenance."""
-        if self._switches:
-            switches = []
-            for dpid in self._switches:
-                switch = self.controller.switches.get(dpid, None)
+        switches = []
+        unis = []
+        links = []
+        for item in self.items:
+            if isinstance(item, UNI):
+                unis.append(UNI)
+            elif isinstance(item, Link):
+                links.append(item)
+            else:
+                switch = self.controller.switches.get(item, None)
                 if switch:
                     switches.append(switch)
+        if switches:
             event = KytosEvent(name=f'kytos/maintenance.{operation}_switch',
                                content={'switches': switches})
             self.controller.buffers.app.put(event)
-        if self._unis:
+        if unis:
             event = KytosEvent(name=f'kytos/maintenance.{operation}_uni',
-                               content={'unis': self._unis})
+                               content={'unis': unis})
             self.controller.buffers.app.put(event)
-        if self._links:
+        if links:
             event = KytosEvent(name=f'kytos/maintenance.{operation}_link',
-                               content={'links': self._links})
+                               content={'links': links})
             self.controller.buffers.app.put(event)
 
     def start_mw(self):
