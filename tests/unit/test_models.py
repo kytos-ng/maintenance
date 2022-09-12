@@ -4,8 +4,8 @@ from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
 import pytz
+from kytos.lib.helpers import get_controller_mock
 from napps.kytos.maintenance.models import MaintenanceWindow as MW, Status
-from tests.helpers import get_controller_mock
 
 TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
 

@@ -7,7 +7,7 @@ import json
 
 import pytz
 
-from tests.helpers import get_controller_mock
+from kytos.lib.helpers import get_controller_mock
 from napps.kytos.maintenance.main import Main
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
 from napps.kytos.maintenance.models import Status
