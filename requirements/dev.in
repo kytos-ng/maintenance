@@ -3,3 +3,4 @@
 -e .[dev]
 pytest-asyncio==0.18.3
 black==22.3.0
+cattrs==22.2.0
