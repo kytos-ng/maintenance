@@ -7,16 +7,17 @@ from datetime import datetime
 from enum import Enum
 from typing import NewType
 from uuid import uuid4
-from kytos.core.db import Mongo
 
 import pytz
-from attrs import define, field
+from attrs import define, field, evolve
 from cattrs import Converter
 
 from apscheduler.jobstores.base import JobLookupError
 from apscheduler.schedulers.base import BaseScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 
+from bson.codec_options import CodecOptions
+from pymongo import MongoClient
 from pymongo.collection import Collection
 
 from kytos.core import KytosEvent, log
@@ -50,7 +51,7 @@ class MaintenanceWindow:
     interfaces: list[str] = field(factory = list)
     links: list[str] = field(factory = list)
     id: MaintenanceID = field(factory = lambda:MaintenanceID(uuid4().hex))
-    description: str | None = field(default=None)
+    description: str = field(default='')
     status: Status = field(default=Status.PENDING)
 
     def maintenance_event(self, operation, controller: Controller):
@@ -76,13 +77,13 @@ class MaintenanceWindow:
 
     def start_mw(self, controller: Controller):
         """Actions taken when a maintenance window starts."""
-        self.status = Status.RUNNING
         self.maintenance_event('start', controller)
+        return evolve(self, status=Status.RUNNING)
 
     def end_mw(self, controller: Controller):
         """Actions taken when a maintenance window finishes."""
-        self.status = Status.FINISHED
         self.maintenance_event('end', controller)
+        return evolve(self, status=Status.FINISHED)
 
 @define
 class MaintenanceStart:
@@ -107,17 +108,23 @@ class MaintenanceEnd:
 class Scheduler:
     """Scheduler for a maintenance window."""
     controller: Controller
+    db_client: MongoClient
     windows: Collection
     scheduler: BaseScheduler
     #windows: dict[MaintenanceID, MaintenanceWindow] = field(factory=list)
 
     @classmethod
     def new_scheduler(cls, controller: Controller):
-        db = Mongo.client[Mongo.db_name]
+        db_client = controller.db_client
+        db = controller.db
         scheduler = BackgroundScheduler(timezone=pytz.utc)
-        windows = db['maintenance']['windows']
+        windows = db['maintenance.windows'].with_options(
+            codec_options=CodecOptions(
+                tz_aware=True,
+            )
+        )
         windows.create_index('id')
-        instance = cls(controller, windows, scheduler)
+        instance = cls(controller, db_client, windows, scheduler)
         return instance
 
     def start(self):
@@ -144,30 +151,30 @@ class Scheduler:
         window = self._db_get_window(id)
 
         # Set to Running
-        window.start_mw(self.controller)
+        next_win = window.start_mw(self.controller)
 
         # Update DB
-        self._db_udate_window(window)
+        self._db_update_window(next_win)
 
     def endMaintenance(self, id: MaintenanceID):
         # Get Maintenance from DB
         window = self._db_get_window(id)
 
         # Set to Ending
-        window.end_mw(self.controller)
+        next_win = window.end_mw(self.controller)
 
         # Update DB
-        self._db_udate_window(window)
+        self._db_update_window(next_win)
 
     def endMaintenanceEarly(self, id: MaintenanceID):
         # Get Maintenance from DB
         window = self._db_get_window(id)
 
         # Set to Ending
-        self._unschedule(window)
+        next_win = self._unschedule(window)
 
         # Update DB
-        self._db_udate_window(window)
+        self._db_update_window(next_win)
 
     def add(self, window:MaintenanceWindow):
         """Add jobs to start and end a maintenance window."""
@@ -197,8 +204,8 @@ class Scheduler:
         window: MaintenanceWindow = converter.structure(window, MaintenanceWindow)
         return window
 
-    def _db_udate_window(self, window: MaintenanceWindow):
-        self.windows.update_one({'id': window.id}, window)
+    def _db_update_window(self, window: MaintenanceWindow):
+        self.windows.update_one({'id': window.id}, {'$set': converter.unstructure(window)})
 
     def _db_list_windows(self) -> list[MaintenanceWindow]:
         windows = self.windows.find(projection={'_id':False})
@@ -237,7 +244,8 @@ class Scheduler:
             ended = True
             log.info(f'Job to end {window.id} already removed.')
         if started and not ended:
-            window.end_mw(self.controller)
+            window = window.end_mw(self.controller)
+        return window
 
 
     def getMaintenance(self, id: MaintenanceID):

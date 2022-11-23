@@ -72,9 +72,10 @@ class Main(KytosNApp):
     @rest('/v1/<mw_id>', methods=['GET'])
     def get_mw(self, mw_id: MaintenanceID):
         """Return one maintenance window."""
-        try:
-            return jsonify(converter.unstructure(self.scheduler.getMaintenance(mw_id))), 200
-        except KeyError:
+        window = self.scheduler.getMaintenance(mw_id)
+        if window:
+            return jsonify(converter.unstructure(window)), 200
+        else:
             raise NotFound(f'Maintenance with id {mw_id} not found')
 
     @rest('/v1', methods=['POST'])
@@ -83,7 +84,7 @@ class Main(KytosNApp):
         now = datetime.now(pytz.utc)
         data = request.get_json()
         if not data:
-            raise UnsupportedMediaType('The request does not have a json.')
+            raise UnsupportedMediaType('The request does not have a json')
         try:
             maintenance = converter.structure(data, MW)
         except BaseValidationError as err:
@@ -100,18 +101,24 @@ class Main(KytosNApp):
     @rest('/v1/<mw_id>', methods=['PATCH'])
     def update_mw(self, mw_id: MaintenanceID):
         """Update a maintenance window."""
+        now = datetime.now(pytz.utc)
         data = request.get_json()
         if not data:
-            raise UnsupportedMediaType('The request does not have a json.')
+            raise UnsupportedMediaType('The request does not have a json')
         old_maintenance = self.scheduler.getMaintenance(mw_id)
         if old_maintenance is None:
             raise NotFound(f'Maintenance with id {mw_id} not found')
         if old_maintenance.status == Status.RUNNING:
             raise BadRequest('Updating a running maintenance is not allowed')
-        try:
-            new_maintenance = converter.structure({**converter.unstructure(old_maintenance), **data}, MW)
-        except BaseValidationError as err:
-            raise BadRequest(f'{err}')
+        # try:
+        new_maintenance = converter.structure({**converter.unstructure(old_maintenance), **data}, MW)
+        # except BaseValidationError as err:
+        #     raise BadRequest(f'{err}')
+
+        if new_maintenance.start < now:
+            raise BadRequest('Start in the past not allowed')
+        if new_maintenance.end <= new_maintenance.start:
+            raise BadRequest('End before start not allowed')
         self.scheduler.remove(mw_id)
         self.scheduler.add(new_maintenance)
         return jsonify({'response': f'Maintenance {mw_id} updated'}), 200
@@ -119,7 +126,7 @@ class Main(KytosNApp):
     @rest('/v1/<mw_id>', methods=['DELETE'])
     def remove_mw(self, mw_id: MaintenanceID):
         """Delete a maintenance window."""
-        maintenance = self.scheduler.getMaintenances(mw_id)
+        maintenance = self.scheduler.getMaintenance(mw_id)
         if maintenance is None:
             raise NotFound(f'Maintenance with id {mw_id} not found')
         if maintenance.status == Status.RUNNING:
@@ -131,7 +138,7 @@ class Main(KytosNApp):
     @rest('/v1/<mw_id>/end', methods=['PATCH'])
     def end_mw(self, mw_id: MaintenanceID):
         """Finish a maintenance window right now."""
-        maintenance = self.scheduler.getMaintenances(mw_id)
+        maintenance = self.scheduler.getMaintenance(mw_id)
         if maintenance is None:
             raise NotFound(f'Maintenance with id {mw_id} not found')
         match maintenance:
@@ -145,7 +152,7 @@ class Main(KytosNApp):
                 )
         self.scheduler.endMaintenanceEarly(mw_id)
         return jsonify({'response': f'Maintenance window {mw_id} '
-                                    f'finished.'}), 200
+                                    f'finished'}), 200
 
     @rest('/v1/<mw_id>/extend', methods=['PATCH'])
     def extend_mw(self, mw_id):
@@ -158,7 +165,6 @@ class Main(KytosNApp):
             raise NotFound(f'Maintenance with id {mw_id} not found')
         if 'minutes' not in data:
             raise BadRequest('Minutes of extension must be sent')
-        now = datetime.now(pytz.utc)
         match maintenance:
             case MW(status = Status.PENDING):
                 raise BadRequest(
@@ -175,6 +181,6 @@ class Main(KytosNApp):
         except TypeError:
             raise BadRequest('Minutes of extension must be integer')
         
-        self.scheduler.remove(maintenance)
+        self.scheduler.remove(maintenance.id)
         self.scheduler.add(new_maintenance)
         return jsonify({'response': f'Maintenance {mw_id} extended'}), 200
