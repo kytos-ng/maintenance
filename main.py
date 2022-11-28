@@ -33,6 +33,21 @@ def time_decoder(time_stamp: datetime):
     return time_stamp.strftime(TIME_FMT)
 
 
+def validate_mw(maintenance: MW):
+    """Validates received maintenance windows
+    """
+    now = datetime.now(pytz.utc)
+    match maintenance:
+        case None:
+            raise BadRequest('One or more items are invalid')
+        case MW(start = start) if start < now:
+            raise BadRequest('Start in the past not allowed')
+        case MW(start = start, end = end) if end <= start:
+            raise BadRequest('End before start not allowed')
+        case MW(switches = [], interfaces = [], links = []):
+            raise BadRequest('At least one item must be provided')
+
+
 converter = Converter()
 converter.register_structure_hook(datetime, time_encoder)
 converter.register_unstructure_hook(datetime, time_decoder)
@@ -88,7 +103,6 @@ class Main(KytosNApp):
     @rest('/v1', methods=['POST'])
     def create_mw(self):
         """Create a new maintenance window."""
-        now = datetime.now(pytz.utc)
         data = request.get_json()
         if not data:
             raise UnsupportedMediaType('The request does not have a json')
@@ -96,19 +110,13 @@ class Main(KytosNApp):
             maintenance = converter.structure(data, MW)
         except BaseValidationError as err:
             raise BadRequest('Failed to create window') from err
-        if maintenance is None:
-            raise BadRequest('One or more items are invalid')
-        if maintenance.start < now:
-            raise BadRequest('Start in the past not allowed')
-        if maintenance.end <= maintenance.start:
-            raise BadRequest('End before start not allowed')
+        validate_mw(maintenance)
         self.scheduler.add(maintenance)
         return jsonify({'mw_id': maintenance.id}), 201
 
     @rest('/v1/<mw_id>', methods=['PATCH'])
     def update_mw(self, mw_id: MaintenanceID):
         """Update a maintenance window."""
-        now = datetime.now(pytz.utc)
         data = request.get_json()
         if not data:
             raise UnsupportedMediaType('The request does not have a json')
@@ -124,11 +132,7 @@ class Main(KytosNApp):
             )
         except BaseValidationError as err:
             raise BadRequest('Failed to create window') from err
-
-        if new_maintenance.start < now:
-            raise BadRequest('Start in the past not allowed')
-        if new_maintenance.end <= new_maintenance.start:
-            raise BadRequest('End before start not allowed')
+        validate_mw(new_maintenance)
         self.scheduler.remove(mw_id)
         self.scheduler.add(new_maintenance)
         return jsonify({'response': f'Maintenance {mw_id} updated'}), 200

@@ -584,8 +584,9 @@ class TestMain(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(current_data['description'],
                          'At least one item must be provided')
-        self.assertEqual(self.napp.maintenances['1234'].start, start1)
-        self.assertEqual(self.napp.maintenances['1234'].end, end1)
+        maintenance = self.napp.scheduler.windows.find_one({'id': '1234'})
+        self.assertLessEqual(maintenance['start'] - start1, timedelta(seconds=1))
+        self.assertLessEqual(maintenance['end'] - end1, timedelta(seconds=1))
         self.napp.scheduler.windows.drop()
 
     def test_end_mw_case_1(self):
