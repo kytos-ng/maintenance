@@ -240,28 +240,27 @@ class Scheduler:
         )
 
     def _schedule(self, window: MaintenanceWindow):
-        match window:
-            case MaintenanceWindow(status=Status.PENDING):
-                self.scheduler.add_job(
-                    MaintenanceStart(self, window.id),
-                    'date',
-                    id=f'{window.id}-start',
-                    run_date=window.start
-                )
-                self.scheduler.add_job(
-                    MaintenanceEnd(self, window.id),
-                    'date',
-                    id=f'{window.id}-end',
-                    run_date=window.end
-                )
-            case MaintenanceWindow(status=Status.RUNNING):
-                window.start_mw(self.controller)
-                self.scheduler.add_job(
-                    MaintenanceEnd(self, window.id),
-                    'date',
-                    id=f'{window.id}-end',
-                    run_date=window.end
-                )
+        if window.status is Status.PENDING:
+            self.scheduler.add_job(
+                MaintenanceStart(self, window.id),
+                'date',
+                id=f'{window.id}-start',
+                run_date=window.start
+            )
+            self.scheduler.add_job(
+                MaintenanceEnd(self, window.id),
+                'date',
+                id=f'{window.id}-end',
+                run_date=window.end
+            )
+        if window.status is Status.RUNNING:
+            window.start_mw(self.controller)
+            self.scheduler.add_job(
+                MaintenanceEnd(self, window.id),
+                'date',
+                id=f'{window.id}-end',
+                run_date=window.end
+            )
 
     def _unschedule(self, window: MaintenanceWindow):
         """Remove maintenance events from scheduler.

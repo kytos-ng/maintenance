@@ -37,15 +37,16 @@ def validate_mw(maintenance: MW):
     """Validates received maintenance windows
     """
     now = datetime.now(pytz.utc)
-    match maintenance:
-        case None:
-            raise BadRequest('One or more items are invalid')
-        case MW(start = start) if start < now:
-            raise BadRequest('Start in the past not allowed')
-        case MW(start = start, end = end) if end <= start:
-            raise BadRequest('End before start not allowed')
-        case MW(switches = [], interfaces = [], links = []):
-            raise BadRequest('At least one item must be provided')
+    if maintenance is None:
+        raise BadRequest('One or more items are invalid')
+    if maintenance.start < now:
+        raise BadRequest('Start in the past not allowed')
+    if maintenance.end <= maintenance.start:
+        raise BadRequest('End before start not allowed')
+    if not maintenance.switches\
+    and not maintenance.interfaces\
+    and not maintenance.links:
+        raise BadRequest('At least one item must be provided')
 
 
 converter = Converter()
@@ -123,7 +124,7 @@ class Main(KytosNApp):
         old_maintenance = self.scheduler.get_maintenance(mw_id)
         if old_maintenance is None:
             raise NotFound(f'Maintenance with id {mw_id} not found')
-        if old_maintenance.status == Status.RUNNING:
+        if old_maintenance.status is Status.RUNNING:
             raise BadRequest('Updating a running maintenance is not allowed')
         try:
             new_maintenance = converter.structure(
@@ -143,7 +144,7 @@ class Main(KytosNApp):
         maintenance = self.scheduler.get_maintenance(mw_id)
         if maintenance is None:
             raise NotFound(f'Maintenance with id {mw_id} not found')
-        if maintenance.status == Status.RUNNING:
+        if maintenance.status is Status.RUNNING:
             raise BadRequest('Deleting a running maintenance is not allowed')
         self.scheduler.remove(mw_id)
         return jsonify({'response': f'Maintenance with id {mw_id} '
@@ -155,15 +156,14 @@ class Main(KytosNApp):
         maintenance = self.scheduler.get_maintenance(mw_id)
         if maintenance is None:
             raise NotFound(f'Maintenance with id {mw_id} not found')
-        match maintenance:
-            case MW(status = Status.PENDING):
-                raise BadRequest(
-                    f'Maintenance window {mw_id} has not yet started'
-                )
-            case MW(status = Status.FINISHED):
-                raise BadRequest(
-                    f'Maintenance window {mw_id} has already finished'
-                )
+        if maintenance.status is Status.PENDING:
+            raise BadRequest(
+                f'Maintenance window {mw_id} has not yet started'
+            )
+        if maintenance.status is Status.FINISHED:
+            raise BadRequest(
+                f'Maintenance window {mw_id} has already finished'
+            )
         self.scheduler.end_maintenance_early(mw_id)
         return jsonify({'response': f'Maintenance window {mw_id} '
                                     f'finished'}), 200
@@ -179,15 +179,14 @@ class Main(KytosNApp):
             raise NotFound(f'Maintenance with id {mw_id} not found')
         if 'minutes' not in data:
             raise BadRequest('Minutes of extension must be sent')
-        match maintenance:
-            case MW(status = Status.PENDING):
-                raise BadRequest(
-                    f'Maintenance window {mw_id} has not yet started'
-                )
-            case MW(status = Status.FINISHED):
-                raise BadRequest(
-                    f'Maintenance window {mw_id} has already finished'
-                )
+        if maintenance.status is Status.PENDING:
+            raise BadRequest(
+                f'Maintenance window {mw_id} has not yet started'
+            )
+        if maintenance.status is Status.FINISHED:
+            raise BadRequest(
+                f'Maintenance window {mw_id} has already finished'
+            )
         try:
             maintenance_end = maintenance.end + \
                 timedelta(minutes=data['minutes'])
