@@ -27,6 +27,7 @@ class TestMain(TestCase):
         self.controller = get_controller_mock()
         self.napp = Main(self.controller)
         self.api = self.get_app_test_client(self.napp)
+        self.maxDiff = None
 
     @staticmethod
     def get_app_test_client(napp):

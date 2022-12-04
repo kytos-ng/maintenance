@@ -3,6 +3,7 @@
 This module define models for the maintenance window itself and the
 scheduler.
 """
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from typing import NewType
@@ -12,19 +13,13 @@ import pytz
 from apscheduler.jobstores.base import JobLookupError
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.base import BaseScheduler
-from attrs import define, evolve, field
 from bson.codec_options import CodecOptions
-from cattrs import Converter
+from pydantic import BaseModel, Field
 from pymongo import MongoClient
 from pymongo.collection import Collection
 
 from kytos.core import KytosEvent, log
 from kytos.core.controller import Controller
-
-TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
-
-converter = Converter()
-converter.register_structure_hook(datetime, lambda ts, cl: ts)
 
 
 class Status(str, Enum):
@@ -38,18 +33,19 @@ class Status(str, Enum):
 MaintenanceID = NewType('MaintenanceID', str)
 
 
-@define(frozen=True)
-class MaintenanceWindow:
+class MaintenanceWindow(BaseModel):
     """Class for structure of maintenance windows.
     """
     start: datetime
     end: datetime
-    switches: list[str] = field(factory = list)
-    interfaces: list[str] = field(factory = list)
-    links: list[str] = field(factory = list)
-    id: MaintenanceID = field(factory = lambda: MaintenanceID(uuid4().hex))
-    description: str = field(default='')
-    status: Status = field(default=Status.PENDING)
+    switches: list[str] = Field(default_factory = list)
+    interfaces: list[str] = Field(default_factory = list)
+    links: list[str] = Field(default_factory = list)
+    id: MaintenanceID = Field(
+        default_factory = lambda: MaintenanceID(uuid4().hex)
+    )
+    description: str = Field(default = '')
+    status: Status = Field(default=Status.PENDING)
 
     def maintenance_event(self, operation, controller: Controller):
         """Create events to start/end a maintenance."""
@@ -75,39 +71,39 @@ class MaintenanceWindow:
     def start_mw(self, controller: Controller):
         """Actions taken when a maintenance window starts."""
         self.maintenance_event('start', controller)
-        return evolve(self, status=Status.RUNNING)
+        return self.copy(update = {'status': Status.RUNNING})
 
     def end_mw(self, controller: Controller):
         """Actions taken when a maintenance window finishes."""
         self.maintenance_event('end', controller)
-        return evolve(self, status=Status.FINISHED)
+        return self.copy(update = {'status': Status.FINISHED})
 
 
-@define
+@dataclass
 class MaintenanceStart:
     """
     Callable used for starting maintenance windows
     """
     maintenance_scheduler: 'Scheduler'
-    id: MaintenanceID
+    mw_id: MaintenanceID
 
     def __call__(self):
-        self.maintenance_scheduler.start_maintenance(self.id)
+        self.maintenance_scheduler.start_maintenance(self.mw_id)
 
 
-@define
+@dataclass
 class MaintenanceEnd:
     """
     Callable used for ending maintenance windows
     """
     maintenance_scheduler: 'Scheduler'
-    id: MaintenanceID
+    mw_id: MaintenanceID
 
     def __call__(self):
-        self.maintenance_scheduler.end_maintenance(self.id)
+        self.maintenance_scheduler.end_maintenance(self.mw_id)
 
 
-@define
+@dataclass
 class Scheduler:
     """Scheduler for a maintenance window."""
     controller: Controller
@@ -196,7 +192,7 @@ class Scheduler:
         """Add jobs to start and end a maintenance window."""
 
         # Add window to DB
-        self.windows.insert_one(converter.unstructure(window))
+        self.windows.insert_one(window.dict())
 
         # Schedule window
         self._schedule(window)
@@ -218,26 +214,18 @@ class Scheduler:
             projection = {'_id': False}
         )
         if window is not None:
-            window: MaintenanceWindow = converter.structure(
-                window,
-                MaintenanceWindow
-            )
+            window = MaintenanceWindow.construct(**window)
         return window
 
     def _db_update_window(self, window: MaintenanceWindow):
         self.windows.update_one(
             {'id': window.id},
-            {'$set': converter.unstructure(window)}
+            {'$set': window.dict()}
         )
 
     def _db_list_windows(self) -> list[MaintenanceWindow]:
         windows = self.windows.find(projection={'_id': False})
-        return list(
-            map(
-                lambda win: converter.structure(win, MaintenanceWindow),
-                windows
-            )
-        )
+        return list(windows)
 
     def _schedule(self, window: MaintenanceWindow):
         if window.status is Status.PENDING:

@@ -6,31 +6,16 @@ devices (switch, link, and interface) without receiving alerts.
 from datetime import datetime, timedelta
 
 import pytz
-from attrs import evolve
-from cattrs import BaseValidationError, Converter
 from flask import jsonify, request
 from napps.kytos.maintenance.models import MaintenanceID
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
 from napps.kytos.maintenance.models import Scheduler, Status
+from pydantic import ValidationError
 from werkzeug.exceptions import BadRequest, NotFound, UnsupportedMediaType
 
 from kytos.core import KytosNApp, rest
 
 TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
-
-
-def time_encoder(time_stamp, cls):
-    """Converts incoming strings into datetime.
-    """
-    if isinstance(time_stamp, str):
-        time_stamp = cls.strptime(time_stamp, TIME_FMT)
-    return time_stamp
-
-
-def time_decoder(time_stamp: datetime):
-    """Converts outgoing datetime into strings.
-    """
-    return time_stamp.strftime(TIME_FMT)
 
 
 def validate_mw(maintenance: MW):
@@ -44,14 +29,9 @@ def validate_mw(maintenance: MW):
     if maintenance.end <= maintenance.start:
         raise BadRequest('End before start not allowed')
     if not maintenance.switches\
-    and not maintenance.interfaces\
-    and not maintenance.links:
+        and not maintenance.interfaces\
+        and not maintenance.links:
         raise BadRequest('At least one item must be provided')
-
-
-converter = Converter()
-converter.register_structure_hook(datetime, time_encoder)
-converter.register_unstructure_hook(datetime, time_decoder)
 
 
 class Main(KytosNApp):
@@ -91,14 +71,14 @@ class Main(KytosNApp):
     def get_all_mw(self):
         """Return all maintenance windows."""
         maintenances = self.scheduler.list_maintenances()
-        return jsonify(converter.unstructure(maintenances)), 200
+        return jsonify(maintenances), 200
 
     @rest('/v1/<mw_id>', methods=['GET'])
     def get_mw(self, mw_id: MaintenanceID):
         """Return one maintenance window."""
         window = self.scheduler.get_maintenance(mw_id)
         if window:
-            return jsonify(converter.unstructure(window)), 200
+            return jsonify(window.dict()), 200
         raise NotFound(f'Maintenance with id {mw_id} not found')
 
     @rest('/v1', methods=['POST'])
@@ -108,8 +88,8 @@ class Main(KytosNApp):
         if not data:
             raise UnsupportedMediaType('The request does not have a json')
         try:
-            maintenance = converter.structure(data, MW)
-        except BaseValidationError as err:
+            maintenance = MW.parse_obj(data)
+        except ValidationError as err:
             raise BadRequest('Failed to create window') from err
         validate_mw(maintenance)
         self.scheduler.add(maintenance)
@@ -124,14 +104,11 @@ class Main(KytosNApp):
         old_maintenance = self.scheduler.get_maintenance(mw_id)
         if old_maintenance is None:
             raise NotFound(f'Maintenance with id {mw_id} not found')
-        if old_maintenance.status is Status.RUNNING:
+        if old_maintenance.status == Status.RUNNING:
             raise BadRequest('Updating a running maintenance is not allowed')
         try:
-            new_maintenance = converter.structure(
-                {**converter.unstructure(old_maintenance), **data},
-                MW
-            )
-        except BaseValidationError as err:
+            new_maintenance = MW.parse_obj({**old_maintenance.dict(), **data})
+        except ValidationError as err:
             raise BadRequest('Failed to create window') from err
         validate_mw(new_maintenance)
         self.scheduler.remove(mw_id)
@@ -144,7 +121,7 @@ class Main(KytosNApp):
         maintenance = self.scheduler.get_maintenance(mw_id)
         if maintenance is None:
             raise NotFound(f'Maintenance with id {mw_id} not found')
-        if maintenance.status is Status.RUNNING:
+        if maintenance.status == Status.RUNNING:
             raise BadRequest('Deleting a running maintenance is not allowed')
         self.scheduler.remove(mw_id)
         return jsonify({'response': f'Maintenance with id {mw_id} '
@@ -156,11 +133,11 @@ class Main(KytosNApp):
         maintenance = self.scheduler.get_maintenance(mw_id)
         if maintenance is None:
             raise NotFound(f'Maintenance with id {mw_id} not found')
-        if maintenance.status is Status.PENDING:
+        if maintenance.status == Status.PENDING:
             raise BadRequest(
                 f'Maintenance window {mw_id} has not yet started'
             )
-        if maintenance.status is Status.FINISHED:
+        if maintenance.status == Status.FINISHED:
             raise BadRequest(
                 f'Maintenance window {mw_id} has already finished'
             )
@@ -179,18 +156,20 @@ class Main(KytosNApp):
             raise NotFound(f'Maintenance with id {mw_id} not found')
         if 'minutes' not in data:
             raise BadRequest('Minutes of extension must be sent')
-        if maintenance.status is Status.PENDING:
+        if maintenance.status == Status.PENDING:
             raise BadRequest(
                 f'Maintenance window {mw_id} has not yet started'
             )
-        if maintenance.status is Status.FINISHED:
+        if maintenance.status == Status.FINISHED:
             raise BadRequest(
                 f'Maintenance window {mw_id} has already finished'
             )
         try:
             maintenance_end = maintenance.end + \
                 timedelta(minutes=data['minutes'])
-            new_maintenance = evolve(maintenance, end = maintenance_end)
+            new_maintenance = maintenance.copy(
+                update = {'end': maintenance_end}
+            )
         except TypeError as exc:
             raise BadRequest('Minutes of extension must be integer') from exc
 
