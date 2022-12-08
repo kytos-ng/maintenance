@@ -25,7 +25,10 @@ class TestMain(TestCase):
         self.server_name_url = \
             'http://localhost:8181/api/kytos/maintenance/v1'
         self.controller = get_controller_mock()
-        self.napp = Main(self.controller)
+        self.scheduler = MagicMock()
+        with patch('napps.kytos.maintenance.models.Scheduler.new_scheduler') as new_scheduler:
+            new_scheduler.return_value = self.scheduler
+            self.napp = Main(self.controller)
         self.api = self.get_app_test_client(self.napp)
         self.maxDiff = None
 
@@ -54,9 +57,17 @@ class TestMain(TestCase):
         response = self.api.post(url, data=json.dumps(payload),
                                  content_type='application/json')
         current_data = json.loads(response.data)
+        self.scheduler.add.assert_called_once_with(
+            MW(
+                id = '1234',
+                start = start.replace(microsecond=0),
+                end = end.replace(microsecond=0),
+                switches = ['00:00:00:00:00:00:02'],
+                interfaces = ['00:00:00:00:00:00:00:03:3']
+            )
+        )
         self.assertEqual(current_data, {'mw_id': '1234'})
         self.assertEqual(response.status_code, 201)
-        self.napp.scheduler.windows.drop()
 
     def test_create_mw_case_2(self):
         """Test a fail case of the REST to create a maintenance window."""
@@ -74,7 +85,7 @@ class TestMain(TestCase):
         response = self.api.post(url, data=json.dumps(payload),
                                  content_type='application/json')
         self.assertEqual(response.status_code, 400)
-        
+        self.scheduler.add.assert_not_called()
 
     def test_create_mw_case_3(self):
         """Test a fail case of the REST to create a maintenance window."""
@@ -97,6 +108,7 @@ class TestMain(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(current_data['description'],
                          'Start in the past not allowed')
+        self.scheduler.add.assert_not_called()
 
     def test_create_mw_case_4(self):
         """Test a fail case of the REST to create a maintenance window."""
@@ -121,14 +133,17 @@ class TestMain(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(current_data['description'],
                          'End before start not allowed')
+        self.scheduler.add.assert_not_called()
 
     def test_get_mw_case_1(self):
         """Test get all maintenance windows, empty list."""
+        self.scheduler.list_maintenances.return_value = []
         url = f'{self.server_name_url}'
         response = self.api.get(url)
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(current_data, [])
+        self.scheduler.list_maintenances.assert_called_once()
 
     def test_get_mw_case_2(self):
         """Test get all maintenance windows."""
@@ -136,24 +151,32 @@ class TestMain(TestCase):
         end1 = start1 + timedelta(hours=6)
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
+        self.scheduler.list_maintenances.return_value = [
             {
                 'id': '1234',
-                'start': start1,
-                'end': end1,
+                'start': start1.replace(microsecond=0),
+                'end': end1.replace(microsecond=0),
                 'switches': [
                     '00:00:00:00:00:00:12:23'
-                ]
+                ],
+                'description': '',
+                'links': [],
+                'interfaces': [],
+                'status': 'pending',
             },
             {
                 'id': '4567',
-                'start': start2,
-                'end': end2,
+                'start': start2.replace(microsecond=0),
+                'end': end2.replace(microsecond=0),
                 'switches': [
                     '12:34:56:78:90:ab:cd:ef'
-                ]
+                ],
+                'description': '',
+                'links': [],
+                'interfaces': [],
+                'status': 'pending',
             }
-        ])
+        ]
         mw_dict = [
             {
                 'id': '1234',
@@ -186,39 +209,18 @@ class TestMain(TestCase):
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(current_data, mw_dict)
-        self.napp.scheduler.windows.drop()
+        self.scheduler.list_maintenances.assert_called_once()
 
     def test_get_mw_case_3(self):
         """Test get non-existent id."""
-        start1 = datetime.now(pytz.utc) + timedelta(days=1)
-        end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ]
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
+        self.scheduler.get_maintenance.return_value = None
         url = f'{self.server_name_url}/2345'
         response = self.api.get(url)
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 404)
         self.assertEqual(current_data['description'],
                          'Maintenance with id 2345 not found')
-        self.napp.scheduler.windows.drop()
+        self.scheduler.get_maintenance.assert_called_once_with('2345')
 
     def test_get_mw_case_4(self):
         """Test get existent id."""
@@ -226,24 +228,14 @@ class TestMain(TestCase):
         end1 = start1 + timedelta(hours=6)
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ]
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
+        self.scheduler.get_maintenance.return_value = MW(
+            id = '4567',
+            start = start2.replace(microsecond=0),
+            end = end2.replace(microsecond=0),
+            switches = [
+                '12:34:56:78:90:ab:cd:ef'
+            ]
+        )
         mw_dict = {
             'id': '4567',
             'start': start2.strftime(TIME_FMT),
@@ -261,130 +253,67 @@ class TestMain(TestCase):
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(current_data, mw_dict)
-        self.napp.scheduler.windows.drop()
+        self.scheduler.get_maintenance.assert_called_once_with('4567')
 
     def test_remove_mw_case_1(self):
         """Test remove non-existent id."""
-        start1 = datetime.now(pytz.utc) + timedelta(days=1)
-        end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ]
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
+        self.scheduler.get_maintenance.return_value = None
         url = f'{self.server_name_url}/2345'
         response = self.api.delete(url)
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 404)
         self.assertEqual(current_data['description'],
                          'Maintenance with id 2345 not found')
-        self.napp.scheduler.windows.drop()
+        self.scheduler.get_maintenance.assert_called_once_with('2345')
+        self.scheduler.remove.assert_not_called()
 
     def test_remove_mw_case_2(self):
         """Test remove existent id."""
         start1 = datetime.now(pytz.utc) + timedelta(hours=1)
         end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ]
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
+        self.scheduler.get_maintenance.return_value = MW(
+            id = '1234',
+            start = start1.replace(microsecond=0),
+            end = end1.replace(microsecond=0),
+            switches = [
+                '00:00:00:00:00:00:12:23'
+            ],
+        )
         url = f'{self.server_name_url}/1234'
         response = self.api.delete(url)
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(current_data, {'response': 'Maintenance with id 1234 '
                                                     'successfully removed'})
-        self.assertEqual(self.napp.scheduler.windows.count_documents({}), 1)
-        self.napp.scheduler.windows.drop()
+        self.scheduler.get_maintenance.assert_called_once_with('1234')
+        self.scheduler.remove.assert_called_once_with('1234')
 
     def test_remove_mw_case_3(self):
         """Test remove existent id."""
         start1 = datetime.now(pytz.utc) - timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ],
-                'status': 'running',
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
+        self.scheduler.get_maintenance.return_value = MW(
+            id = '1234',
+            start = start1.replace(microsecond=0),
+            end = end1.replace(microsecond=0),
+            switches = [
+                '00:00:00:00:00:00:12:23'
+            ],
+            status = 'running',
+        )
         url = f'{self.server_name_url}/1234'
         response = self.api.delete(url)
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(current_data['description'],
                          'Deleting a running maintenance is not allowed')
-        self.napp.scheduler.windows.drop()
+        self.scheduler.get_maintenance.assert_called_once_with('1234')
+        self.scheduler.remove.assert_not_called()
 
     def test_update_mw_case_1(self):
         """Test update non-existent id."""
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
-        end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ],
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
+        self.scheduler.get_maintenance.return_value = None
         payload = {
             "start": start1.strftime(TIME_FMT),
         }
@@ -395,32 +324,12 @@ class TestMain(TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(current_data['description'],
                          'Maintenance with id 2345 not found')
-        self.napp.scheduler.windows.drop()
+        self.scheduler.remove.assert_not_called()
+        self.scheduler.add.assert_not_called()
 
     def test_update_mw_case_2(self):
         """Test update no data."""
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
-        end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ],
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
         payload = {
             "start": start1.strftime(TIME_FMT),
         }
@@ -431,32 +340,21 @@ class TestMain(TestCase):
         self.assertEqual(response.status_code, 415)
         self.assertEqual(current_data['description'],
                          'The request does not have a json')
-        self.napp.scheduler.windows.drop()
+        self.scheduler.remove.assert_not_called()
+        self.scheduler.add.assert_not_called()
 
     def test_update_mw_case_3(self):
         """Test successful update."""
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ],
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
+        self.scheduler.get_maintenance.return_value = MW(
+            id = '1234',
+            start = start1.replace(microsecond=0),
+            end = end1.replace(microsecond=0),
+            switches = [
+                '00:00:00:00:00:00:12:23'
+            ],
+        )
         start_new = datetime.now(pytz.utc) + timedelta(days=1, hours=3)
         payload = {
             "start": start_new.strftime(TIME_FMT),
@@ -468,32 +366,31 @@ class TestMain(TestCase):
         self.assertEqual(current_data,
                          {'response': 'Maintenance 1234 updated'})
         self.assertEqual(response.status_code, 200)
-        self.napp.scheduler.windows.drop()
+        self.scheduler.get_maintenance.assert_called_once_with('1234')
+        self.scheduler.remove.assert_called_once_with('1234')
+        self.scheduler.add.assert_called_once_with(
+            MW(
+                id = '1234',
+                start = start_new.replace(microsecond=0),
+                end = end1.replace(microsecond=0),
+                switches = [
+                    '00:00:00:00:00:00:12:23'
+                ],
+            )
+        )
 
     def test_update_mw_case_4(self):
         """Test successful update."""
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ],
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
+        self.scheduler.get_maintenance.return_value = MW(
+            id = '1234',
+            start = start1.replace(microsecond=0),
+            end = end1.replace(microsecond=0),
+            switches = [
+                '00:00:00:00:00:00:12:23'
+            ],
+        )
         start_new = datetime.now(pytz.utc) - timedelta(days=1, hours=3)
         payload = {
             "start": start_new.strftime(TIME_FMT),
@@ -505,32 +402,22 @@ class TestMain(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(current_data['description'],
                          'Start in the past not allowed')
-        self.napp.scheduler.windows.drop()
+        self.scheduler.get_maintenance.assert_called_once_with('1234')
+        self.scheduler.remove.assert_not_called()
+        self.scheduler.add.assert_not_called()
 
     def test_update_mw_case_5(self):
         """Test successful update."""
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ],
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
+        self.scheduler.get_maintenance.return_value = MW(
+            id = '1234',
+            start = start1.replace(microsecond=0),
+            end = end1.replace(microsecond=0),
+            switches = [
+                '00:00:00:00:00:00:12:23'
+            ],
+        )
         start_new = datetime.now(pytz.utc) + timedelta(days=1, hours=3)
         end_new = start_new - timedelta(hours=5)
         payload = {
@@ -544,32 +431,22 @@ class TestMain(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(current_data['description'],
                          'End before start not allowed')
-        self.napp.scheduler.windows.drop()
+        self.scheduler.get_maintenance.assert_called_once_with('1234')
+        self.scheduler.remove.assert_not_called()
+        self.scheduler.add.assert_not_called()
 
     def test_update_mw_case_6(self):
         """Test successful update."""
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ],
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
+        self.scheduler.get_maintenance.return_value = MW(
+            id = '1234',
+            start = start1.replace(microsecond=0),
+            end = end1.replace(microsecond=0),
+            switches = [
+                '00:00:00:00:00:00:12:23'
+            ],
+        )
         start_new = datetime.now(pytz.utc) + timedelta(days=1, hours=3)
         payload = {
             "start": start_new.strftime(TIME_FMT),
@@ -585,167 +462,99 @@ class TestMain(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(current_data['description'],
                          'At least one item must be provided')
-        maintenance = self.napp.scheduler.windows.find_one({'id': '1234'})
-        self.assertLessEqual(maintenance['start'] - start1, timedelta(seconds=1))
-        self.assertLessEqual(maintenance['end'] - end1, timedelta(seconds=1))
-        self.napp.scheduler.windows.drop()
+        self.scheduler.get_maintenance.assert_called_once_with('1234')
+        self.scheduler.remove.assert_not_called()
+        self.scheduler.add.assert_not_called()
 
     def test_end_mw_case_1(self):
         """Test method that finishes the maintenance now."""
-        start1 = datetime.now(pytz.utc) + timedelta(days=1)
-        end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ],
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
+        self.scheduler.get_maintenance.return_value = None
         url = f'{self.server_name_url}/2345/end'
         response = self.api.patch(url)
         current_data = json.loads(response.data)
         self.assertEqual(response.status_code, 404)
         self.assertEqual(current_data['description'],
                          'Maintenance with id 2345 not found')
-        self.napp.scheduler.windows.drop()
 
     def test_end_mw_case_2(self):
         """Test method that finishes the maintenance now."""
         start1 = datetime.now(pytz.utc) - timedelta(hours=1)
         end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ],
-                'status': 'running',
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
+        self.scheduler.get_maintenance.return_value = MW(
+            id = '1234',
+            start = start1.replace(microsecond=0),
+            end = end1.replace(microsecond=0),
+            switches = [
+                '00:00:00:00:00:00:12:23'
+            ],
+            status = 'running',
+        )
         url = f'{self.server_name_url}/1234/end'
         response = self.api.patch(url)
         current_data = json.loads(response.data)
+        self.scheduler.get.asssert_called_once_with('1234')
+        self.scheduler.end_maintenance_early.assert_called_once_with('1234')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(current_data,
                          {'response': 'Maintenance window 1234 finished'})
-        self.napp.scheduler.windows.drop()
 
     def test_end_mw_case_3(self):
         """Test method that finishes the maintenance now."""
         start1 = datetime.now(pytz.utc) + timedelta(hours=1)
         end1 = start1 + timedelta(hours=6)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ],
-                'status': 'pending',
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
+        self.scheduler.get_maintenance.return_value = MW(
+            id = '1234',
+            start = start1.replace(microsecond=0),
+            end = end1.replace(microsecond=0),
+            switches = [
+                '00:00:00:00:00:00:12:23'
+            ],
+            status = 'pending',
+        )
         url = f'{self.server_name_url}/1234/end'
         response = self.api.patch(url)
         current_data = json.loads(response.data)
+        self.scheduler.get.asssert_called_once_with('1234')
+        self.scheduler.end_maintenance_early.assert_not_called()
         self.assertEqual(response.status_code, 400)
         self.assertEqual(current_data['description'],
                          'Maintenance window 1234 has not yet started')
-        self.napp.scheduler.windows.drop()
 
     def test_end_mw_case_4(self):
         """Test method that finishes the maintenance now."""
         start1 = datetime.now(pytz.utc) - timedelta(hours=5)
         end1 = start1 + timedelta(hours=4)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ],
-                'status': 'finished',
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
+        self.scheduler.get_maintenance.return_value = MW(
+            id = '1234',
+            start = start1.replace(microsecond=0),
+            end = end1.replace(microsecond=0),
+            switches = [
+                '00:00:00:00:00:00:12:23'
+            ],
+            status = 'finished',
+        )
         url = f'{self.server_name_url}/1234/end'
         response = self.api.patch(url)
         current_data = json.loads(response.data)
+        self.scheduler.get.asssert_called_once_with('1234')
+        self.scheduler.end_maintenance_early.assert_not_called()
         self.assertEqual(response.status_code, 400)
         self.assertEqual(current_data['description'],
                          'Maintenance window 1234 has already finished')
-        self.napp.scheduler.windows.drop()
 
     def test_extend_case_1(self):
         """Test successful extension."""
         start1 = datetime.now(pytz.utc) - timedelta(hours=3)
         end1 = start1 + timedelta(hours=4)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ],
-                'status': 'running',
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
+        self.scheduler.get_maintenance.return_value = MW(
+            id = '1234',
+            start = start1.replace(microsecond=0),
+            end = end1.replace(microsecond=0),
+            switches = [
+                '00:00:00:00:00:00:12:23'
+            ],
+            status = 'running',
+        )
         url = f'{self.server_name_url}/1234/extend'
         payload = {
             'minutes': 45
@@ -753,68 +562,31 @@ class TestMain(TestCase):
         response = self.api.patch(url, data=json.dumps(payload),
                                   content_type='application/json')
         self.assertEqual(response.status_code, 200)
-        maintenance = self.napp.scheduler.windows.find_one({'id': '1234'})
-        self.assertLessEqual((end1 + timedelta(minutes=45)) - maintenance['end'], timedelta(seconds=1))
-        self.napp.scheduler.windows.drop()
+        self.scheduler.get_maintenance.called_with('1234')
+        self.scheduler.remove.assert_called_with('1234')
+        self.scheduler.add.assert_called_with(MW(
+            id = '1234',
+            start = start1.replace(microsecond=0),
+            end = end1.replace(microsecond=0) + timedelta(minutes=45),
+            switches = [
+                '00:00:00:00:00:00:12:23'
+            ],
+            status = 'running',
+        ))
 
     def test_extend_case_2(self):
         """Test no payload error."""
-        start1 = datetime.now(pytz.utc) - timedelta(hours=3)
-        end1 = start1 + timedelta(hours=4)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ],
-                'status': 'running',
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
         url = f'{self.server_name_url}/1234/extend'
         response = self.api.patch(url)
         self.assertEqual(response.status_code, 415)
         current_data = json.loads(response.data)
         self.assertEqual(current_data['description'],
                          'The request does not have a json')
-        self.napp.scheduler.windows.drop()
+        self.scheduler.remove.assert_not_called()
+        self.scheduler.add.assert_not_called()
 
     def test_extend_case_3(self):
         """Test payload without minutes."""
-        start1 = datetime.now(pytz.utc) - timedelta(hours=3)
-        end1 = start1 + timedelta(hours=4)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ],
-                'status': 'running',
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
         url = f'{self.server_name_url}/1234/extend'
         payload = {
             'seconds': 240
@@ -825,33 +597,11 @@ class TestMain(TestCase):
         current_data = json.loads(response.data)
         self.assertEqual(current_data['description'],
                          'Minutes of extension must be sent')
-        self.napp.scheduler.windows.drop()
+        self.scheduler.remove.assert_not_called()
+        self.scheduler.add.assert_not_called()
 
     def test_extend_case_4(self):
         """Test no integer extension minutes."""
-        start1 = datetime.now(pytz.utc) - timedelta(hours=3)
-        end1 = start1 + timedelta(hours=4)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ],
-                'status': 'running',
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
         url = f'{self.server_name_url}/1234/extend'
         payload = {
             'minutes': '240'
@@ -862,33 +612,22 @@ class TestMain(TestCase):
         current_data = json.loads(response.data)
         self.assertEqual(current_data['description'],
                          'Minutes of extension must be integer')
-        self.napp.scheduler.windows.drop()
+        self.scheduler.remove.assert_not_called()
+        self.scheduler.add.assert_not_called()
 
     def test_extend_case_5(self):
         """Test maintenance did not start."""
         start1 = datetime.now(pytz.utc) + timedelta(hours=3)
         end1 = start1 + timedelta(hours=4)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ],
-                'status': 'pending',
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
+        self.scheduler.get_maintenance.return_value = MW(
+            id = '1234',
+            start = start1.replace(microsecond=0),
+            end = end1.replace(microsecond=0),
+            switches = [
+                '00:00:00:00:00:00:12:23'
+            ],
+            status = 'pending',
+        )
         url = f'{self.server_name_url}/1234/extend'
         payload = {
             'minutes': 240
@@ -899,33 +638,23 @@ class TestMain(TestCase):
         current_data = json.loads(response.data)
         self.assertEqual(current_data['description'],
                          'Maintenance window 1234 has not yet started')
-        self.napp.scheduler.windows.drop()
+        self.scheduler.get_maintenance.assert_called_once_with('1234')
+        self.scheduler.remove.assert_not_called()
+        self.scheduler.add.assert_not_called()
 
     def test_extend_case_6(self):
         """Test maintenance already finished."""
         start1 = datetime.now(pytz.utc) - timedelta(hours=3)
         end1 = start1 + timedelta(hours=2)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ],
-                'status': 'finished',
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
+        self.scheduler.get_maintenance.return_value = MW(
+            id = '1234',
+            start = start1.replace(microsecond=0),
+            end = end1.replace(microsecond=0),
+            switches = [
+                '00:00:00:00:00:00:12:23'
+            ],
+            status = 'finished',
+        )
         url = f'{self.server_name_url}/1234/extend'
         payload = {
             'minutes': 240
@@ -936,33 +665,13 @@ class TestMain(TestCase):
         current_data = json.loads(response.data)
         self.assertEqual(current_data['description'],
                          'Maintenance window 1234 has already finished')
-        self.napp.scheduler.windows.drop()
+        self.scheduler.get_maintenance.assert_called_once_with('1234')
+        self.scheduler.remove.assert_not_called()
+        self.scheduler.add.assert_not_called()
 
     def test_extend_case_7(self):
         """Test no maintenace found."""
-        start1 = datetime.now(pytz.utc) - timedelta(hours=3)
-        end1 = start1 + timedelta(hours=4)
-        start2 = datetime.now(pytz.utc) + timedelta(hours=5)
-        end2 = start2 + timedelta(hours=1, minutes=30)
-        self.napp.scheduler.windows.insert_many([
-            {
-                'id': '1234',
-                'start': start1,
-                'end': end1,
-                'switches': [
-                    '00:00:00:00:00:00:12:23'
-                ],
-                'status': 'finished',
-            },
-            {
-                'id': '4567',
-                'start': start2,
-                'end': end2,
-                'switches': [
-                    '12:34:56:78:90:ab:cd:ef'
-                ]
-            }
-        ])
+        self.scheduler.get_maintenance.return_value = None
         url = f'{self.server_name_url}/1235/extend'
         payload = {
             'minutes': 240
@@ -973,4 +682,6 @@ class TestMain(TestCase):
         current_data = json.loads(response.data)
         self.assertEqual(current_data['description'],
                          'Maintenance with id 1235 not found')
-        self.napp.scheduler.windows.drop()
+        self.scheduler.get_maintenance.assert_called_once_with('1235')
+        self.scheduler.remove.assert_not_called()
+        self.scheduler.add.assert_not_called()
