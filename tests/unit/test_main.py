@@ -58,7 +58,7 @@ class TestMain(TestCase):
                                  content_type='application/json')
         current_data = json.loads(response.data)
         self.scheduler.add.assert_called_once_with(
-            MW(
+            MW.construct(
                 id = '1234',
                 start = start.replace(microsecond=0),
                 end = end.replace(microsecond=0),
@@ -228,7 +228,7 @@ class TestMain(TestCase):
         end1 = start1 + timedelta(hours=6)
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
-        self.scheduler.get_maintenance.return_value = MW(
+        self.scheduler.get_maintenance.return_value = MW.construct(
             id = '4567',
             start = start2.replace(microsecond=0),
             end = end2.replace(microsecond=0),
@@ -271,7 +271,7 @@ class TestMain(TestCase):
         """Test remove existent id."""
         start1 = datetime.now(pytz.utc) + timedelta(hours=1)
         end1 = start1 + timedelta(hours=6)
-        self.scheduler.get_maintenance.return_value = MW(
+        self.scheduler.get_maintenance.return_value = MW.construct(
             id = '1234',
             start = start1.replace(microsecond=0),
             end = end1.replace(microsecond=0),
@@ -292,7 +292,7 @@ class TestMain(TestCase):
         """Test remove existent id."""
         start1 = datetime.now(pytz.utc) - timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
-        self.scheduler.get_maintenance.return_value = MW(
+        self.scheduler.get_maintenance.return_value = MW.construct(
             id = '1234',
             start = start1.replace(microsecond=0),
             end = end1.replace(microsecond=0),
@@ -347,7 +347,7 @@ class TestMain(TestCase):
         """Test successful update."""
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
-        self.scheduler.get_maintenance.return_value = MW(
+        self.scheduler.get_maintenance.return_value = MW.construct(
             id = '1234',
             start = start1.replace(microsecond=0),
             end = end1.replace(microsecond=0),
@@ -369,7 +369,7 @@ class TestMain(TestCase):
         self.scheduler.get_maintenance.assert_called_once_with('1234')
         self.scheduler.remove.assert_called_once_with('1234')
         self.scheduler.add.assert_called_once_with(
-            MW(
+            MW.construct(
                 id = '1234',
                 start = start_new.replace(microsecond=0),
                 end = end1.replace(microsecond=0),
@@ -383,7 +383,7 @@ class TestMain(TestCase):
         """Test successful update."""
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
-        self.scheduler.get_maintenance.return_value = MW(
+        self.scheduler.get_maintenance.return_value = MW.construct(
             id = '1234',
             start = start1.replace(microsecond=0),
             end = end1.replace(microsecond=0),
@@ -410,7 +410,7 @@ class TestMain(TestCase):
         """Test successful update."""
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
-        self.scheduler.get_maintenance.return_value = MW(
+        self.scheduler.get_maintenance.return_value = MW.construct(
             id = '1234',
             start = start1.replace(microsecond=0),
             end = end1.replace(microsecond=0),
@@ -439,7 +439,7 @@ class TestMain(TestCase):
         """Test successful update."""
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
-        self.scheduler.get_maintenance.return_value = MW(
+        self.scheduler.get_maintenance.return_value = MW.construct(
             id = '1234',
             start = start1.replace(microsecond=0),
             end = end1.replace(microsecond=0),
@@ -480,7 +480,7 @@ class TestMain(TestCase):
         """Test method that finishes the maintenance now."""
         start1 = datetime.now(pytz.utc) - timedelta(hours=1)
         end1 = start1 + timedelta(hours=6)
-        self.scheduler.get_maintenance.return_value = MW(
+        self.scheduler.get_maintenance.return_value = MW.construct(
             id = '1234',
             start = start1.replace(microsecond=0),
             end = end1.replace(microsecond=0),
@@ -502,7 +502,7 @@ class TestMain(TestCase):
         """Test method that finishes the maintenance now."""
         start1 = datetime.now(pytz.utc) + timedelta(hours=1)
         end1 = start1 + timedelta(hours=6)
-        self.scheduler.get_maintenance.return_value = MW(
+        self.scheduler.get_maintenance.return_value = MW.construct(
             id = '1234',
             start = start1.replace(microsecond=0),
             end = end1.replace(microsecond=0),
@@ -524,7 +524,7 @@ class TestMain(TestCase):
         """Test method that finishes the maintenance now."""
         start1 = datetime.now(pytz.utc) - timedelta(hours=5)
         end1 = start1 + timedelta(hours=4)
-        self.scheduler.get_maintenance.return_value = MW(
+        self.scheduler.get_maintenance.return_value = MW.construct(
             id = '1234',
             start = start1.replace(microsecond=0),
             end = end1.replace(microsecond=0),
@@ -546,7 +546,7 @@ class TestMain(TestCase):
         """Test successful extension."""
         start1 = datetime.now(pytz.utc) - timedelta(hours=3)
         end1 = start1 + timedelta(hours=4)
-        self.scheduler.get_maintenance.return_value = MW(
+        self.scheduler.get_maintenance.return_value = MW.construct(
             id = '1234',
             start = start1.replace(microsecond=0),
             end = end1.replace(microsecond=0),
@@ -564,7 +564,7 @@ class TestMain(TestCase):
         self.assertEqual(response.status_code, 200)
         self.scheduler.get_maintenance.called_with('1234')
         self.scheduler.remove.assert_called_with('1234')
-        self.scheduler.add.assert_called_with(MW(
+        self.scheduler.add.assert_called_with(MW.construct(
             id = '1234',
             start = start1.replace(microsecond=0),
             end = end1.replace(microsecond=0) + timedelta(minutes=45),
@@ -619,7 +619,7 @@ class TestMain(TestCase):
         """Test maintenance did not start."""
         start1 = datetime.now(pytz.utc) + timedelta(hours=3)
         end1 = start1 + timedelta(hours=4)
-        self.scheduler.get_maintenance.return_value = MW(
+        self.scheduler.get_maintenance.return_value = MW.construct(
             id = '1234',
             start = start1.replace(microsecond=0),
             end = end1.replace(microsecond=0),
@@ -646,7 +646,7 @@ class TestMain(TestCase):
         """Test maintenance already finished."""
         start1 = datetime.now(pytz.utc) - timedelta(hours=3)
         end1 = start1 + timedelta(hours=2)
-        self.scheduler.get_maintenance.return_value = MW(
+        self.scheduler.get_maintenance.return_value = MW.construct(
             id = '1234',
             start = start1.replace(microsecond=0),
             end = end1.replace(microsecond=0),
