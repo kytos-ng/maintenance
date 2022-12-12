@@ -13,11 +13,12 @@ import pytz
 from apscheduler.jobstores.base import JobLookupError
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.base import BaseScheduler
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator, root_validator
 
 from kytos.core import KytosEvent, log
 from kytos.core.controller import Controller
 
+TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
 
 class Status(str, Enum):
     """Maintenance windows status."""
@@ -43,6 +44,30 @@ class MaintenanceWindow(BaseModel):
     )
     description: str = Field(default = '')
     status: Status = Field(default=Status.PENDING)
+
+    @validator('start', 'end', pre = True)
+    def convert_time(cls, time):
+        if isinstance(time, str):
+            time = datetime.strptime(time, TIME_FMT)
+        return time
+
+    @validator('start')
+    def check_start_in_past(cls, start_time):
+        if start_time < datetime.now(pytz.utc):
+            raise ValueError('Start in the past not allowed')
+        return start_time
+
+    @validator('end')
+    def check_end_before_start(cls, end_time, values):
+        if 'start' in values and end_time <= values['start']:
+            raise ValueError('End before start not allowed')
+        return end_time
+    
+    @root_validator
+    def check_items_empty(cls, values):
+        if all(map(lambda key: len(values[key]) == 0, ['switches', 'links', 'interfaces'])):
+            raise ValueError('At least one item must be provided')
+        return values
 
     def maintenance_event(self, operation, controller: Controller):
         """Create events to start/end a maintenance."""

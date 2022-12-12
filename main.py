@@ -15,9 +15,6 @@ from werkzeug.exceptions import BadRequest, NotFound, UnsupportedMediaType
 
 from kytos.core import KytosNApp, rest
 
-TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
-
-
 def validate_mw(maintenance: MW):
     """Validates received maintenance windows
     """
@@ -90,7 +87,7 @@ class Main(KytosNApp):
         try:
             maintenance = MW.parse_obj(data)
         except ValidationError as err:
-            raise BadRequest('Failed to create window') from err
+            raise BadRequest(f'{err.errors()[0]["msg"]}') from err
         validate_mw(maintenance)
         self.scheduler.add(maintenance)
         return jsonify({'mw_id': maintenance.id}), 201
@@ -109,7 +106,7 @@ class Main(KytosNApp):
         try:
             new_maintenance = MW.parse_obj({**old_maintenance.dict(), **data})
         except ValidationError as err:
-            raise BadRequest('Failed to create window') from err
+            raise BadRequest(f'{err.errors()[0]["msg"]}') from err
         validate_mw(new_maintenance)
         self.scheduler.remove(mw_id)
         self.scheduler.add(new_maintenance)
