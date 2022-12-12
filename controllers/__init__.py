@@ -42,13 +42,13 @@ class MaintenanceController:
 
     def bootstrap_indexes(self) -> None:
         """Bootstrap all maintenance related indexes."""
-        index_tuples = [
+        unique_index_tuples = [
             ("maintenance.windows", [("id", pymongo.ASCENDING)]),
         ]
-        for collection, keys in index_tuples:
-            if self.mongo.bootstrap_index(collection, keys):
+        for collection, keys in unique_index_tuples:
+            if self.mongo.bootstrap_index(collection, keys, unique=True):
                 log.info(
-                    f"Created DB index {keys}, collection: {collection})"
+                    f"Created DB unique index {keys}, collection: {collection})"
                 )
 
     def add_window(self, window: MaintenanceWindow):
