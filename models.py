@@ -6,7 +6,7 @@ scheduler.
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import NewType
+from typing import NewType, Optional
 from uuid import uuid4
 
 import pytz
@@ -44,6 +44,8 @@ class MaintenanceWindow(BaseModel):
     )
     description: str = Field(default = '')
     status: Status = Field(default=Status.PENDING)
+    inserted_at: Optional[datetime] = Field(default = None)
+    updated_at: Optional[datetime] = Field(default = None)
 
     @validator('start', 'end', pre = True)
     def convert_time(cls, time):

@@ -58,7 +58,9 @@ class MaintenanceController:
             {'id': window.id},
             {
                 '$setOnInsert': {
-                    **window.dict(),
+                    **window.dict(exclude=['inserted_at', 'updated_at']),
+                    'inserted_at': '$$NOW',
+                    'updated_at': '$$NOW',
                 },
             },
             {'_id': False},
@@ -73,7 +75,8 @@ class MaintenanceController:
             {'id': window.id},
             {
                 '$set': {
-                    **window.dict(),
+                    **window.dict(exclude=['inserted_at', 'updated_at']),
+                    'updated_at': '$$NOW',
                 },
             },
             {'_id': False},
@@ -95,6 +98,7 @@ class MaintenanceController:
             {
                 '$set': {
                     'status': Status.RUNNING,
+                    'last_modified': '$$NOW',
                 },
             },
             {'_id': False},
@@ -107,6 +111,7 @@ class MaintenanceController:
             {
                 '$set': {
                     'status': Status.FINISHED,
+                    'last_modified': '$$NOW',
                 },
             },
             {'_id': False},
