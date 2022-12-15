@@ -15,21 +15,6 @@ from werkzeug.exceptions import BadRequest, NotFound, UnsupportedMediaType
 
 from kytos.core import KytosNApp, rest
 
-def validate_mw(maintenance: MW):
-    """Validates received maintenance windows
-    """
-    now = datetime.now(pytz.utc)
-    if maintenance is None:
-        raise BadRequest('One or more items are invalid')
-    if maintenance.start < now:
-        raise BadRequest('Start in the past not allowed')
-    if maintenance.end <= maintenance.start:
-        raise BadRequest('End before start not allowed')
-    if not maintenance.switches\
-        and not maintenance.interfaces\
-        and not maintenance.links:
-        raise BadRequest('At least one item must be provided')
-
 
 class Main(KytosNApp):
     """Main class of kytos/maintenance NApp.
@@ -88,7 +73,6 @@ class Main(KytosNApp):
             maintenance = MW.parse_obj(data)
         except ValidationError as err:
             raise BadRequest(f'{err.errors()[0]["msg"]}') from err
-        validate_mw(maintenance)
         self.scheduler.add(maintenance)
         return jsonify({'mw_id': maintenance.id}), 201
 
@@ -107,9 +91,9 @@ class Main(KytosNApp):
             new_maintenance = MW.parse_obj({**old_maintenance.dict(), **data})
         except ValidationError as err:
             raise BadRequest(f'{err.errors()[0]["msg"]}') from err
-        validate_mw(new_maintenance)
-        self.scheduler.remove(mw_id)
-        self.scheduler.add(new_maintenance)
+        if new_maintenance.id != old_maintenance.id:
+            raise BadRequest('Updated id must match old id')
+        self.scheduler.update(new_maintenance)
         return jsonify({'response': f'Maintenance {mw_id} updated'}), 200
 
     @rest('/v1/<mw_id>', methods=['DELETE'])
@@ -170,6 +154,5 @@ class Main(KytosNApp):
         except TypeError as exc:
             raise BadRequest('Minutes of extension must be integer') from exc
 
-        self.scheduler.remove(maintenance.id)
-        self.scheduler.add(new_maintenance)
+        self.scheduler.update(new_maintenance)
         return jsonify({'response': f'Maintenance {mw_id} extended'}), 200

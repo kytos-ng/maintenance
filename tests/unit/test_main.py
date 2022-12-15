@@ -324,8 +324,7 @@ class TestMain(TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(current_data['description'],
                          'Maintenance with id 2345 not found')
-        self.scheduler.remove.assert_not_called()
-        self.scheduler.add.assert_not_called()
+        self.scheduler.update.assert_not_called()
 
     def test_update_mw_case_2(self):
         """Test update no data."""
@@ -340,8 +339,7 @@ class TestMain(TestCase):
         self.assertEqual(response.status_code, 415)
         self.assertEqual(current_data['description'],
                          'The request does not have a json')
-        self.scheduler.remove.assert_not_called()
-        self.scheduler.add.assert_not_called()
+        self.scheduler.update.assert_not_called()
 
     def test_update_mw_case_3(self):
         """Test successful update."""
@@ -367,8 +365,7 @@ class TestMain(TestCase):
                          {'response': 'Maintenance 1234 updated'})
         self.assertEqual(response.status_code, 200)
         self.scheduler.get_maintenance.assert_called_once_with('1234')
-        self.scheduler.remove.assert_called_once_with('1234')
-        self.scheduler.add.assert_called_once_with(
+        self.scheduler.update.assert_called_once_with(
             MW.construct(
                 id = '1234',
                 start = start_new.replace(microsecond=0),
@@ -403,8 +400,7 @@ class TestMain(TestCase):
         self.assertEqual(current_data['description'],
                          'Start in the past not allowed')
         self.scheduler.get_maintenance.assert_called_once_with('1234')
-        self.scheduler.remove.assert_not_called()
-        self.scheduler.add.assert_not_called()
+        self.scheduler.update.assert_not_called()
 
     def test_update_mw_case_5(self):
         """Test successful update."""
@@ -432,8 +428,7 @@ class TestMain(TestCase):
         self.assertEqual(current_data['description'],
                          'End before start not allowed')
         self.scheduler.get_maintenance.assert_called_once_with('1234')
-        self.scheduler.remove.assert_not_called()
-        self.scheduler.add.assert_not_called()
+        self.scheduler.update.assert_not_called()
 
     def test_update_mw_case_6(self):
         """Test successful update."""
@@ -463,8 +458,7 @@ class TestMain(TestCase):
         self.assertEqual(current_data['description'],
                          'At least one item must be provided')
         self.scheduler.get_maintenance.assert_called_once_with('1234')
-        self.scheduler.remove.assert_not_called()
-        self.scheduler.add.assert_not_called()
+        self.scheduler.update.assert_not_called()
 
     def test_end_mw_case_1(self):
         """Test method that finishes the maintenance now."""
@@ -563,8 +557,7 @@ class TestMain(TestCase):
                                   content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.scheduler.get_maintenance.called_with('1234')
-        self.scheduler.remove.assert_called_with('1234')
-        self.scheduler.add.assert_called_with(MW.construct(
+        self.scheduler.update.assert_called_with(MW.construct(
             id = '1234',
             start = start1.replace(microsecond=0),
             end = end1.replace(microsecond=0) + timedelta(minutes=45),
@@ -582,8 +575,7 @@ class TestMain(TestCase):
         current_data = json.loads(response.data)
         self.assertEqual(current_data['description'],
                          'The request does not have a json')
-        self.scheduler.remove.assert_not_called()
-        self.scheduler.add.assert_not_called()
+        self.scheduler.update.assert_not_called()
 
     def test_extend_case_3(self):
         """Test payload without minutes."""
@@ -597,8 +589,7 @@ class TestMain(TestCase):
         current_data = json.loads(response.data)
         self.assertEqual(current_data['description'],
                          'Minutes of extension must be sent')
-        self.scheduler.remove.assert_not_called()
-        self.scheduler.add.assert_not_called()
+        self.scheduler.update.assert_not_called()
 
     def test_extend_case_4(self):
         """Test no integer extension minutes."""
@@ -612,8 +603,7 @@ class TestMain(TestCase):
         current_data = json.loads(response.data)
         self.assertEqual(current_data['description'],
                          'Minutes of extension must be integer')
-        self.scheduler.remove.assert_not_called()
-        self.scheduler.add.assert_not_called()
+        self.scheduler.update.assert_not_called()
 
     def test_extend_case_5(self):
         """Test maintenance did not start."""
@@ -639,8 +629,7 @@ class TestMain(TestCase):
         self.assertEqual(current_data['description'],
                          'Maintenance window 1234 has not yet started')
         self.scheduler.get_maintenance.assert_called_once_with('1234')
-        self.scheduler.remove.assert_not_called()
-        self.scheduler.add.assert_not_called()
+        self.scheduler.update.assert_not_called()
 
     def test_extend_case_6(self):
         """Test maintenance already finished."""
@@ -666,8 +655,7 @@ class TestMain(TestCase):
         self.assertEqual(current_data['description'],
                          'Maintenance window 1234 has already finished')
         self.scheduler.get_maintenance.assert_called_once_with('1234')
-        self.scheduler.remove.assert_not_called()
-        self.scheduler.add.assert_not_called()
+        self.scheduler.update.assert_not_called()
 
     def test_extend_case_7(self):
         """Test no maintenace found."""
@@ -683,5 +671,4 @@ class TestMain(TestCase):
         self.assertEqual(current_data['description'],
                          'Maintenance with id 1235 not found')
         self.scheduler.get_maintenance.assert_called_once_with('1235')
-        self.scheduler.remove.assert_not_called()
-        self.scheduler.add.assert_not_called()
+        self.scheduler.update.assert_not_called()

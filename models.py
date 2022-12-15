@@ -93,12 +93,10 @@ class MaintenanceWindow(BaseModel):
     def start_mw(self, controller: Controller):
         """Actions taken when a maintenance window starts."""
         self.maintenance_event('start', controller)
-        return self.copy(update = {'status': Status.RUNNING})
 
     def end_mw(self, controller: Controller):
         """Actions taken when a maintenance window finishes."""
         self.maintenance_event('end', controller)
-        return self.copy(update = {'status': Status.FINISHED})
 
 
 @dataclass
@@ -171,47 +169,50 @@ class Scheduler:
     def start_maintenance(self, mw_id: MaintenanceID):
         """Begins executing the maintenance window
         """
-        # Get Maintenance from DB
-        window = self.db.get_window(mw_id)
+        # Get Maintenance from DB and Update
+        window = self.db.start_window(mw_id)
 
-        # Set to Running
-        next_win = window.start_mw(self.controller)
+        # Activate Running
+        window.start_mw(self.controller)
 
-        # Update DB
-        self.db.update_window(next_win)
+        # Schedule next task
+        self._schedule(window)
 
     def end_maintenance(self, mw_id: MaintenanceID):
         """Ends execution of the maintenance window
         """
         # Get Maintenance from DB
-        window = self.db.get_window(mw_id)
+        window = self.db.end_window(mw_id)
 
         # Set to Ending
-        next_win = window.end_mw(self.controller)
-
-        # Update DB
-        self.db.update_window(next_win)
+        window.end_mw(self.controller)
 
     def end_maintenance_early(self, mw_id: MaintenanceID):
         """Ends execution of the maintenance window early
         """
         # Get Maintenance from DB
-        window = self.db.get_window(mw_id)
+        window = self.db.end_window(mw_id)
 
-        # Set to Ending
-        next_win = self._unschedule(window)
-
-        # Update DB
-        self.db.update_window(next_win)
+        # Unschedule tasks
+        self._unschedule(window)
 
     def add(self, window: MaintenanceWindow):
         """Add jobs to start and end a maintenance window."""
 
         # Add window to DB
-        self.db.add_window(window)
+        self.db.insert_window(window)
 
-        # Schedule window
+        # Schedule next task
         self._schedule(window)
+
+    def update(self, window: MaintenanceWindow):
+        """Update an existing Maintenance Window."""
+
+        # Update window
+        self.db.update_window(window)
+
+        # Reschedule any pending tasks
+        self._reschedule(window)
 
     def remove(self, mw_id: MaintenanceID):
         """Remove jobs that start and end a maintenance window."""
@@ -232,12 +233,6 @@ class Scheduler:
                 id=f'{window.id}-start',
                 run_date=window.start
             )
-            self.scheduler.add_job(
-                MaintenanceEnd(self, window.id),
-                'date',
-                id=f'{window.id}-end',
-                run_date=window.end
-            )
         if window.status is Status.RUNNING:
             window.start_mw(self.controller)
             self.scheduler.add_job(
@@ -246,6 +241,22 @@ class Scheduler:
                 id=f'{window.id}-end',
                 run_date=window.end
             )
+
+    def _reschedule(self, window: MaintenanceWindow):
+        try:
+            self.scheduler.modify_job(
+                f'{window.id}-start',
+                run_date = window.start,
+            )
+        except JobLookupError:
+            log.info(f'Could not reschedule start, already started')
+        try:
+            self.scheduler.modify_job(
+                f'{window.id}-end',
+                run_date = window.end,
+            )
+        except JobLookupError:
+            log.info(f'Could not reschedule end, already ended')
 
     def _unschedule(self, window: MaintenanceWindow):
         """Remove maintenance events from scheduler.
@@ -265,8 +276,7 @@ class Scheduler:
             ended = True
             log.info(f'Job to end {window.id} already removed.')
         if started and not ended:
-            window = window.end_mw(self.controller)
-        return window
+            window.end_mw(self.controller)
 
     def get_maintenance(self, mw_id: MaintenanceID):
         """Get a single maintenance by id"""

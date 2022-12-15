@@ -39,7 +39,9 @@ class TestMW(TestCase):
             'switches': self.switches,
             'interfaces': [],
             'links': [],
-            'status': Status.PENDING
+            'status': Status.PENDING,
+            'inserted_at': None,
+            'updated_at': None,
         }
         self.assertEqual(mw_dict, expected_dict)
 
@@ -56,9 +58,8 @@ class TestMW(TestCase):
                 'links': [],
             }
         )
-        next_win = maintenance.start_mw(self.controller)
+        maintenance.start_mw(self.controller)
         buffer_put_mock.assert_called_once()
-        self.assertEqual(next_win.status, Status.RUNNING)
 
     @patch('kytos.core.buffers.KytosEventBuffer.put')
     def test_start_mw_case_2(self, buffer_put_mock):
@@ -74,9 +75,8 @@ class TestMW(TestCase):
                 'links': [],
             }
         )
-        next_win = maintenance.start_mw(self.controller)
+        maintenance.start_mw(self.controller)
         self.assertEqual(buffer_put_mock.call_count, 2)
-        self.assertEqual(next_win.status, Status.RUNNING)
 
     @patch('kytos.core.buffers.KytosEventBuffer.put')
     def test_start_mw_case_3(self, buffer_put_mock):
@@ -92,9 +92,8 @@ class TestMW(TestCase):
                 'links': [link1, link2],
             }
         )
-        next_win = maintenance.start_mw(self.controller)
+        maintenance.start_mw(self.controller)
         self.assertEqual(buffer_put_mock.call_count, 2)
-        self.assertEqual(next_win.status, Status.RUNNING)
 
     @patch('kytos.core.buffers.KytosEventBuffer.put')
     def test_end_mw_case_1(self, buffer_put_mock):
@@ -110,9 +109,8 @@ class TestMW(TestCase):
                 'status': Status.RUNNING,
             }
         )
-        next_win = maintenance.end_mw(self.controller)
+        maintenance.end_mw(self.controller)
         buffer_put_mock.assert_called_once()
-        self.assertEqual(next_win.status, Status.FINISHED)
 
     @patch('kytos.core.buffers.KytosEventBuffer.put')
     def test_end_mw_case_2(self, buffer_put_mock):
@@ -129,9 +127,8 @@ class TestMW(TestCase):
                 'status': Status.RUNNING,
             }
         )
-        next_win = maintenance.end_mw(self.controller)
+        maintenance.end_mw(self.controller)
         self.assertEqual(buffer_put_mock.call_count, 2)
-        self.assertEqual(next_win.status, Status.FINISHED)
 
     @patch('kytos.core.buffers.KytosEventBuffer.put')
     def test_end_mw_case_3(self, buffer_put_mock):
@@ -148,6 +145,5 @@ class TestMW(TestCase):
                 'status': Status.RUNNING,
             }
         )
-        next_win = maintenance.end_mw(self.controller)
+        maintenance.end_mw(self.controller)
         self.assertEqual(buffer_put_mock.call_count, 2)
-        self.assertEqual(next_win.status, Status.FINISHED)

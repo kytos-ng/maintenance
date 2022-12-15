@@ -2,16 +2,18 @@
 
 # pylint: disable=invalid-name
 import os
+from typing import Optional
 
 from bson.codec_options import CodecOptions
 import pymongo
 from pymongo.errors import AutoReconnect
 from tenacity import retry_if_exception_type, stop_after_attempt, wait_random
+from werkzeug.exceptions import BadRequest
 
 from kytos.core import log
 from kytos.core.db import Mongo
 from kytos.core.retry import before_sleep, for_all_methods, retries
-from napps.kytos.maintenance.models import MaintenanceWindow, MaintenanceID
+from napps.kytos.maintenance.models import MaintenanceWindow, MaintenanceID, Status
 
 
 @for_all_methods(
@@ -51,23 +53,65 @@ class MaintenanceController:
                     f"Created DB unique index {keys}, collection: {collection})"
                 )
 
-    def add_window(self, window: MaintenanceWindow):
-        self.windows.insert_one(window.dict())
-
-    def get_window(self, mw_id: MaintenanceID) -> MaintenanceWindow:
-        window = self.windows.find_one(
-            {'id': mw_id},
-            projection = {'_id': False}
+    def insert_window(self, window: MaintenanceWindow):
+        old_window = self.windows.find_one_and_update(
+            {'id': window.id},
+            {
+                '$setOnInsert': {
+                    **window.dict(),
+                },
+            },
+            {'_id': False},
+            upsert = True,
         )
-        if window is not None:
-            window = MaintenanceWindow.construct(**window)
-        return window
+        if old_window is not None:
+            raise BadRequest('Window with given ID already exists')
 
-    def udpate_window(self, window: MaintenanceWindow):
+
+    def update_window(self, window: MaintenanceWindow):
         self.windows.update_one(
             {'id': window.id},
-            {'$set': window.dict()}
+            {
+                '$set': {
+                    **window.dict(),
+                },
+            },
+            {'_id': False},
         )
+
+    def get_window(self, mw_id: MaintenanceID) -> Optional[MaintenanceWindow]:
+        window = self.windows.find_one(
+            {'id': mw_id},
+            {'_id': False},
+        )
+        if window is None:
+            return None
+        else:
+            return MaintenanceWindow.construct(**window)
+
+    def start_window(self, mw_id: MaintenanceID) -> MaintenanceWindow:
+        window = self.windows.find_one_and_update(
+            {'id': mw_id},
+            {
+                '$set': {
+                    'status': Status.RUNNING,
+                },
+            },
+            {'_id': False},
+        )
+        return MaintenanceWindow.construct(**window)
+
+    def end_window(self, mw_id: MaintenanceID) -> MaintenanceWindow:
+        window = self.windows.find_one_and_update(
+            {'id': mw_id},
+            {
+                '$set': {
+                    'status': Status.FINISHED,
+                },
+            },
+            {'_id': False},
+        )
+        return MaintenanceWindow.construct(**window)
 
     def get_windows(self) -> list[MaintenanceWindow]:
         windows = self.windows.find(projection={'_id': False})
