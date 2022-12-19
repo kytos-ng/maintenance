@@ -97,26 +97,15 @@
         request.done(function(data) {
           $.each(data, function(i, window) {
               if(window) {
-                  // Convert numberic status (0,1,2) to their correspoding words. 
-                  // If an status is not 0,1,2 then it will display it as a number (default).
-                  let status = window.status
-                  if(window.status == '0') {
-                      status = 'Pending'
-                  } else if(window.status == '1') {
-                      status = 'Running'
-                  } else if(window.status == '2') {
-                      status = 'Finished'
-                  }
-
                   // Get the items formatted with metadata or id.
-                  items = _this.formatItems(window.items, topology)
+                  items = _this.formatItems(window.links, window.switches, window.interfaces, topology)
                   
                   let row = {
                       "Id": window.id,
                       "Start": window.start,
                       "End": window.end,
                       "Description": window.description,
-                      "Status": status,
+                      "Status": window.status,
                       "Links": items[0].join("\n"),
                       "Switches": items[1].join("\n"),
                       "Interfaces": items[2].join("\n"),
@@ -164,58 +153,58 @@
          The ids will be displayed if the correspoding metadata doesn't exist or
          there is no topology. Otherwise, it will be the correspoding metadata.
      */
-     formatItems: function(items, topology) {
-         // List of links, interfaces, and switches.
-         links_list = []
-         interfaces_list = []
-         switches_list = []
+    formatItems: function(in_links, in_switches, in_interfaces, topology) {
+        // List of links, interfaces, and switches.
+        links_list = []
+        interfaces_list = []
+        switches_list = []
+
+        for(let i = 0; i < in_links.length; i++) {
+            // LINK
+            data = in_links[i]
+            try {
+                linkMetadata = topology.links[data].metadata
+                // Check to avoid 'undefined' data
+                if(linkMetadata.hasOwnProperty('link_name')) {
+                    data = linkMetadata.link_name
+                }
+            } catch(error) {
+                // Show Id
+            }
+            links_list.push(data)
+        }
+
+        for(let i = 0; i < in_switches.length; i++) {
+            // SWITCH
+            data = in_switches[i]
+            try {
+                switchMetadata = topology.switches[data].metadata
+                // Check to avoid 'undefined' data
+                if(switchMetadata.hasOwnProperty('node_name')) {
+                    data = switchMetadata.node_name
+                }
+            } catch(error) {
+                // Show Id
+            }
+            switches_list.push(data)
+        }
 
          // For every item in the list
-         for(let i = 0; i < items.length; i++) {
-             if(items[i].hasOwnProperty('id')) {
-                 // LINK
-                 data = items[i].id
+         for(let i = 0; i < in_interfaces.length; i++) {
+            // INTERFACE
+            data = in_interfaces[i]
 
-                 try {
-                     linkMetadata = topology.links[data].metadata
-                     // Check to avoid 'undefined' data
-                     if(linkMetadata.hasOwnProperty('link_name')) {
-                         data = linkMetadata.link_name
-                     }
-                 } catch(error) {
-                     // Show Id
-                 }
-                 links_list.push(data)
-             } else if((typeof items[i]) == "string") {
-                 // SWITCH
-                 data = items[i]
-
-                 try {
-                     switchMetadata = topology.switches[data].metadata
-                     // Check to avoid 'undefined' data
-                     if(switchMetadata.hasOwnProperty('node_name')) {
-                         data = switchMetadata.node_name
-                     }
-                 } catch(error) {
-                     // Show Id
-                 }
-                 switches_list.push(data)
-             } else if(items[i].hasOwnProperty('interface_id')) {
-                 // INTERFACE
-                 data = items[i].interface_id
-
-                 switch_id = this.correspondingSwitch(data)
-                 try {
-                    interfaceMetadata = topology.switches[switch_id].interfaces[data].metadata
-                    // Check to avoid 'undefined' data
-                    if(interfaceMetadata.hasOwnProperty('port_name')) {
-                        data = interfaceMetadata.port_name
-                    }
-                 } catch(error) {
-                     // Show Id
-                 }
-                 interfaces_list.push(data)
-             } 
+            switch_id = this.correspondingSwitch(data)
+            try {
+                interfaceMetadata = topology.switches[switch_id].interfaces[data].metadata
+                // Check to avoid 'undefined' data
+                if(interfaceMetadata.hasOwnProperty('port_name')) {
+                    data = interfaceMetadata.port_name
+                }
+            } catch(error) {
+                // Show Id
+            }
+            interfaces_list.push(data)
          }
          return [links_list, switches_list, interfaces_list] 
      },
