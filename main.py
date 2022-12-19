@@ -6,7 +6,7 @@ devices (switch, link, and interface) without receiving alerts.
 from datetime import datetime, timedelta
 
 import pytz
-from flask import jsonify, request
+from flask import jsonify, request, current_app
 from napps.kytos.maintenance.models import MaintenanceID
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
 from napps.kytos.maintenance.models import Scheduler, Status
@@ -53,14 +53,20 @@ class Main(KytosNApp):
     def get_all_mw(self):
         """Return all maintenance windows."""
         maintenances = self.scheduler.list_maintenances()
-        return jsonify(maintenances), 200
+        return current_app.response_class(
+            f"{maintenances.json()}\n",
+            mimetype=current_app.config["JSONIFY_MIMETYPE"],
+        ), 200
 
     @rest('/v1/<mw_id>', methods=['GET'])
     def get_mw(self, mw_id: MaintenanceID):
         """Return one maintenance window."""
         window = self.scheduler.get_maintenance(mw_id)
         if window:
-            return jsonify(window.dict()), 200
+           return current_app.response_class(
+                f"{window.json()}\n",
+                mimetype=current_app.config["JSONIFY_MIMETYPE"],
+            ), 200
         raise NotFound(f'Maintenance with id {mw_id} not found')
 
     @rest('/v1', methods=['POST'])

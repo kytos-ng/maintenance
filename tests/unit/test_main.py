@@ -10,6 +10,7 @@ import pytz
 from kytos.lib.helpers import get_controller_mock
 from napps.kytos.maintenance.main import Main
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
+from napps.kytos.maintenance.models import MaintenanceWindows
 from napps.kytos.maintenance.models import Status
 
 TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
@@ -137,7 +138,7 @@ class TestMain(TestCase):
 
     def test_get_mw_case_1(self):
         """Test get all maintenance windows, empty list."""
-        self.scheduler.list_maintenances.return_value = []
+        self.scheduler.list_maintenances.return_value = MaintenanceWindows.construct(__root__ = [])
         url = f'{self.server_name_url}'
         response = self.api.get(url)
         current_data = json.loads(response.data)
@@ -147,36 +148,42 @@ class TestMain(TestCase):
 
     def test_get_mw_case_2(self):
         """Test get all maintenance windows."""
+        now = datetime.now(pytz.utc)
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
-        self.scheduler.list_maintenances.return_value = [
-            {
-                'id': '1234',
-                'start': start1.replace(microsecond=0),
-                'end': end1.replace(microsecond=0),
-                'switches': [
+        self.scheduler.list_maintenances.return_value = MaintenanceWindows.construct(
+            __root__ = [
+            MW.construct(
+                id = '1234',
+                start = start1.replace(microsecond=0),
+                end = end1.replace(microsecond=0),
+                switches = [
                     '00:00:00:00:00:00:12:23'
                 ],
-                'description': '',
-                'links': [],
-                'interfaces': [],
-                'status': 'pending',
-            },
-            {
-                'id': '4567',
-                'start': start2.replace(microsecond=0),
-                'end': end2.replace(microsecond=0),
-                'switches': [
+                description = '',
+                links = [],
+                interfaces = [],
+                status = 'pending',
+                updated_at = now.replace(microsecond=0),
+                inserted_at = now.replace(microsecond=0),
+            ),
+            MW.construct(
+                id = '4567',
+                start = start2.replace(microsecond=0),
+                end = end2.replace(microsecond=0),
+                switches = [
                     '12:34:56:78:90:ab:cd:ef'
                 ],
-                'description': '',
-                'links': [],
-                'interfaces': [],
-                'status': 'pending',
-            }
-        ]
+                description = '',
+                links = [],
+                interfaces = [],
+                status = 'pending',
+                updated_at = now.replace(microsecond=0),
+                inserted_at = now.replace(microsecond=0),
+            ),
+        ])
         mw_dict = [
             {
                 'id': '1234',
@@ -189,6 +196,8 @@ class TestMain(TestCase):
                 'links': [],
                 'interfaces': [],
                 'status': 'pending',
+                'updated_at': now.strftime(TIME_FMT),
+                'inserted_at': now.strftime(TIME_FMT),
             },
             {
                 'id': '4567',
@@ -201,6 +210,8 @@ class TestMain(TestCase):
                 'links': [],
                 'interfaces': [],
                 'status': 'pending',
+                'updated_at': now.strftime(TIME_FMT),
+                'inserted_at': now.strftime(TIME_FMT),
             }
         ]
 
@@ -224,8 +235,7 @@ class TestMain(TestCase):
 
     def test_get_mw_case_4(self):
         """Test get existent id."""
-        start1 = datetime.now(pytz.utc) + timedelta(days=1)
-        end1 = start1 + timedelta(hours=6)
+        now = datetime.now(pytz.utc)
         start2 = datetime.now(pytz.utc) + timedelta(hours=5)
         end2 = start2 + timedelta(hours=1, minutes=30)
         self.scheduler.get_maintenance.return_value = MW.construct(
@@ -234,7 +244,9 @@ class TestMain(TestCase):
             end = end2.replace(microsecond=0),
             switches = [
                 '12:34:56:78:90:ab:cd:ef'
-            ]
+            ],
+            updated_at = now.replace(microsecond=0),
+            inserted_at = now.replace(microsecond=0),
         )
         mw_dict = {
             'id': '4567',
@@ -247,6 +259,8 @@ class TestMain(TestCase):
             'links': [],
             'interfaces': [],
             'status': 'pending',
+            'updated_at': now.strftime(TIME_FMT),
+            'inserted_at': now.strftime(TIME_FMT),
         }
         url = f'{self.server_name_url}/4567'
         response = self.api.get(url)

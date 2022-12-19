@@ -1,7 +1,9 @@
 """MaintenanceController."""
 
 # pylint: disable=invalid-name
+from datetime import datetime
 import os
+import pytz
 from typing import Optional
 
 from bson.codec_options import CodecOptions
@@ -13,7 +15,12 @@ from werkzeug.exceptions import BadRequest
 from kytos.core import log
 from kytos.core.db import Mongo
 from kytos.core.retry import before_sleep, for_all_methods, retries
-from napps.kytos.maintenance.models import MaintenanceWindow, MaintenanceID, Status
+from napps.kytos.maintenance.models import (
+    MaintenanceWindow,
+    MaintenanceWindows,
+    MaintenanceID,
+    Status,
+)
 
 
 @for_all_methods(
@@ -109,9 +116,11 @@ class MaintenanceController:
         )
         return MaintenanceWindow.construct(**window)
 
-    def get_windows(self) -> list[MaintenanceWindow]:
+    def get_windows(self) -> MaintenanceWindows:
         windows = self.windows.find(projection={'_id': False})
-        return list(windows)
+        return MaintenanceWindows.construct(
+            __root__ = [MaintenanceWindow.construct(**window) for window in windows]
+        )
 
     def remove_window(self, mw_id: MaintenanceID):
         self.windows.delete_one({'id': mw_id})

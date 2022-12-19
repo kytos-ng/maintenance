@@ -100,6 +100,24 @@ class MaintenanceWindow(BaseModel):
         """Actions taken when a maintenance window finishes."""
         self.maintenance_event('end', controller)
 
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.strftime(TIME_FMT),
+        }
+
+class MaintenanceWindows(BaseModel):
+    __root__: list[MaintenanceWindow]
+
+    def __iter__(self):
+        return iter(self.__root__)
+
+    def __getitem__(self, item):
+        return self.__root__[item]
+
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.strftime(TIME_FMT),
+        }
 
 @dataclass
 class MaintenanceStart:
@@ -280,10 +298,10 @@ class Scheduler:
         if started and not ended:
             window.end_mw(self.controller)
 
-    def get_maintenance(self, mw_id: MaintenanceID):
+    def get_maintenance(self, mw_id: MaintenanceID) -> MaintenanceWindow:
         """Get a single maintenance by id"""
         return self.db.get_window(mw_id)
 
-    def list_maintenances(self):
+    def list_maintenances(self) -> MaintenanceWindows:
         """Returns a list of all maintenances"""
         return self.db.get_windows()
