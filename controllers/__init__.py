@@ -54,32 +54,23 @@ class MaintenanceController:
                 )
 
     def insert_window(self, window: MaintenanceWindow):
-        old_window = self.windows.find_one_and_update(
-            {'id': window.id},
-            {
-                '$setOnInsert': {
-                    **window.dict(exclude=['inserted_at', 'updated_at']),
-                    'inserted_at': '$$NOW',
-                    'updated_at': '$$NOW',
-                },
-            },
-            {'_id': False},
-            upsert = True,
-        )
-        if old_window is not None:
-            raise BadRequest('Window with given ID already exists')
+        now = datetime.now(pytz.utc)
+        self.windows.insert_one({
+                    **window.dict(exclude={'inserted_at', 'updated_at'}),
+                    'inserted_at': now,
+                    'updated_at': now,
+        })
 
 
     def update_window(self, window: MaintenanceWindow):
         self.windows.update_one(
             {'id': window.id},
-            {
+            [{
                 '$set': {
-                    **window.dict(exclude=['inserted_at', 'updated_at']),
+                    **window.dict(exclude={'inserted_at', 'updated_at'}),
                     'updated_at': '$$NOW',
                 },
-            },
-            {'_id': False},
+            }],
         )
 
     def get_window(self, mw_id: MaintenanceID) -> Optional[MaintenanceWindow]:
@@ -95,12 +86,12 @@ class MaintenanceController:
     def start_window(self, mw_id: MaintenanceID) -> MaintenanceWindow:
         window = self.windows.find_one_and_update(
             {'id': mw_id},
-            {
+            [{
                 '$set': {
                     'status': Status.RUNNING,
                     'last_modified': '$$NOW',
                 },
-            },
+            }],
             {'_id': False},
         )
         return MaintenanceWindow.construct(**window)
@@ -108,12 +99,12 @@ class MaintenanceController:
     def end_window(self, mw_id: MaintenanceID) -> MaintenanceWindow:
         window = self.windows.find_one_and_update(
             {'id': mw_id},
-            {
+            [{
                 '$set': {
                     'status': Status.FINISHED,
                     'last_modified': '$$NOW',
                 },
-            },
+            }],
             {'_id': False},
         )
         return MaintenanceWindow.construct(**window)
