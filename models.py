@@ -13,6 +13,7 @@ import pytz
 from apscheduler.jobstores.base import JobLookupError
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.base import BaseScheduler
+from apscheduler.triggers.date import DateTrigger
 from pydantic import BaseModel, Field, validator, root_validator
 
 from kytos.core import KytosEvent, log
@@ -246,14 +247,16 @@ class Scheduler:
         self.db.remove_window(mw_id)
 
     def _schedule(self, window: MaintenanceWindow):
-        if window.status is Status.PENDING:
+        log.info(f'Scheduling "{window.id}"')
+        if window.status == Status.PENDING:
             self.scheduler.add_job(
                 MaintenanceStart(self, window.id),
                 'date',
                 id=f'{window.id}-start',
                 run_date=window.start
             )
-        if window.status is Status.RUNNING:
+            log.info(f'Scheduled "{window.id}" start at {window.start}')
+        if window.status == Status.RUNNING:
             window.start_mw(self.controller)
             self.scheduler.add_job(
                 MaintenanceEnd(self, window.id),
@@ -261,22 +264,26 @@ class Scheduler:
                 id=f'{window.id}-end',
                 run_date=window.end
             )
+            log.info(f'Scheduled "{window.id}" end at {window.end}')
 
     def _reschedule(self, window: MaintenanceWindow):
+        log.info(f'Rescheduling "{window.id}"')
         try:
             self.scheduler.modify_job(
                 f'{window.id}-start',
-                run_date = window.start,
+                trigger = DateTrigger(window.start),
             )
+            log.info(f'Rescheduled "{window.id}" start to {window.start}')
         except JobLookupError:
-            log.info(f'Could not reschedule start, already started')
+            log.info(f'Could not reschedule "{window.id}" start, no start job')
         try:
             self.scheduler.modify_job(
                 f'{window.id}-end',
-                run_date = window.end,
+                trigger = DateTrigger(window.end),
             )
+            log.info(f'Rescheduled "{window.id}" end to {window.end}')
         except JobLookupError:
-            log.info(f'Could not reschedule end, already ended')
+            log.info(f'Could not reschedule "{window.id}" end, no end job')
 
     def _unschedule(self, window: MaintenanceWindow):
         """Remove maintenance events from scheduler.
@@ -289,12 +296,12 @@ class Scheduler:
             self.scheduler.remove_job(f'{window.id}-start')
         except JobLookupError:
             started = True
-            log.info(f'Job to start {window.id} already removed.')
+            log.info(f'Job to start "{window.id}" already removed.')
         try:
             self.scheduler.remove_job(f'{window.id}-end')
         except JobLookupError:
             ended = True
-            log.info(f'Job to end {window.id} already removed.')
+            log.info(f'Job to end "{window.id}" already removed.')
         if started and not ended:
             window.end_mw(self.controller)
 
