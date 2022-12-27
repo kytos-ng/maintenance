@@ -1,13 +1,15 @@
 """Tests for the models module."""
-import datetime
-from unittest import TestCase
-from unittest.mock import patch, MagicMock
 
-from attrs import evolve
+from unittest import TestCase
+from unittest.mock import patch, MagicMock, call
+
+from apscheduler.jobstores.base import JobLookupError
+from apscheduler.triggers.date import DateTrigger
+from datetime import datetime, timedelta
 import pytz
 from kytos.lib.helpers import get_controller_mock
-from napps.kytos.maintenance.models import MaintenanceWindow as MW, Status
-
+from napps.kytos.maintenance.models import MaintenanceWindow as MW, Status, Scheduler
+from napps.kytos.maintenance.models import MaintenanceStart, MaintenanceEnd
 TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
 
 
@@ -19,9 +21,9 @@ class TestMW(TestCase):
     def setUp(self):
         """Initialize before tests are executed."""
         self.controller = get_controller_mock()
-        self.start = datetime.datetime.now(pytz.utc)
-        self.start += datetime.timedelta(days=1)
-        self.end = self.start + datetime.timedelta(hours=6)
+        self.start = datetime.now(pytz.utc)
+        self.start += timedelta(days=1)
+        self.end = self.start + timedelta(hours=6)
         self.switches = [
             "01:23:45:67:89:ab:cd:ef"
         ]
@@ -147,3 +149,145 @@ class TestMW(TestCase):
         )
         maintenance.end_mw(self.controller)
         self.assertEqual(buffer_put_mock.call_count, 2)
+
+
+class TestScheduler(TestCase):
+    """Test of the Scheduler Class"""
+    
+    def setUp(self) -> None:
+        self.kytosController = MagicMock()
+        self.db = MagicMock()
+        self.task_scheduler = MagicMock()
+        
+        self.now = datetime.now(pytz.utc)
+
+        self.window = MW.construct(
+            id = 'Test Window',
+            description = '',
+            start = self.now + timedelta(hours=1),
+            end = self.now + timedelta(hours=2),
+            status = 'pending',
+            switches = [],
+            interfaces = [],
+            links = [],
+            updated_at = self.now - timedelta(days=1),
+            inserted_at = self.now - timedelta(days=1),
+        )
+
+        self.scheduler = Scheduler(self.kytosController, self.db, self.task_scheduler)
+
+    @patch.object(MW, 'start_mw')
+    def test_start(self, start_mock):
+
+        pending_window = self.window.copy(
+            update={'id': 'pending window', 'status': 'pending'}
+        )
+        running_window = self.window.copy(
+            update={'id': 'running window', 'status': 'running'}
+        )
+        finished_window = self.window.copy(
+            update={'id': 'finished window', 'status': 'finished'}
+        )
+
+        expected_schedule_calls = [
+            call(MaintenanceStart(self.scheduler, 'pending window'),
+            'date', id='pending window-start',
+            run_date = pending_window.start),
+            call(MaintenanceEnd(self.scheduler, 'running window'),
+            'date', id='running window-end',
+            run_date = running_window.end),
+        ]
+
+        self.db.get_windows.return_value = [
+            pending_window,
+            running_window,
+            finished_window,
+        ]
+        self.scheduler.start()
+
+        resultant_schedule_calls = self.task_scheduler.add_job.call_args_list
+        self.assertEqual(resultant_schedule_calls, expected_schedule_calls)
+
+        # Couldn't mock individual start_mw functions
+        # so they all share the same mock
+        # pending_window.start_mw.assert_not_called()
+        running_window.start_mw.assert_called_once_with(self.kytosController)
+        # finished_window.start_mw.assert_not_called()
+
+    @patch.object(MW, 'end_mw')
+    def test_shutdown(self, end_mock):
+        pending_window = self.window.copy(
+            update={'id': 'pending window', 'status': 'pending'}
+        )
+        running_window = self.window.copy(
+            update={'id': 'running window', 'status': 'running'}
+        )
+        finished_window = self.window.copy(
+            update={'id': 'finished window', 'status': 'finished'}
+        )
+
+        self.db.get_windows.return_value = [
+            pending_window,
+            running_window,
+            finished_window,
+        ]
+
+        remove_job_effects = {
+            'pending window-start': False,
+            'pending window-end': True,
+            'running window-start': True,
+            'running window-end': False,
+            'finished window-start': True,
+            'finished window-end': True,
+        }
+
+        def side_effect(job_id):
+            effect = remove_job_effects[job_id]
+            if effect:
+                raise JobLookupError(job_id)
+            else:
+                return None
+
+        self.task_scheduler.remove_job.side_effect = side_effect
+
+        self.scheduler.shutdown()
+
+        # Couldn't mock individual end_mw functions
+        # so they all share the same mock
+        # pending_window.end_mw.assert_not_called()
+        running_window.end_mw.assert_called_once_with(self.kytosController)
+        # finished_window.end_mw.assert_not_called()
+
+    def test_update(self):
+        pending_window = self.window.copy(
+            update={'id': 'pending window', 'status': 'pending'}
+        )
+        running_window = self.window.copy(
+            update={'id': 'running window', 'status': 'running'}
+        )
+        finished_window = self.window.copy(
+            update={'id': 'finished window', 'status': 'finished'}
+        )
+
+        modify_job_effects = {
+            'pending window-start': (False, DateTrigger(pending_window.start)),
+            'pending window-end': (True, DateTrigger(pending_window.end)),
+            'running window-start': (True, DateTrigger(running_window.start)),
+            'running window-end': (False, DateTrigger(running_window.end)),
+            'finished window-start': (True, DateTrigger(finished_window.start)),
+            'finished window-end': (True, DateTrigger(finished_window.end)),
+        }
+
+        def side_effect(job_id, trigger):
+            throw, expected_trigger = modify_job_effects[job_id]
+            self.assertEqual(trigger.run_date, expected_trigger.run_date)
+            if throw:
+                raise JobLookupError(job_id)
+            else:
+                return None
+        
+        self.task_scheduler.modify_job.side_effect = side_effect
+
+        self.scheduler.update(pending_window)
+        self.scheduler.update(running_window)
+        self.scheduler.update(finished_window)
