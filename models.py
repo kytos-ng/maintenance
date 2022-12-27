@@ -179,13 +179,14 @@ class Scheduler:
         """
         Stop running the scheduler.
         """
-        self.scheduler.remove_all_jobs()
-        self.scheduler.shutdown()
         windows = self.db.get_windows()
 
         # Depopulate the scheduler
         for window in windows:
             self._unschedule(window)
+
+        self.scheduler.remove_all_jobs()
+        self.scheduler.shutdown()
 
     def start_maintenance(self, mw_id: MaintenanceID):
         """Begins executing the maintenance window
