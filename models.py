@@ -68,7 +68,7 @@ class MaintenanceWindow(BaseModel):
     
     @root_validator
     def check_items_empty(cls, values):
-        if all(map(lambda key: len(values[key]) == 0, ['switches', 'links', 'interfaces'])):
+        if all(map(lambda key: key not in values or len(values[key]) == 0, ['switches', 'links', 'interfaces'])):
             raise ValueError('At least one item must be provided')
         return values
 
@@ -115,6 +115,9 @@ class MaintenanceWindows(BaseModel):
     def __getitem__(self, item):
         return self.__root__[item]
 
+    def __len__(self):
+        return len(self.__root__)
+
     class Config:
         json_encoders = {
             datetime: lambda v: v.strftime(TIME_FMT),
@@ -143,6 +146,24 @@ class MaintenanceEnd:
     def __call__(self):
         self.maintenance_scheduler.end_maintenance(self.mw_id)
 
+class OverlapError(Exception):
+    """
+    Exception for when a Maintenance Windows execution
+    period overlaps with one or more windows.
+    """
+    new_window: MaintenanceWindow
+    interferring: MaintenanceWindows
+
+    def __init__(self, new_window: MaintenanceWindow, interferring: MaintenanceWindows):
+        self.new_window = new_window
+        self.interferring = interferring
+
+    def __str__(self):
+        return f"Maintenance Window '{self.new_window.id}'<{self.new_window.start} to {self.new_window.end}> " +\
+            "interfers with the following windows: " +\
+            '[' +\
+            ', '.join([f"'{window.id}'<{window.start} to {window.end}>" for window in self.interferring]) +\
+            ']'
 
 @dataclass
 class Scheduler:
@@ -218,8 +239,13 @@ class Scheduler:
         # Unschedule tasks
         self._unschedule(window)
 
-    def add(self, window: MaintenanceWindow):
+    def add(self, window: MaintenanceWindow, force = False):
         """Add jobs to start and end a maintenance window."""
+
+        if force is False:
+            overlapping_windows = self.db.check_overlap(window)
+            if overlapping_windows:
+                raise OverlapError(window, overlapping_windows)
 
         # Add window to DB
         self.db.insert_window(window)

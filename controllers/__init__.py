@@ -115,6 +115,28 @@ class MaintenanceController:
         )
         return MaintenanceWindow.construct(**window)
 
+    def check_overlap(self, window):
+        # If two time periods are overlapping,
+        # then the start of one time period must occur in the other time period
+        windows = self.windows.find(
+            {
+                '$or': [
+                    {'$and': [
+                        {'start': {'$lte': window.start}},
+                        {'end': {'$gt': window.start}},
+                    ]},
+                    {'$and': [
+                        {'start': {'$gte': window.start}},
+                        {'start': {'$lt': window.end}},
+                    ]}
+                ]
+            },
+            {'_id': False}
+        )
+        return MaintenanceWindows.construct(
+            __root__ = [MaintenanceWindow.construct(**window) for window in windows]
+        )
+
     def get_windows(self) -> MaintenanceWindows:
         windows = self.windows.find(projection={'_id': False})
         return MaintenanceWindows.construct(

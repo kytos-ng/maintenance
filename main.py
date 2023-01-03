@@ -9,7 +9,7 @@ import pytz
 from flask import jsonify, request, current_app
 from napps.kytos.maintenance.models import MaintenanceID
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
-from napps.kytos.maintenance.models import Scheduler, Status
+from napps.kytos.maintenance.models import Scheduler, Status, OverlapError
 from pydantic import ValidationError
 from werkzeug.exceptions import BadRequest, NotFound, UnsupportedMediaType
 
@@ -72,14 +72,18 @@ class Main(KytosNApp):
     @rest('/v1', methods=['POST'])
     def create_mw(self):
         """Create a new maintenance window."""
-        data = request.get_json()
+        data: dict = request.get_json()
         if not data:
             raise UnsupportedMediaType('The request does not have a json')
         try:
             maintenance = MW.parse_obj(data)
+            force = data.get('force', False)
         except ValidationError as err:
             raise BadRequest(f'{err.errors()[0]["msg"]}') from err
-        self.scheduler.add(maintenance)
+        try:
+            self.scheduler.add(maintenance, force = force)
+        except OverlapError as err:
+            raise BadRequest(f'{err}') from err
         return jsonify({'mw_id': maintenance.id}), 201
 
     @rest('/v1/<mw_id>', methods=['PATCH'])

@@ -18,7 +18,11 @@
         <k-select icon = "link" title = "List of Links"
           :options = "link_names" :value.sync = "links">
         </k-select>
-        
+
+        <k-checkbox title = "Force" :model.sync = "checked_list" :value = "'force'">
+        </k-checkbox>
+        <p></p>
+
         <k-button title = "Reset Fields" :on_click = "forceRenderer"></k-button>
         <k-button title = "Create Maintenance Window" :on_click = "post_window"></k-button>
       </k-accordion-item>
@@ -71,6 +75,41 @@
             */
             post_window(){
                 var self = this
+                filteredLinks = []
+                filteredSwitches = []
+                filteredInterfaces = []
+                
+                // For every chosen link
+                for(item of this.links) {
+                    // If the link is not a string
+                    if(typeof(item) != "string") {
+                        // Skip it.
+                        continue
+                    }
+                    // Otherwise, add the link id to the list of links.
+                    filteredLinks.push(item)
+                }
+                // For every chosen switch
+                for(item of this.switches) {
+                    // If the switch is not a string
+                    if(typeof(item) != "string") {
+                        // Skip it.
+                        continue
+                    }
+                    // Otherwise, add the switch id to the list of items.
+                    filteredSwitches.push(item)
+                }
+                // For every chosen interface
+                for(item of this.interfaces) {
+                    // If the interface is not a string
+                    if(typeof(item) != "string") {
+                        // Skip it.
+                        continue
+                    }
+                    // Otherwise, add the interface id to the list of links.
+                    filteredInterfaces.push(item)
+                }
+
                 var request = $.ajax({
                     async: true,
                     dataType: "json",
@@ -80,9 +119,10 @@
                                           "description": self.description,
                                           "start": self.start,
                                           "end": self.end,
-                                          "switches": self.switches,
-                                          "link": self.links,
-                                          "interfaces": self.interfaces,
+                                          "switches": filteredSwitches,
+                                          "link": filteredLinks,
+                                          "interfaces": filteredInterfaces,
+                                          "force": self.checked_list.includes("force"),
                     }),
                     url:this.$kytos_server_api + "kytos/maintenance/v1",
                 });
@@ -114,8 +154,7 @@
                         description: 'Maintenance Window with id ' + self.id + ' was not created. Error: ' + error_message
                     }
                    self.$kytos.$emit("setNotification", notification);
-               }),
-             self.merged_list = [];
+                })
             },
             /*
                 Gets the Switch and Interface information using the GET api call from topology. 
@@ -201,10 +240,10 @@
               this.switches = [];
               this.interfaces = [];
               this.links = [];
-              this.merged_list = [];   
+              this.checked_list = [];
               this.componentKey +=1;
-           }    
-        },       
+           }
+        },
         data() {
             return{
                 id: "",
@@ -218,8 +257,8 @@
                 interface_names: [],
                 link_names: [],
                 links: [],
-                merged_list: [],
-                componentKey: ""
+                checked_list: [],
+                componentKey: "",
            }
        },
        mounted(){
