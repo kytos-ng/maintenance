@@ -65,7 +65,8 @@ class TestMain(TestCase):
                 end = end.replace(microsecond=0),
                 switches = ['00:00:00:00:00:00:02'],
                 interfaces = ['00:00:00:00:00:00:00:03:3']
-            )
+            ),
+            force = False
         )
         self.assertEqual(current_data, {'mw_id': '1234'})
         self.assertEqual(response.status_code, 201)

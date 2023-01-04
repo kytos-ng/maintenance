@@ -188,6 +188,8 @@ class Scheduler:
         """
         Begin running the scheduler.
         """
+        self.db.prepare_start()
+
         # Populate the scheduler with all pending tasks
         windows = self.db.get_windows()
         for window in windows:

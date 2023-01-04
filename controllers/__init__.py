@@ -145,3 +145,30 @@ class MaintenanceController:
 
     def remove_window(self, mw_id: MaintenanceID):
         self.windows.delete_one({'id': mw_id})
+
+    def prepare_start(self):
+        now = datetime.now(pytz.utc)
+        self.windows.update_many(
+            {'$and': [
+                {'status': {'$eq': Status.PENDING}},
+                {'start': {'$lte': now}},
+            ]},
+            {
+                '$set': {
+                    'status': Status.RUNNING,
+                    'last_modified': now,
+                },
+            }
+        )
+        self.windows.update_many(
+            {'$and': [
+                {'status': {'$eq': Status.RUNNING}},
+                {'end': {'$lte': now}},
+            ]},
+            {
+                '$set': {
+                    'status': Status.FINISHED,
+                    'last_modified': now,
+                },
+            }
+        )
