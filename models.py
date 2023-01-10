@@ -193,6 +193,8 @@ class Scheduler:
         # Populate the scheduler with all pending tasks
         windows = self.db.get_windows()
         for window in windows:
+            if window.status == Status.PENDING:
+                window.start_mw(self.controller)
             self._schedule(window)
 
         # Start the scheduler
@@ -286,7 +288,6 @@ class Scheduler:
             )
             log.info(f'Scheduled "{window.id}" start at {window.start}')
         if window.status == Status.RUNNING:
-            window.start_mw(self.controller)
             self.scheduler.add_job(
                 MaintenanceEnd(self, window.id),
                 'date',

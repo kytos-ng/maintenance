@@ -99,6 +99,7 @@ class MaintenanceController:
                 },
             }],
             {'_id': False},
+            return_document=pymongo.ReturnDocument.AFTER,
         )
         return MaintenanceWindow.construct(**window)
 
@@ -112,6 +113,7 @@ class MaintenanceController:
                 },
             }],
             {'_id': False},
+            return_document=pymongo.ReturnDocument.AFTER,
         )
         return MaintenanceWindow.construct(**window)
 
