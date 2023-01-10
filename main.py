@@ -3,13 +3,12 @@
 This NApp creates maintenance windows, allowing the maintenance of network
 devices (switch, link, and interface) without receiving alerts.
 """
-from datetime import datetime, timedelta
+from datetime import timedelta
 
-import pytz
-from flask import jsonify, request, current_app
+from flask import current_app, jsonify, request
 from napps.kytos.maintenance.models import MaintenanceID
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
-from napps.kytos.maintenance.models import Scheduler, Status, OverlapError
+from napps.kytos.maintenance.models import OverlapError, Scheduler, Status
 from pydantic import ValidationError
 from werkzeug.exceptions import BadRequest, NotFound, UnsupportedMediaType
 
@@ -63,7 +62,7 @@ class Main(KytosNApp):
         """Return one maintenance window."""
         window = self.scheduler.get_maintenance(mw_id)
         if window:
-           return current_app.response_class(
+            return current_app.response_class(
                 f"{window.json()}\n",
                 mimetype=current_app.config["JSONIFY_MIMETYPE"],
             ), 200
@@ -81,7 +80,7 @@ class Main(KytosNApp):
         except ValidationError as err:
             raise BadRequest(f'{err.errors()[0]["msg"]}') from err
         try:
-            self.scheduler.add(maintenance, force = force)
+            self.scheduler.add(maintenance, force=force)
         except OverlapError as err:
             raise BadRequest(f'{err}') from err
         return jsonify({'mw_id': maintenance.id}), 201
@@ -159,7 +158,7 @@ class Main(KytosNApp):
             maintenance_end = maintenance.end + \
                 timedelta(minutes=data['minutes'])
             new_maintenance = maintenance.copy(
-                update = {'end': maintenance_end}
+                update={'end': maintenance_end}
             )
         except TypeError as exc:
             raise BadRequest('Minutes of extension must be integer') from exc

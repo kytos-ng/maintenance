@@ -13,13 +13,13 @@ import pytz
 from apscheduler.jobstores.base import JobLookupError
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.base import BaseScheduler
-from apscheduler.triggers.date import DateTrigger
-from pydantic import BaseModel, Field, validator, root_validator
+from pydantic import BaseModel, Field, root_validator, validator
 
 from kytos.core import KytosEvent, log
 from kytos.core.controller import Controller
 
 TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
+
 
 class Status(str, Enum):
     """Maintenance windows status."""
@@ -37,38 +37,48 @@ class MaintenanceWindow(BaseModel):
     """
     start: datetime
     end: datetime
-    switches: list[str] = Field(default_factory = list)
-    interfaces: list[str] = Field(default_factory = list)
-    links: list[str] = Field(default_factory = list)
+    switches: list[str] = Field(default_factory=list)
+    interfaces: list[str] = Field(default_factory=list)
+    links: list[str] = Field(default_factory=list)
     id: MaintenanceID = Field(
-        default_factory = lambda: MaintenanceID(uuid4().hex)
+        default_factory=lambda: MaintenanceID(uuid4().hex)
     )
-    description: str = Field(default = '')
+    description: str = Field(default='')
     status: Status = Field(default=Status.PENDING)
-    inserted_at: Optional[datetime] = Field(default = None)
-    updated_at: Optional[datetime] = Field(default = None)
+    inserted_at: Optional[datetime] = Field(default=None)
+    updated_at: Optional[datetime] = Field(default=None)
 
-    @validator('start', 'end', pre = True)
+    @validator('start', 'end', pre=True)
     def convert_time(cls, time):
+        """Convert time strings using TIME_FMT"""
         if isinstance(time, str):
             time = datetime.strptime(time, TIME_FMT)
         return time
 
     @validator('start')
     def check_start_in_past(cls, start_time):
+        """Check if the start is set to occur before now."""
         if start_time < datetime.now(pytz.utc):
             raise ValueError('Start in the past not allowed')
         return start_time
 
     @validator('end')
     def check_end_before_start(cls, end_time, values):
+        """Check if the end is set to occur before the start."""
         if 'start' in values and end_time <= values['start']:
             raise ValueError('End before start not allowed')
         return end_time
-    
+
     @root_validator
     def check_items_empty(cls, values):
-        if all(map(lambda key: key not in values or len(values[key]) == 0, ['switches', 'links', 'interfaces'])):
+        """Check if no items are in the maintenance window."""
+        no_items = all(
+            map(
+                lambda key: key not in values or len(values[key]) == 0,
+                ['switches', 'links', 'interfaces']
+            )
+        )
+        if no_items:
             raise ValueError('At least one item must be provided')
         return values
 
@@ -101,12 +111,17 @@ class MaintenanceWindow(BaseModel):
         """Actions taken when a maintenance window finishes."""
         self.maintenance_event('end', controller)
 
+    def __str__(self) -> str:
+        return f"'{self.id}'<{self.start} to {self.end}>"
+
     class Config:
         json_encoders = {
             datetime: lambda v: v.strftime(TIME_FMT),
         }
 
+
 class MaintenanceWindows(BaseModel):
+    """List of Maintenance Windows for json conversion."""
     __root__: list[MaintenanceWindow]
 
     def __iter__(self):
@@ -122,6 +137,7 @@ class MaintenanceWindows(BaseModel):
         json_encoders = {
             datetime: lambda v: v.strftime(TIME_FMT),
         }
+
 
 @dataclass
 class MaintenanceStart:
@@ -146,24 +162,33 @@ class MaintenanceEnd:
     def __call__(self):
         self.maintenance_scheduler.end_maintenance(self.mw_id)
 
+
 class OverlapError(Exception):
     """
     Exception for when a Maintenance Windows execution
     period overlaps with one or more windows.
     """
     new_window: MaintenanceWindow
-    interferring: MaintenanceWindows
+    interfering: MaintenanceWindows
 
-    def __init__(self, new_window: MaintenanceWindow, interferring: MaintenanceWindows):
+    def __init__(
+                self,
+                new_window: MaintenanceWindow,
+                interfering: MaintenanceWindows
+            ):
         self.new_window = new_window
-        self.interferring = interferring
+        self.interfering = interfering
 
     def __str__(self):
-        return f"Maintenance Window '{self.new_window.id}'<{self.new_window.start} to {self.new_window.end}> " +\
-            "interfers with the following windows: " +\
+        return f"Maintenance Window {self.new_window} " +\
+            "interferes with the following windows: " +\
             '[' +\
-            ', '.join([f"'{window.id}'<{window.start} to {window.end}>" for window in self.interferring]) +\
+            ', '.join([
+                f"{window}"
+                for window in self.interfering
+            ]) +\
             ']'
+
 
 @dataclass
 class Scheduler:
@@ -243,7 +268,7 @@ class Scheduler:
         # Unschedule tasks
         self._unschedule(window)
 
-    def add(self, window: MaintenanceWindow, force = False):
+    def add(self, window: MaintenanceWindow, force=False):
         """Add jobs to start and end a maintenance window."""
 
         if force is False:
