@@ -27,8 +27,11 @@ class TestMW(TestCase):
         self.switches = [
             "01:23:45:67:89:ab:cd:ef"
         ]
-        self.maintenance = MW(start = self.start, end = self.end,
-                              switches = self.switches)
+        self.maintenance = MW(
+            start=self.start,
+            end=self.end,
+            switches=self.switches
+        )
 
     def test_as_dict(self):
         """Test as_dict method."""
@@ -99,7 +102,7 @@ class TestMW(TestCase):
 
     @patch('kytos.core.buffers.KytosEventBuffer.put')
     def test_end_mw_case_1(self, buffer_put_mock):
-        """Test the method that starts a maintenance."""
+        """Test the method that ends a maintenance."""
         maintenance = self.maintenance.copy(
             update = {
                 'switches': [
@@ -116,7 +119,7 @@ class TestMW(TestCase):
 
     @patch('kytos.core.buffers.KytosEventBuffer.put')
     def test_end_mw_case_2(self, buffer_put_mock):
-        """Test the method that starts a maintenance."""
+        """Test the method that ends a maintenance."""
         interface_id = "interface_1"
         maintenance = self.maintenance.copy(
             update = {
@@ -134,7 +137,7 @@ class TestMW(TestCase):
 
     @patch('kytos.core.buffers.KytosEventBuffer.put')
     def test_end_mw_case_3(self, buffer_put_mock):
-        """Test the method that starts a maintenance."""
+        """Test the method that ends a maintenance."""
         interface_id = "interface_1"
         link1 = "link_1"
         link2 = "link_2"
@@ -149,6 +152,31 @@ class TestMW(TestCase):
         )
         maintenance.end_mw(self.controller)
         self.assertEqual(buffer_put_mock.call_count, 2)
+
+    def test_start_in_past(self):
+        start = datetime.now(pytz.utc) - timedelta(days=1)
+
+        self.assertRaises(ValueError, MW,
+            start=start,
+            end=self.end,
+            switches=self.switches,
+        )
+
+    def test_end_before_start(self):
+        end = datetime.now(pytz.utc) - timedelta(days=1)
+
+        self.assertRaises(ValueError, MW,
+            start=self.start,
+            end=end,
+            switches=self.switches,
+        )
+
+    def test_items_empty(self):
+
+        self.assertRaises(ValueError, MW,
+            start=self.start,
+            end=self.end,
+        )
 
 
 class TestScheduler(TestCase):
@@ -291,3 +319,41 @@ class TestScheduler(TestCase):
         self.scheduler.update(pending_window)
         self.scheduler.update(running_window)
         self.scheduler.update(finished_window)
+
+    @patch.object(MW, 'start_mw')
+    def test_maintenance_start(self, start_mock):
+
+        pending_window = self.window.copy(
+            update={'id': 'pending window', 'status': 'pending'}
+        )
+        next_window = self.window.copy(
+            update={'id': 'pending window', 'status': 'running'}
+        )
+
+        self.db.start_window.return_value = next_window
+        start = MaintenanceStart(self.scheduler, pending_window.id)
+        start()
+        next_window.start_mw.assert_called_once_with(self.kytosController)
+
+        self.task_scheduler.add_job.assert_called_once_with(
+            MaintenanceEnd(self.scheduler, pending_window.id),
+            'date',
+            id='pending window-end',
+            run_date=pending_window.end
+        )
+
+    @patch.object(MW, 'end_mw')
+    def test_maintenance_end(self, end_mock):
+
+        running_window = self.window.copy(
+            update={'id': 'running window', 'status': 'running'}
+        )
+        next_window = self.window.copy(
+            update={'id': 'running window', 'status': 'finished'}
+        )
+
+        self.db.end_window.return_value = next_window
+        end = MaintenanceEnd(self.scheduler, running_window.id)
+        end()
+        next_window.end_mw.assert_called_once_with(self.kytosController)
+
