@@ -298,17 +298,27 @@ class Scheduler:
     def _reschedule(self, window: MaintenanceWindow):
         log.info(f'Rescheduling "{window.id}"')
         try:
-            self.scheduler.modify_job(
+            self.scheduler.remove_job(
                 f'{window.id}-start',
-                trigger = DateTrigger(window.start),
+            )
+            self.scheduler.add_job(
+                MaintenanceStart(self, window.id),
+                'date',
+                id=f'{window.id}-start',
+                run_date=window.start
             )
             log.info(f'Rescheduled "{window.id}" start to {window.start}')
         except JobLookupError:
             log.info(f'Could not reschedule "{window.id}" start, no start job')
         try:
-            self.scheduler.modify_job(
+            self.scheduler.remove_job(
                 f'{window.id}-end',
-                trigger = DateTrigger(window.end),
+            )
+            self.scheduler.add_job(
+                MaintenanceEnd(self, window.id),
+                'date',
+                id=f'{window.id}-end',
+                run_date=window.end
             )
             log.info(f'Rescheduled "{window.id}" end to {window.end}')
         except JobLookupError:
