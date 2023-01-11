@@ -3,6 +3,7 @@
 This module define models for the maintenance window itself and the
 scheduler.
 """
+from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -16,6 +17,7 @@ from apscheduler.schedulers.base import BaseScheduler
 from pydantic import BaseModel, Field, root_validator, validator
 
 from kytos.core import KytosEvent, log
+from kytos.core.common import EntityStatus
 from kytos.core.controller import Controller
 
 TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
@@ -81,35 +83,6 @@ class MaintenanceWindow(BaseModel):
         if no_items:
             raise ValueError('At least one item must be provided')
         return values
-
-    def maintenance_event(self, operation, controller: Controller):
-        """Create events to start/end a maintenance."""
-        if self.switches:
-            event = KytosEvent(
-                name=f'kytos/maintenance.{operation}_switch',
-                content={'switches': self.switches}
-            )
-            controller.buffers.app.put(event)
-        if self.interfaces:
-            event = KytosEvent(
-                name=f'kytos/maintenance.{operation}_interface',
-                content={'unis': self.interfaces}
-            )
-            controller.buffers.app.put(event)
-        if self.links:
-            event = KytosEvent(
-                name=f'kytos/maintenance.{operation}_link',
-                content={'links': self.links}
-            )
-            controller.buffers.app.put(event)
-
-    def start_mw(self, controller: Controller):
-        """Actions taken when a maintenance window starts."""
-        self.maintenance_event('start', controller)
-
-    def end_mw(self, controller: Controller):
-        """Actions taken when a maintenance window finishes."""
-        self.maintenance_event('end', controller)
 
     def __str__(self) -> str:
         return f"'{self.id}'<{self.start} to {self.end}>"
@@ -191,14 +164,63 @@ class OverlapError(Exception):
 
 
 @dataclass
-class Scheduler:
-    """Scheduler for a maintenance window."""
+class MaintenanceDeployer:
+    """Class for deploying maintenances"""
     controller: Controller
+    maintenance_devices: Counter
+
+    @classmethod
+    def new_deployer(cls, controller: Controller):
+        instance = cls(controller, Counter())
+        return instance
+
+    def _maintenance_event(self, window: MaintenanceWindow, operation: str):
+        """Create events to start/end a maintenance."""
+        if window.switches:
+            event = KytosEvent(
+                name=f'kytos/maintenance.{operation}_switch',
+                content={'switches': window.switches}
+            )
+            self.controller.buffers.app.put(event)
+        if window.interfaces:
+            event = KytosEvent(
+                name=f'kytos/maintenance.{operation}_interface',
+                content={'unis': window.interfaces}
+            )
+            self.controller.buffers.app.put(event)
+        if window.links:
+            event = KytosEvent(
+                name=f'kytos/maintenance.{operation}_link',
+                content={'links': window.links}
+            )
+            self.controller.buffers.app.put(event)
+
+    def start_mw(self, window: MaintenanceWindow):
+        """Actions taken when a maintenance window starts."""
+        items = [*window.switches, *window.links, *window.interfaces]
+        self.maintenance_devices.update(items)
+        self._maintenance_event(window, 'start')
+
+    def end_mw(self, window: MaintenanceWindow):
+        """Actions taken when a maintenance window finishes."""
+        items = [*window.switches, *window.links, *window.interfaces]
+        self.maintenance_devices.subtract(items)
+        self._maintenance_event(window, 'end')
+
+    def dev_in_maintenance(self, dev):
+        if self.maintenance_devices[dev.id]:
+            return EntityStatus.DOWN
+        return EntityStatus.UP
+
+@dataclass
+class Scheduler:
+    """Class for scheduling maintenance windows."""
+    deployer: MaintenanceDeployer
     db: 'MaintenanceController'
     scheduler: BaseScheduler
 
     @classmethod
-    def new_scheduler(cls, controller: Controller):
+    def new_scheduler(cls, deployer: MaintenanceDeployer):
         """
         Creates a new scheduler from the given kytos controller
         """
@@ -206,7 +228,7 @@ class Scheduler:
         from napps.kytos.maintenance.controllers import MaintenanceController
         db = MaintenanceController()
         db.bootstrap_indexes()
-        instance = cls(controller, db, scheduler)
+        instance = cls(deployer, db, scheduler)
         return instance
 
     def start(self):
@@ -218,8 +240,8 @@ class Scheduler:
         # Populate the scheduler with all pending tasks
         windows = self.db.get_windows()
         for window in windows:
-            if window.status == Status.PENDING:
-                window.start_mw(self.controller)
+            if window.status == Status.RUNNING:
+                self.deployer.start_mw(window)
             self._schedule(window)
 
         # Start the scheduler
@@ -245,7 +267,7 @@ class Scheduler:
         window = self.db.start_window(mw_id)
 
         # Activate Running
-        window.start_mw(self.controller)
+        self.deployer.start_mw(window)
 
         # Schedule next task
         self._schedule(window)
@@ -257,7 +279,7 @@ class Scheduler:
         window = self.db.end_window(mw_id)
 
         # Set to Ending
-        window.end_mw(self.controller)
+        self.deployer.end_mw(window)
 
     def end_maintenance_early(self, mw_id: MaintenanceID):
         """Ends execution of the maintenance window early
@@ -368,7 +390,7 @@ class Scheduler:
             ended = True
             log.info(f'Job to end "{window.id}" already removed.')
         if started and not ended:
-            window.end_mw(self.controller)
+            self.deployer.end_mw(window)
 
     def get_maintenance(self, mw_id: MaintenanceID) -> MaintenanceWindow:
         """Get a single maintenance by id"""

@@ -6,13 +6,16 @@ devices (switch, link, and interface) without receiving alerts.
 from datetime import timedelta
 
 from flask import current_app, jsonify, request
-from napps.kytos.maintenance.models import MaintenanceID
+from napps.kytos.maintenance.models import MaintenanceDeployer, MaintenanceID
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
 from napps.kytos.maintenance.models import OverlapError, Scheduler, Status
 from pydantic import ValidationError
 from werkzeug.exceptions import BadRequest, NotFound, UnsupportedMediaType
 
 from kytos.core import KytosNApp, rest
+from kytos.core.interface import Interface
+from kytos.core.link import Link
+from kytos.core.switch import Switch
 
 
 class Main(KytosNApp):
@@ -29,7 +32,22 @@ class Main(KytosNApp):
 
         So, if you have any setup routine, insert it here.
         """
-        self.scheduler = Scheduler.new_scheduler(self.controller)
+        self.maintenance_deployer = \
+            MaintenanceDeployer.new_deployer(self.controller)
+
+        # Switch.register_status_func(
+        #     'maintenance_status',
+        #     self.maintenance_deployer.dev_in_maintenance
+        # )
+        # Interface.register_status_func(
+        #     'maintenance_status',
+        #     self.maintenance_deployer.dev_in_maintenance
+        # )
+        # Link.register_status_func(
+        #     'maintenance_status',
+        #     self.maintenance_deployer.dev_in_maintenance
+        # )
+        self.scheduler = Scheduler.new_scheduler(self.maintenance_deployer)
         self.scheduler.start()
 
     def execute(self):
