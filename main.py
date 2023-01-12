@@ -13,9 +13,12 @@ from pydantic import ValidationError
 from werkzeug.exceptions import BadRequest, NotFound, UnsupportedMediaType
 
 from kytos.core import KytosNApp, rest
+# pylint: disable=unused-import
 from kytos.core.interface import Interface
 from kytos.core.link import Link
 from kytos.core.switch import Switch
+
+# pylint: enable=unused-import
 
 
 class Main(KytosNApp):

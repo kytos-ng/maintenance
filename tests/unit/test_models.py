@@ -204,7 +204,7 @@ class TestScheduler(TestCase):
     
     def setUp(self) -> None:
         self.maintenance_deployer = MagicMock()
-        self.db = MagicMock()
+        self.db_controller = MagicMock()
         self.task_scheduler = MagicMock()
         
         self.now = datetime.now(pytz.utc)
@@ -222,7 +222,7 @@ class TestScheduler(TestCase):
             inserted_at = self.now - timedelta(days=1),
         )
 
-        self.scheduler = Scheduler(self.maintenance_deployer, self.db, self.task_scheduler)
+        self.scheduler = Scheduler(self.maintenance_deployer, self.db_controller, self.task_scheduler)
 
     def test_start(self):
 
@@ -245,7 +245,7 @@ class TestScheduler(TestCase):
             run_date = running_window.end),
         ]
 
-        self.db.get_windows.return_value = [
+        self.db_controller.get_windows.return_value = [
             pending_window,
             running_window,
             finished_window,
@@ -268,7 +268,7 @@ class TestScheduler(TestCase):
             update={'id': 'finished window', 'status': 'finished'}
         )
 
-        self.db.get_windows.return_value = [
+        self.db_controller.get_windows.return_value = [
             pending_window,
             running_window,
             finished_window,
@@ -339,7 +339,7 @@ class TestScheduler(TestCase):
             update={'id': 'pending window', 'status': 'running'}
         )
 
-        self.db.start_window.return_value = next_window
+        self.db_controller.start_window.return_value = next_window
         start = MaintenanceStart(self.scheduler, pending_window.id)
         start()
         self.maintenance_deployer.start_mw.assert_called_once_with(next_window)
@@ -360,7 +360,7 @@ class TestScheduler(TestCase):
             update={'id': 'running window', 'status': 'finished'}
         )
 
-        self.db.end_window.return_value = next_window
+        self.db_controller.end_window.return_value = next_window
         end = MaintenanceEnd(self.scheduler, running_window.id)
         end()
         self.maintenance_deployer.end_mw.assert_called_once_with(next_window)

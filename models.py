@@ -14,11 +14,15 @@ import pytz
 from apscheduler.jobstores.base import JobLookupError
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.base import BaseScheduler
+# pylint: disable=no-name-in-module
 from pydantic import BaseModel, Field, root_validator, validator
 
 from kytos.core import KytosEvent, log
 from kytos.core.common import EntityStatus
 from kytos.core.controller import Controller
+
+# pylint: enable=no-name-in-module
+
 
 TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
 
@@ -49,6 +53,8 @@ class MaintenanceWindow(BaseModel):
     status: Status = Field(default=Status.PENDING)
     inserted_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
+
+    # pylint: disable=no-self-argument
 
     @validator('start', 'end', pre=True)
     def convert_time(cls, time):
@@ -84,10 +90,13 @@ class MaintenanceWindow(BaseModel):
             raise ValueError('At least one item must be provided')
         return values
 
+    # pylint: enable=no-self-argument
+
     def __str__(self) -> str:
         return f"'{self.id}'<{self.start} to {self.end}>"
 
     class Config:
+        """Config for encoding MaintenanceWindow class"""
         json_encoders = {
             datetime: lambda v: v.strftime(TIME_FMT),
         }
@@ -107,6 +116,7 @@ class MaintenanceWindows(BaseModel):
         return len(self.__root__)
 
     class Config:
+        """Config for encoding MaintenanceWindows class"""
         json_encoders = {
             datetime: lambda v: v.strftime(TIME_FMT),
         }
@@ -171,6 +181,9 @@ class MaintenanceDeployer:
 
     @classmethod
     def new_deployer(cls, controller: Controller):
+        """
+        Creates a new MaintenanceDeployer from the given Kytos Controller
+        """
         instance = cls(controller, Counter())
         return instance
 
@@ -208,37 +221,42 @@ class MaintenanceDeployer:
         self._maintenance_event(window, 'end')
 
     def dev_in_maintenance(self, dev):
+        """Checks if a given device is undergoing maintenance"""
         if self.maintenance_devices[dev.id]:
             return EntityStatus.DOWN
         return EntityStatus.UP
+
 
 @dataclass
 class Scheduler:
     """Class for scheduling maintenance windows."""
     deployer: MaintenanceDeployer
-    db: 'MaintenanceController'
+    db_controller: 'MaintenanceController'
     scheduler: BaseScheduler
 
     @classmethod
     def new_scheduler(cls, deployer: MaintenanceDeployer):
         """
-        Creates a new scheduler from the given kytos controller
+        Creates a new scheduler from the given MaintenanceDeployer
         """
         scheduler = BackgroundScheduler(timezone=pytz.utc)
+        # pylint: disable=import-outside-toplevel
         from napps.kytos.maintenance.controllers import MaintenanceController
-        db = MaintenanceController()
-        db.bootstrap_indexes()
-        instance = cls(deployer, db, scheduler)
+
+        # pylint: enable=import-outside-toplevel
+        db_controller = MaintenanceController()
+        db_controller.bootstrap_indexes()
+        instance = cls(deployer, db_controller, scheduler)
         return instance
 
     def start(self):
         """
         Begin running the scheduler.
         """
-        self.db.prepare_start()
+        self.db_controller.prepare_start()
 
         # Populate the scheduler with all pending tasks
-        windows = self.db.get_windows()
+        windows = self.db_controller.get_windows()
         for window in windows:
             if window.status == Status.RUNNING:
                 self.deployer.start_mw(window)
@@ -251,7 +269,7 @@ class Scheduler:
         """
         Stop running the scheduler.
         """
-        windows = self.db.get_windows()
+        windows = self.db_controller.get_windows()
 
         # Depopulate the scheduler
         for window in windows:
@@ -264,7 +282,7 @@ class Scheduler:
         """Begins executing the maintenance window
         """
         # Get Maintenance from DB and Update
-        window = self.db.start_window(mw_id)
+        window = self.db_controller.start_window(mw_id)
 
         # Activate Running
         self.deployer.start_mw(window)
@@ -276,7 +294,7 @@ class Scheduler:
         """Ends execution of the maintenance window
         """
         # Get Maintenance from DB
-        window = self.db.end_window(mw_id)
+        window = self.db_controller.end_window(mw_id)
 
         # Set to Ending
         self.deployer.end_mw(window)
@@ -285,7 +303,7 @@ class Scheduler:
         """Ends execution of the maintenance window early
         """
         # Get Maintenance from DB
-        window = self.db.end_window(mw_id)
+        window = self.db_controller.end_window(mw_id)
 
         # Unschedule tasks
         self._unschedule(window)
@@ -294,12 +312,12 @@ class Scheduler:
         """Add jobs to start and end a maintenance window."""
 
         if force is False:
-            overlapping_windows = self.db.check_overlap(window)
+            overlapping_windows = self.db_controller.check_overlap(window)
             if overlapping_windows:
                 raise OverlapError(window, overlapping_windows)
 
         # Add window to DB
-        self.db.insert_window(window)
+        self.db_controller.insert_window(window)
 
         # Schedule next task
         self._schedule(window)
@@ -308,7 +326,7 @@ class Scheduler:
         """Update an existing Maintenance Window."""
 
         # Update window
-        self.db.update_window(window)
+        self.db_controller.update_window(window)
 
         # Reschedule any pending tasks
         self._reschedule(window)
@@ -316,13 +334,13 @@ class Scheduler:
     def remove(self, mw_id: MaintenanceID):
         """Remove jobs that start and end a maintenance window."""
         # Get Maintenance from DB
-        window = self.db.get_window(mw_id)
+        window = self.db_controller.get_window(mw_id)
 
         # Remove from schedule
         self._unschedule(window)
 
         # Remove from DB
-        self.db.remove_window(mw_id)
+        self.db_controller.remove_window(mw_id)
 
     def _schedule(self, window: MaintenanceWindow):
         log.info(f'Scheduling "{window.id}"')
@@ -394,8 +412,8 @@ class Scheduler:
 
     def get_maintenance(self, mw_id: MaintenanceID) -> MaintenanceWindow:
         """Get a single maintenance by id"""
-        return self.db.get_window(mw_id)
+        return self.db_controller.get_window(mw_id)
 
     def list_maintenances(self) -> MaintenanceWindows:
         """Returns a list of all maintenances"""
-        return self.db.get_windows()
+        return self.db_controller.get_windows()
