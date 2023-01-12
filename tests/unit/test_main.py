@@ -11,7 +11,6 @@ from kytos.lib.helpers import get_controller_mock
 from napps.kytos.maintenance.main import Main
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
 from napps.kytos.maintenance.models import MaintenanceWindows
-from napps.kytos.maintenance.models import Status
 
 TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
 
@@ -473,6 +472,31 @@ class TestMain(TestCase):
         self.assertEqual(current_data['description'],
                          'At least one item must be provided')
         self.scheduler.get_maintenance.assert_called_once_with('1234')
+        self.scheduler.update.assert_not_called()
+
+    
+    def test_update_mw_case_7(self):
+        """Test successful update."""
+        start1 = datetime.now(pytz.utc) + timedelta(days=1)
+        end1 = start1 + timedelta(hours=6)
+        self.scheduler.get_maintenance.return_value = MW.construct(
+            id = '1234',
+            start = start1.replace(microsecond=0),
+            end = end1.replace(microsecond=0),
+            switches = [
+                '00:00:00:00:00:00:12:23'
+            ],
+        )
+        payload = {
+            'status': 'running',
+        }
+        url = f'{self.server_name_url}/1234'
+        response = self.api.patch(url, data=json.dumps(payload),
+                                  content_type='application/json')
+        current_data = json.loads(response.data)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(current_data['description'],
+                         'Updating a maintenance status is not allowed')
         self.scheduler.update.assert_not_called()
 
     def test_end_mw_case_1(self):

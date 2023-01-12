@@ -114,6 +114,8 @@ class Main(KytosNApp):
             raise NotFound(f'Maintenance with id {mw_id} not found')
         if old_maintenance.status == Status.RUNNING:
             raise BadRequest('Updating a running maintenance is not allowed')
+        if 'status' in data:
+            raise BadRequest('Updating a maintenance status is not allowed')
         try:
             new_maintenance = MW.parse_obj({**old_maintenance.dict(), **data})
         except ValidationError as err:
