@@ -96,6 +96,8 @@ class Main(KytosNApp):
         if not data:
             raise UnsupportedMediaType('The request does not have a json')
         try:
+            if data.get('id') == '':
+                del data['id']
             maintenance = MW.parse_obj(data)
             force = data.get('force', False)
         except ValidationError as err:
