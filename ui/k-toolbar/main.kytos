@@ -1,26 +1,40 @@
 <template>
-    <k-toolbar-item icon="gear" tooltip="Maintenace">
-      <k-accordion>
-        <k-accordion-item title = "Create Maintenance Window" :key = "componentKey">
-                <k-input placeholder = "Id" :value.sync ="id"></k-input>
-                <k-input placeholder = "Description" :value.sync = "description"></k-input>
-                <k-input placeholder = "Start time" :value.sync = "start"></k-input>
-                <k-input placeholder = "End time" :value.sync = "end"></k-input>
-                <k-select icon = "link" title = "List of Switches" :options = "dpid_names" :value.sync = "items"></k-select>
-                <k-select icon = "link" title = "List of Interfaces" :options = "interface_names" :value.sync = "interface_items"></k-select>
-                <k-select icon = "link" title = "List of Links" :options = "link_names" :value.sync = "link_items"></k-select>
-                <k-button title = "Reset Fields" :on_click = "forceRenderer"></k-button>
-                <k-button title = "Create Maintenance Window" :on_click = "post_window"></k-button>
-        </k-accordion-item>
-         <k-accordion-item title = "List Maintenance Windows">
-                <k-button tooltip="Maintenance Windows"
-                          title="List Maintenance Windows"
-                          icon="desktop"
-                          :on_click="list_windows">
-                </k-button>
-         </k-accordion-item>         
-     </k-accordion>
-    </k-toolbar-item>
+  <k-toolbar-item icon="gear" tooltip="Maintenace">
+    <k-accordion>
+      <k-accordion-item title = "Create Maintenance Window" :key = "componentKey">
+        <k-input placeholder = "Id" :value.sync ="id"></k-input>
+        <k-input placeholder = "Description" :value.sync = "description"></k-input>
+        <k-input placeholder = "Start time" :value.sync = "start"></k-input>
+        <k-input placeholder = "End time" :value.sync = "end"></k-input>
+
+        <k-select icon = "link" title = "List of Switches"
+          :options = "dpid_names" :value.sync = "switches">
+        </k-select>
+
+        <k-select icon = "link" title = "List of Interfaces"
+          :options = "interface_names" :value.sync = "interfaces">
+        </k-select>
+
+        <k-select icon = "link" title = "List of Links"
+          :options = "link_names" :value.sync = "links">
+        </k-select>
+
+        <k-checkbox title = "Force" :model.sync = "checked_list" :value = "'force'">
+        </k-checkbox>
+        <p></p>
+
+        <k-button title = "Reset Fields" :on_click = "forceRenderer"></k-button>
+        <k-button title = "Create Maintenance Window" :on_click = "post_window"></k-button>
+      </k-accordion-item>
+      <k-accordion-item title = "List Maintenance Windows">
+        <k-button tooltip="Maintenance Windows"
+          title="List Maintenance Windows"
+          icon="desktop"
+          :on_click="list_windows">
+        </k-button>
+      </k-accordion-item>
+    </k-accordion>
+  </k-toolbar-item>
 </template>
 
 <script>
@@ -61,7 +75,41 @@
             */
             post_window(){
                 var self = this
-                this.formatInfo();
+                filteredLinks = []
+                filteredSwitches = []
+                filteredInterfaces = []
+                
+                // For every chosen link
+                for(item of this.links) {
+                    // If the link is not a string
+                    if(typeof(item) != "string") {
+                        // Skip it.
+                        continue
+                    }
+                    // Otherwise, add the link id to the list of links.
+                    filteredLinks.push(item)
+                }
+                // For every chosen switch
+                for(item of this.switches) {
+                    // If the switch is not a string
+                    if(typeof(item) != "string") {
+                        // Skip it.
+                        continue
+                    }
+                    // Otherwise, add the switch id to the list of items.
+                    filteredSwitches.push(item)
+                }
+                // For every chosen interface
+                for(item of this.interfaces) {
+                    // If the interface is not a string
+                    if(typeof(item) != "string") {
+                        // Skip it.
+                        continue
+                    }
+                    // Otherwise, add the interface id to the list of links.
+                    filteredInterfaces.push(item)
+                }
+
                 var request = $.ajax({
                     async: true,
                     dataType: "json",
@@ -71,7 +119,10 @@
                                           "description": self.description,
                                           "start": self.start,
                                           "end": self.end,
-                                          "items": self.merged_list,         
+                                          "switches": filteredSwitches,
+                                          "link": filteredLinks,
+                                          "interfaces": filteredInterfaces,
+                                          "force": self.checked_list.includes("force"),
                     }),
                     url:this.$kytos_server_api + "kytos/maintenance/v1",
                 });
@@ -103,8 +154,7 @@
                         description: 'Maintenance Window with id ' + self.id + ' was not created. Error: ' + error_message
                     }
                    self.$kytos.$emit("setNotification", notification);
-               }),
-             self.merged_list = [];
+                })
             },
             /*
                 Gets the Switch and Interface information using the GET api call from topology. 
@@ -178,24 +228,6 @@
                    alert("Request failed: " + textStatus)
                });
             },
-            /*
-                This method takes the various lists with switch, link, and interface information 
-                and combines the options the user selected to JSON format.
-            */
-            formatInfo: function(){
-               this.link_items.forEach(e=>{
-                  if(typeof e === "string")
-                     this.merged_list.push({"id":e})   
-               }); 
-               this.interface_items.forEach(e=>{
-                  if(typeof e === "string")
-                     this.merged_list.push({"interface_id":e})
-               });
-               this.items.forEach(e => {
-       		 if(typeof e === "string")
-            	     this.merged_list.push(e);
-   	       });
-            },
            /*
                 This method clears all fields and makes them empty.
            */
@@ -205,28 +237,28 @@
               this.start =  "";
               this.end =  "";
               this.status = "";
-              this.items = [];
-              this.interface_items = [];
-              this.link_items = [];
-              this.merged_list = [];   
+              this.switches = [];
+              this.interfaces = [];
+              this.links = [];
+              this.checked_list = [];
               this.componentKey +=1;
-           }    
-        },       
+           }
+        },
         data() {
             return{
                 id: "",
                 description: "",
                 start: "",
                 end: "",
-                items: [],
-                interface_items: [],
+                switches: [],
+                interfaces: [],
                 status: "",
                 dpid_names: [],
                 interface_names: [],
                 link_names: [],
-                link_items: [],
-                merged_list: [],
-                componentKey: ""
+                links: [],
+                checked_list: [],
+                componentKey: "",
            }
        },
        mounted(){

@@ -127,57 +127,39 @@
             saveWindow: function() {
                 var _this = this
 
-                // Translate the status in the window to a 0,1,2 number used
-                // in the maintenance API.
-                var status
-                if(_this.window_data.status == 'Pending') {
-                    status = 0
-                } else if(_this.window_data.status == 'Running') {
-                    status = 1
-                } else if(_this.window_data.status == 'Finished') {
-                    status = 2
-                } else {
-                    status = _this.window_data.status
-                }
-
-                jsonItems = []
+                filteredLinks = []
+                filteredSwitches = []
+                filteredInterfaces = []
+                
                 // For every chosen link
-                for(i = 0; i < this.chosen_links.length; i++) {
+                for(item of this.chosen_links) {
                     // If the link is not a string
-                    if(typeof(this.chosen_links[i]) != "string") {
+                    if(typeof(item) != "string") {
                         // Skip it.
                         continue
                     }
-                    // Otherwise, construct a JSON object with the link id.
-                    link = {
-                        "id": this.chosen_links[i]
-                    }
-                    // Add the JSON link to the list of items.
-                    jsonItems.push(link)
+                    // Otherwise, add the link id to the list of links.
+                    filteredLinks.push(item)
                 }
                 // For every chosen switch
-                for(i = 0; i < this.chosen_switches.length; i++) {
+                for(item of this.chosen_switches) {
                     // If the switch is not a string
-                    if(typeof(this.chosen_switches[i]) != "string") {
+                    if(typeof(item) != "string") {
                         // Skip it.
                         continue
                     }
                     // Otherwise, add the switch id to the list of items.
-                    jsonItems.push(this.chosen_switches[i])
+                    filteredSwitches.push(item)
                 }
                 // For every chosen interface
-                for(i = 0; i < this.chosen_interfaces.length; i++) {
+                for(item of this.chosen_interfaces) {
                     // If the interface is not a string
-                    if(typeof(this.chosen_interfaces[i]) != "string") {
+                    if(typeof(item) != "string") {
                         // Skip it.
                         continue
                     }
-                    // Otherwise, construct a JSON object with the interface id.
-                    interface = {
-                        "interface_id": this.chosen_interfaces[i]
-                    }
-                    // Add the JSON interface to the list of items.
-                    jsonItems.push(interface)
+                    // Otherwise, add the interface id to the list of links.
+                    filteredInterfaces.push(item)
                 }
 
                 // Update the maitenance window with the new values.
@@ -189,8 +171,9 @@
                         "start": _this.window_data.Start,
                         "end": _this.window_data.End,
                         "description": _this.window_data.Description,
-                        "items": jsonItems,
-                        "status": status
+                        "links": filteredLinks,
+                        "switches": filteredSwitches,
+                        "interfaces": filteredInterfaces,
                     }),
                     dataType: "json",
                     contentType: "application/json"
@@ -273,73 +256,64 @@
             /*
                 Builds the maintenance window to be displayed.
             */
-            buildMaintenanceWindow: function(data) {
+            buildMaintenanceWindow: function(window) {
                 // Translate the window API status into its corresponding word.
-                let status = data.status
-                if(data.status == '0') {
-                    status = 'Pending'
-                } else if(data.status == '1') {
-                    status = 'Running'
-                } else if(data.status == '2') {
-                    status = 'Finished'
-                }
+                let status = window.status
 
                 auto_links = []
                 auto_switches = []
                 auto_interfaces = []
                 
-                items = data.items
                 // For every item in the list of items.
-                for(let i = 0; i < items.length; i++) {
-                    // If the link has an 'id'
-                    if(items[i].hasOwnProperty('id')) {
-                        // LINK
-                        link = items[i].id
+                for(let i = 0; i < window.links.length; i++) {
+                    // LINK
+                    link = window.links[i]
 
-                        // Checks that link is not in topology in case there were errors accessing topology
-                        // or a deletion of the link after the creation of the maintenance window.
-                        linkInTopology = this.links_options.some(option => option.value == link)
-                        if(!linkInTopology) {
-                            // Add the link as an option even if it is not in topology.
-                            this.links_options.push({"value":link, "description":link})
-                        }
-                        // Add the link into the list of link auto-selection.
-                        auto_links.push(link)
-                    } else if((typeof items[i]) == "string") {
-                        // SWITCH
-                        switch_item = items[i]
-
-                        // Checks that switch_item is not in topology in case there were errors accessing topology
-                        // or a deletion of the switch after the creation of the maintenance window.
-                        switchInTopology = this.switches_options.some(option => option.value == switch_item)
-                        if(!switchInTopology) {
-                            // Add the switch as an option even if it is not in topology.
-                            this.switches_options.push({"value":switch_item, "description":switch_item})
-                        }
-                        // Add the switch into the list of switch auto-selection.
-                        auto_switches.push(switch_item)
-                    } else if(items[i].hasOwnProperty('interface_id')) {
-                        // INTERFACE
-                        interface = items[i].interface_id
-
-                        // Checks that interface is not in topology in case there were errors accessing topology
-                        // or a deletion of the interface after the creation of the maintenance window.
-                        interfaceInTopology = this.interfaces_options.some(option => option.value == interface)
-                        if(!interfaceInTopology) {
-                            // Add the interface as an option even if it not in topology.
-                            this.interfaces_options.push({"value":interface, "description":interface})
-                        }
-                        // Add the interface into the list of interface auto-selection.
-                        auto_interfaces.push(interface)
+                    // Checks that link is not in topology in case there were errors accessing topology
+                    // or a deletion of the link after the creation of the maintenance window.
+                    linkInTopology = this.links_options.some(option => option.value == link)
+                    if(!linkInTopology) {
+                        // Add the link as an option even if it is not in topology.
+                        this.links_options.push({"value":link, "description":link})
                     }
+                    // Add the link into the list of link auto-selection.
+                    auto_links.push(link)
+                }
+                for(let i = 0; i < window.switches.length; i++) {
+                    // SWITCH
+                    switch_item = window.switches[i]
+
+                    // Checks that switch_item is not in topology in case there were errors accessing topology
+                    // or a deletion of the switch after the creation of the maintenance window.
+                    switchInTopology = this.switches_options.some(option => option.value == switch_item)
+                    if(!switchInTopology) {
+                        // Add the switch as an option even if it is not in topology.
+                        this.switches_options.push({"value":switch_item, "description":switch_item})
+                    }
+                    // Add the switch into the list of switch auto-selection.
+                    auto_switches.push(switch_item)
+                }
+                for(let i = 0; i < window.interfaces.length; i++) {
+                    // INTERFACE
+                    interface = window.interfaces[i]
+
+                    // Checks that interface is not in topology in case there were errors accessing topology
+                    // or a deletion of the interface after the creation of the maintenance window.
+                    interfaceInTopology = this.interfaces_options.some(option => option.value == interface)
+                    if(!interfaceInTopology) {
+                        // Add the interface as an option even if it not in topology.
+                        this.interfaces_options.push({"value":interface, "description":interface})
+                    }
+                    // Add the interface into the list of interface auto-selection.
+                    auto_interfaces.push(interface)
                 }
 
                 // Build the columns to be displayed in the table.
                 let column = {
-                    "Id": data.id,
-                    "Start": data.start,
-                    "End": data.end,
-                    "Description": data.description,
+                    "Id": window.id,
+                    "Start": window.start,
+                    "End": window.end,
+                    "Description": window.description,
                     "Status": status,
                     "Links": "k-select",        // k-select
                     "Switches": "k-select",     // k-select
