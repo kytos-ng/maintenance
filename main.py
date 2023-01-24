@@ -95,6 +95,8 @@ class Main(KytosNApp):
         data: dict = request.get_json()
         if not data:
             raise UnsupportedMediaType('The request does not have a json')
+        if 'status' in data:
+            raise BadRequest('Setting a maintenance status is not allowed')
         try:
             if data.get('id') == '':
                 del data['id']
