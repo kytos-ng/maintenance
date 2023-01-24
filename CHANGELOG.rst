@@ -5,17 +5,9 @@ All notable changes to the Maintenance NApp will be documented in this file.
 
 [UNRELEASED] - Under development
 ********************************
+
 Added
 =====
-- Added persistence to maintenance using mongodb.
-- Added tracking of maintenance window creation and updated times.
-
-Changed
-=======
-- Updated REST API endpoints to include version numbers. Current version is `\v1`.
-- Changed API to use descriptive strings for `status` of maintenance windows instead of integers.
-- Seperated maintenance window `items` into `switches`, `interfaces`, and `links`. 
-
 
 Deprecated
 ==========
@@ -31,6 +23,22 @@ Security
 
 Changed
 =======
+
+
+[2022.3.0] - 2023-01-23
+***********************
+
+Added
+=====
+- Added persistence to maintenance using mongodb.
+- Added tracking of maintenance window creation and updated times.
+
+Changed
+=======
+- Updated REST API endpoints to include version numbers. Current version is `\v1`.
+- Changed API to use descriptive strings for `status` of maintenance windows instead of integers.
+- Seperated maintenance window `items` into `switches`, `interfaces`, and `links`. 
+
 
 [2022.2.1] - 2022-08-15
 ***********************
