@@ -17,6 +17,7 @@ Removed
 
 Fixed
 =====
+- Fixed maintenance UI using incorrect key for `links` when creating a maintenance window.
 
 Security
 ========
