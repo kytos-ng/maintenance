@@ -120,7 +120,7 @@
                                           "start": self.start,
                                           "end": self.end,
                                           "switches": filteredSwitches,
-                                          "link": filteredLinks,
+                                          "links": filteredLinks,
                                           "interfaces": filteredInterfaces,
                                           "force": self.checked_list.includes("force"),
                     }),

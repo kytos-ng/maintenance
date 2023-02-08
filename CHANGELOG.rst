@@ -25,6 +25,14 @@ Changed
 =======
 
 
+[2022.3.1] - 2023-02-08
+********************************
+
+Fixed
+=====
+- Fixed maintenance UI using incorrect key for `links` when creating a maintenance window.
+
+
 [2022.3.0] - 2023-01-23
 ***********************
 
