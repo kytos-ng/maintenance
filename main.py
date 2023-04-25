@@ -5,7 +5,6 @@ devices (switch, link, and interface) without receiving alerts.
 """
 from datetime import timedelta
 
-# from flask import current_app, jsonify, request
 from napps.kytos.maintenance.models import MaintenanceDeployer, MaintenanceID
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
 from napps.kytos.maintenance.models import OverlapError, Scheduler, Status
@@ -18,9 +17,6 @@ from kytos.core.link import Link
 from kytos.core.rest_api import (HTTPException, JSONResponse, Request,
                                  Response, get_json_or_400)
 from kytos.core.switch import Switch
-
-# from werkzeug.exceptions import BadRequest, NotFound, UnsupportedMediaType
-
 
 # pylint: enable=unused-import
 
