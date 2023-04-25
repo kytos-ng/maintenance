@@ -96,9 +96,10 @@ class TestDeployer(TestCase):
 
         self.deployer = MaintenanceDeployer(self.controller, Counter())
 
-    @patch('kytos.core.buffers.KytosEventBuffer.put')
-    def test_start_mw_case_1(self, buffer_put_mock):
+    def test_start_mw_case_1(self):
         """Test the method that starts a maintenance."""
+        buffer_put_mock = MagicMock()
+        self.controller.buffers.app.put = buffer_put_mock
         maintenance = self.maintenance.copy(
             update = {
                 'switches': [
@@ -112,9 +113,10 @@ class TestDeployer(TestCase):
         self.deployer.start_mw(maintenance)
         buffer_put_mock.assert_called_once()
 
-    @patch('kytos.core.buffers.KytosEventBuffer.put')
-    def test_start_mw_case_2(self, buffer_put_mock):
+    def test_start_mw_case_2(self):
         """Test the method that starts a maintenance."""
+        buffer_put_mock = MagicMock()
+        self.controller.buffers.app.put = buffer_put_mock
         interface_id = "interface_1"
         maintenance = self.maintenance.copy(
             update = {
@@ -129,9 +131,10 @@ class TestDeployer(TestCase):
         self.deployer.start_mw(maintenance)
         self.assertEqual(buffer_put_mock.call_count, 2)
 
-    @patch('kytos.core.buffers.KytosEventBuffer.put')
-    def test_start_mw_case_3(self, buffer_put_mock):
+    def test_start_mw_case_3(self):
         """Test the method that starts a maintenance."""
+        buffer_put_mock = MagicMock()
+        self.controller.buffers.app.put = buffer_put_mock
         interface_id = "interface_1"
         link1 = "link_1"
         link2 = "link_2"
@@ -146,9 +149,10 @@ class TestDeployer(TestCase):
         self.deployer.start_mw(maintenance)
         self.assertEqual(buffer_put_mock.call_count, 2)
 
-    @patch('kytos.core.buffers.KytosEventBuffer.put')
-    def test_end_mw_case_1(self, buffer_put_mock):
+    def test_end_mw_case_1(self):
         """Test the method that ends a maintenance."""
+        buffer_put_mock = MagicMock()
+        self.controller.buffers.app.put = buffer_put_mock
         maintenance = self.maintenance.copy(
             update = {
                 'switches': [
@@ -163,9 +167,10 @@ class TestDeployer(TestCase):
         self.deployer.end_mw(maintenance)
         buffer_put_mock.assert_called_once()
 
-    @patch('kytos.core.buffers.KytosEventBuffer.put')
-    def test_end_mw_case_2(self, buffer_put_mock):
+    def test_end_mw_case_2(self):
         """Test the method that ends a maintenance."""
+        buffer_put_mock = MagicMock()
+        self.controller.buffers.app.put = buffer_put_mock
         interface_id = "interface_1"
         maintenance = self.maintenance.copy(
             update = {
@@ -181,9 +186,10 @@ class TestDeployer(TestCase):
         self.deployer.end_mw(maintenance)
         self.assertEqual(buffer_put_mock.call_count, 2)
 
-    @patch('kytos.core.buffers.KytosEventBuffer.put')
-    def test_end_mw_case_3(self, buffer_put_mock):
+    def test_end_mw_case_3(self):
         """Test the method that ends a maintenance."""
+        buffer_put_mock = MagicMock()
+        self.controller.buffers.app.put = buffer_put_mock
         interface_id = "interface_1"
         link1 = "link_1"
         link2 = "link_2"
