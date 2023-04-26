@@ -96,7 +96,7 @@ class Main(KytosNApp):
     def create_mw(self, request: Response) -> JSONResponse:
         """Create a new maintenance window."""
         data = get_json_or_400(request)
-        if not isinstance(data, dict):
+        if not isinstance(data, dict) or not data:
             raise HTTPException(400, detail=f"Invalid json body value: {data}")
 
         if 'status' in data:
@@ -121,7 +121,7 @@ class Main(KytosNApp):
     def update_mw(self, request: Request) -> JSONResponse:
         """Update a maintenance window."""
         data = get_json_or_400(request)
-        if not isinstance(data, dict):
+        if not isinstance(data, dict) or not data:
             raise HTTPException(400, detail=f"Invalid json body value: {data}")
 
         mw_id: MaintenanceID = request.path_params["mw_id"]
