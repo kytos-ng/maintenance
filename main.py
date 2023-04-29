@@ -95,7 +95,7 @@ class Main(KytosNApp):
     @rest('/v1', methods=['POST'])
     def create_mw(self, request: Response) -> JSONResponse:
         """Create a new maintenance window."""
-        data = get_json_or_400(request)
+        data = get_json_or_400(request, self.controller.loop)
         if not isinstance(data, dict) or not data:
             raise HTTPException(400, detail=f"Invalid json body value: {data}")
 
@@ -120,7 +120,7 @@ class Main(KytosNApp):
     @rest('/v1/{mw_id}', methods=['PATCH'])
     def update_mw(self, request: Request) -> JSONResponse:
         """Update a maintenance window."""
-        data = get_json_or_400(request)
+        data = get_json_or_400(request, self.controller.loop)
         if not isinstance(data, dict) or not data:
             raise HTTPException(400, detail=f"Invalid json body value: {data}")
 
@@ -190,7 +190,7 @@ class Main(KytosNApp):
     def extend_mw(self, request: Request) -> JSONResponse:
         """Extend a running maintenance window."""
         mw_id: MaintenanceID = request.path_params["mw_id"]
-        data = get_json_or_400(request)
+        data = get_json_or_400(request, self.controller.loop)
         if not isinstance(data, dict):
             raise HTTPException(400, detail=f"Invalid json body value: {data}")
 
