@@ -30,8 +30,9 @@ class TestMain:
         self.maxDiff = None
         self.base_endpoint = "kytos/maintenance/v1"
 
-    async def test_create_mw_case_1(self):
+    async def test_create_mw_case_1(self, event_loop):
         """Test a successful case of the REST to create."""
+        self.napp.controller.loop = event_loop
         url = f'{self.base_endpoint}'
         start = datetime.now(pytz.utc) + timedelta(days=1)
         end = start + timedelta(hours=2)
@@ -61,8 +62,9 @@ class TestMain:
         )
         assert current_data == {'mw_id': '1234'}
 
-    async def test_create_mw_case_2(self):
+    async def test_create_mw_case_2(self, event_loop):
         """Test a fail case of the REST to create a maintenance window."""
+        self.napp.controller.loop = event_loop
         url = f'{self.base_endpoint}'
         payload = {
             "switches": [
@@ -76,8 +78,9 @@ class TestMain:
         assert response.status_code == 400
         self.scheduler.add.assert_not_called()
 
-    async def test_create_mw_case_3(self):
+    async def test_create_mw_case_3(self, event_loop):
         """Test a fail case of the REST to create a maintenance window."""
+        self.napp.controller.loop = event_loop
         url = f'{self.base_endpoint}'
         start = datetime.now(pytz.utc) - timedelta(days=1)
         end = start + timedelta(hours=2)
@@ -98,8 +101,9 @@ class TestMain:
                          'Start in the past not allowed'
         self.scheduler.add.assert_not_called()
 
-    async def test_create_mw_case_4(self):
+    async def test_create_mw_case_4(self, event_loop):
         """Test a fail case of the REST to create a maintenance window."""
+        self.napp.controller.loop = event_loop
         url = f'{self.base_endpoint}'
         start = datetime.now(pytz.utc) + timedelta(days=1)
         end = start - timedelta(hours=2)
@@ -309,8 +313,9 @@ class TestMain:
         self.scheduler.get_maintenance.assert_called_once_with('1234')
         self.scheduler.remove.assert_not_called()
 
-    async def test_update_mw_case_1(self):
+    async def test_update_mw_case_1(self, event_loop):
         """Test update non-existent id."""
+        self.napp.controller.loop = event_loop
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
         self.scheduler.get_maintenance.return_value = None
         payload = {
@@ -324,8 +329,9 @@ class TestMain:
                          'Maintenance with id 2345 not found'
         self.scheduler.update.assert_not_called()
 
-    async def test_update_mw_case_2(self):
+    async def test_update_mw_case_2(self, event_loop):
         """Test update no data."""
+        self.napp.controller.loop = event_loop
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
         payload = {
             "start": start1.strftime(TIME_FMT),
@@ -336,8 +342,9 @@ class TestMain:
         assert response.status_code == 400
         assert "field required" in current_data['description']
 
-    async def test_update_mw_case_3(self):
+    async def test_update_mw_case_3(self, event_loop):
         """Test successful update."""
+        self.napp.controller.loop = event_loop
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
         self.scheduler.get_maintenance.return_value = MW.construct(
@@ -370,8 +377,9 @@ class TestMain:
             )
         )
 
-    async def test_update_mw_case_4(self):
+    async def test_update_mw_case_4(self, event_loop):
         """Test successful update."""
+        self.napp.controller.loop = event_loop
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
         self.scheduler.get_maintenance.return_value = MW.construct(
@@ -395,8 +403,9 @@ class TestMain:
         self.scheduler.get_maintenance.assert_called_once_with('1234')
         self.scheduler.update.assert_not_called()
 
-    async def test_update_mw_case_5(self):
+    async def test_update_mw_case_5(self, event_loop):
         """Test successful update."""
+        self.napp.controller.loop = event_loop
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
         self.scheduler.get_maintenance.return_value = MW.construct(
@@ -422,8 +431,9 @@ class TestMain:
         self.scheduler.get_maintenance.assert_called_once_with('1234')
         self.scheduler.update.assert_not_called()
 
-    async def test_update_mw_case_6(self):
+    async def test_update_mw_case_6(self, event_loop):
         """Test successful update."""
+        self.napp.controller.loop = event_loop
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
         self.scheduler.get_maintenance.return_value = MW.construct(
@@ -451,8 +461,9 @@ class TestMain:
         self.scheduler.get_maintenance.assert_called_once_with('1234')
         self.scheduler.update.assert_not_called()
 
-    async def test_update_mw_case_7(self):
+    async def test_update_mw_case_7(self, event_loop):
         """Test successful update."""
+        self.napp.controller.loop = event_loop
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
         end1 = start1 + timedelta(hours=6)
         self.scheduler.get_maintenance.return_value = MW.construct(
@@ -550,8 +561,9 @@ class TestMain:
         assert current_data['description'] == \
                          'Maintenance window 1234 has already finished'
 
-    async def test_extend_case_1(self):
+    async def test_extend_case_1(self, event_loop):
         """Test successful extension."""
+        self.napp.controller.loop = event_loop
         start1 = datetime.now(pytz.utc) - timedelta(hours=3)
         end1 = start1 + timedelta(hours=4)
         self.scheduler.get_maintenance.return_value = MW.construct(
@@ -580,8 +592,9 @@ class TestMain:
             status = 'running',
         ))
 
-    async def test_extend_case_2(self):
+    async def test_extend_case_2(self, event_loop):
         """Test no payload error."""
+        self.napp.controller.loop = event_loop
         url = f'{self.base_endpoint}/1234/extend'
         response = await self.api.patch(url)
         assert response.status_code == 400
@@ -589,8 +602,9 @@ class TestMain:
         assert 'Invalid json' in current_data['description']
         self.scheduler.update.assert_not_called()
 
-    async def test_extend_case_3(self):
+    async def test_extend_case_3(self, event_loop):
         """Test payload without minutes."""
+        self.napp.controller.loop = event_loop
         url = f'{self.base_endpoint}/1234/extend'
         payload = {
             'seconds': 240
@@ -602,8 +616,9 @@ class TestMain:
                          'Minutes of extension must be sent'
         self.scheduler.update.assert_not_called()
 
-    async def test_extend_case_4(self):
+    async def test_extend_case_4(self, event_loop):
         """Test no integer extension minutes."""
+        self.napp.controller.loop = event_loop
         url = f'{self.base_endpoint}/1234/extend'
         payload = {
             'minutes': '240'
@@ -615,8 +630,9 @@ class TestMain:
                          'Minutes of extension must be integer'
         self.scheduler.update.assert_not_called()
 
-    async def test_extend_case_5(self):
+    async def test_extend_case_5(self, event_loop):
         """Test maintenance did not start."""
+        self.napp.controller.loop = event_loop
         start1 = datetime.now(pytz.utc) + timedelta(hours=3)
         end1 = start1 + timedelta(hours=4)
         self.scheduler.get_maintenance.return_value = MW.construct(
@@ -640,8 +656,9 @@ class TestMain:
         self.scheduler.get_maintenance.assert_called_once_with('1234')
         self.scheduler.update.assert_not_called()
 
-    async def test_extend_case_6(self):
+    async def test_extend_case_6(self, event_loop):
         """Test maintenance already finished."""
+        self.napp.controller.loop = event_loop
         start1 = datetime.now(pytz.utc) - timedelta(hours=3)
         end1 = start1 + timedelta(hours=2)
         self.scheduler.get_maintenance.return_value = MW.construct(
@@ -665,8 +682,9 @@ class TestMain:
         self.scheduler.get_maintenance.assert_called_once_with('1234')
         self.scheduler.update.assert_not_called()
 
-    async def test_extend_case_7(self):
+    async def test_extend_case_7(self, event_loop):
         """Test no maintenace found."""
+        self.napp.controller.loop = event_loop
         self.scheduler.get_maintenance.return_value = None
         url = f'{self.base_endpoint}/1235/extend'
         payload = {
