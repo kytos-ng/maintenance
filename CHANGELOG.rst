@@ -24,6 +24,10 @@ Security
 Changed
 =======
 
+General Information
+===================
+- ``@rest`` endpoints are now run by ``starlette/uvicorn`` instead of ``flask/werkzeug``.
+
 
 [2022.3.1] - 2023-02-08
 ********************************
