@@ -191,16 +191,29 @@ class MaintenanceDeployer:
         instance = cls(controller, Counter())
         Switch.register_status_func(
             'maintenance_status',
-            instance.dev_in_maintenance
+            instance.maintenance_status_func
+        )
+        Switch.register_status_reason_func(
+            'maintenance_status',
+            instance.maintenance_status_reason_func
         )
         Interface.register_status_func(
             'maintenance_status',
-            instance.dev_in_maintenance
+            instance.maintenance_status_func
+        )
+        Interface.register_status_reason_func(
+            'maintenance_status',
+            instance.maintenance_status_reason_func
         )
         Link.register_status_func(
             'maintenance_status',
-            instance.dev_in_maintenance
+            instance.maintenance_status_func
         )
+        Link.register_status_reason_func(
+            'maintenance_status',
+            instance.maintenance_status_reason_func
+        )
+
         return instance
 
     def _maintenance_event(self, window_devices: dict, operation: str):
@@ -324,11 +337,17 @@ class MaintenanceDeployer:
             'end'
         )
 
-    def dev_in_maintenance(self, dev):
+    def maintenance_status_func(self, dev):
         """Checks if a given device is undergoing maintenance"""
         if self.maintenance_devices[dev.id]:
             return EntityStatus.DOWN
         return EntityStatus.UP
+
+    def maintenance_status_reason_func(self, dev):
+        """Checks if a given device is undergoing maintenance"""
+        if self.maintenance_devices[dev.id]:
+            return frozenset({'maintenance'})
+        return frozenset()
 
 
 @dataclass
