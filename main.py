@@ -11,14 +11,8 @@ from napps.kytos.maintenance.models import OverlapError, Scheduler, Status
 from pydantic import ValidationError
 
 from kytos.core import KytosNApp, rest
-# pylint: disable=unused-import
-from kytos.core.interface import Interface
-from kytos.core.link import Link
 from kytos.core.rest_api import (HTTPException, JSONResponse, Request,
                                  Response, get_json_or_400)
-from kytos.core.switch import Switch
-
-# pylint: enable=unused-import
 
 
 class Main(KytosNApp):
@@ -37,19 +31,6 @@ class Main(KytosNApp):
         """
         self.maintenance_deployer = \
             MaintenanceDeployer.new_deployer(self.controller)
-
-        # Switch.register_status_func(
-        #     'maintenance_status',
-        #     self.maintenance_deployer.dev_in_maintenance
-        # )
-        # Interface.register_status_func(
-        #     'maintenance_status',
-        #     self.maintenance_deployer.dev_in_maintenance
-        # )
-        # Link.register_status_func(
-        #     'maintenance_status',
-        #     self.maintenance_deployer.dev_in_maintenance
-        # )
         self.scheduler = Scheduler.new_scheduler(self.maintenance_deployer)
         self.scheduler.start()
 

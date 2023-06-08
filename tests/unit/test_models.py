@@ -129,7 +129,7 @@ class TestDeployer(TestCase):
             }
         )
         self.deployer.start_mw(maintenance)
-        self.assertEqual(buffer_put_mock.call_count, 2)
+        self.assertEqual(buffer_put_mock.call_count, 1)
 
     def test_start_mw_case_3(self):
         """Test the method that starts a maintenance."""
@@ -147,7 +147,7 @@ class TestDeployer(TestCase):
             }
         )
         self.deployer.start_mw(maintenance)
-        self.assertEqual(buffer_put_mock.call_count, 2)
+        self.assertEqual(buffer_put_mock.call_count, 1)
 
     def test_end_mw_case_1(self):
         """Test the method that ends a maintenance."""
@@ -184,7 +184,7 @@ class TestDeployer(TestCase):
             }
         )
         self.deployer.end_mw(maintenance)
-        self.assertEqual(buffer_put_mock.call_count, 2)
+        self.assertEqual(buffer_put_mock.call_count, 1)
 
     def test_end_mw_case_3(self):
         """Test the method that ends a maintenance."""
@@ -203,7 +203,7 @@ class TestDeployer(TestCase):
             }
         )
         self.deployer.end_mw(maintenance)
-        self.assertEqual(buffer_put_mock.call_count, 2)
+        self.assertEqual(buffer_put_mock.call_count, 1)
 
 class TestScheduler(TestCase):
     """Test of the Scheduler Class"""

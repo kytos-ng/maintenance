@@ -7,6 +7,7 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
+from itertools import chain
 from typing import NewType, Optional
 from uuid import uuid4
 
@@ -16,12 +17,15 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.base import BaseScheduler
 # pylint: disable=no-name-in-module
 from pydantic import BaseModel, Field, root_validator, validator
+# pylint: enable=no-name-in-module
 
 from kytos.core import KytosEvent, log
 from kytos.core.common import EntityStatus
 from kytos.core.controller import Controller
 
-# pylint: enable=no-name-in-module
+from kytos.core.interface import Interface
+from kytos.core.link import Link
+from kytos.core.switch import Switch
 
 
 TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
@@ -185,40 +189,140 @@ class MaintenanceDeployer:
         Creates a new MaintenanceDeployer from the given Kytos Controller
         """
         instance = cls(controller, Counter())
+        Switch.register_status_func(
+            'maintenance_status',
+            instance.dev_in_maintenance
+        )
+        Interface.register_status_func(
+            'maintenance_status',
+            instance.dev_in_maintenance
+        )
+        Link.register_status_func(
+            'maintenance_status',
+            instance.dev_in_maintenance
+        )
         return instance
 
-    def _maintenance_event(self, window: MaintenanceWindow, operation: str):
+    def _maintenance_event(self, window_devices: dict, operation: str):
         """Create events to start/end a maintenance."""
-        if window.switches:
-            event = KytosEvent(
-                name=f'kytos/maintenance.{operation}_switch',
-                content={'switches': window.switches}
-            )
-            self.controller.buffers.app.put(event)
-        if window.interfaces:
-            event = KytosEvent(
-                name=f'kytos/maintenance.{operation}_interface',
-                content={'unis': window.interfaces}
-            )
-            self.controller.buffers.app.put(event)
-        if window.links:
-            event = KytosEvent(
-                name=f'kytos/maintenance.{operation}_link',
-                content={'links': window.links}
-            )
-            self.controller.buffers.app.put(event)
+        event = KytosEvent(
+            f'kytos/topology.interruption.{operation}',
+            content={
+                'type': 'maintenance',
+                **window_devices
+            }
+        )
+        self.controller.buffers.app.put(event)
 
     def start_mw(self, window: MaintenanceWindow):
         """Actions taken when a maintenance window starts."""
-        items = [*window.switches, *window.links, *window.interfaces]
-        self.maintenance_devices.update(items)
-        self._maintenance_event(window, 'start')
+        implicit_interfaces = chain.from_iterable(
+            map(
+                lambda switch_id: self.controller.switches[switch_id].interfaces.values(),
+                window.switches
+            )
+        )
+        implicit_interface_ids = map(
+            lambda interface: interface.id,
+            implicit_interfaces
+        )
+
+        explicit_interfaces = map(
+            lambda interface_id: self.controller.get_interface_by_id(interface_id),
+            window.interfaces
+        )
+
+        tot_interfaces = chain(implicit_interfaces, explicit_interfaces)
+        tot_interface_ids = chain(implicit_interface_ids, window.interfaces)
+
+        implicit_links = filter(
+            lambda link: link is not None,
+            map(
+                lambda interface_id: self.controller.get_interface_by_id(interface_id).link,
+                tot_interfaces
+            )
+        )
+        implicit_link_ids = map(
+            lambda link: link.id,
+            implicit_links
+        )
+
+        tot_link_ids = chain(implicit_link_ids, window.links)
+
+        old_device_set = frozenset(self.maintenance_devices)
+        self.maintenance_devices.update(chain(window.switches, tot_interface_ids, tot_link_ids))
+        new_device_set = frozenset(self.maintenance_devices)
+        
+        affected_device_set = new_device_set - old_device_set
+
+        affected_links = frozenset(tot_link_ids) - affected_device_set
+        affected_interfaces = frozenset(tot_interface_ids) - affected_device_set
+        affected_switches = frozenset(window.switches) - affected_device_set
+
+
+        self.maintenance_devices.update(chain(window.switches, tot_interface_ids, tot_link_ids))
+        self._maintenance_event(
+            {
+                'links': list(affected_links),
+                'interfaces': list(affected_interfaces),
+                'switches': list(affected_switches),
+            },
+            'start'
+        )
 
     def end_mw(self, window: MaintenanceWindow):
         """Actions taken when a maintenance window finishes."""
-        items = [*window.switches, *window.links, *window.interfaces]
-        self.maintenance_devices.subtract(items)
-        self._maintenance_event(window, 'end')
+        implicit_interfaces = chain.from_iterable(
+            map(
+                lambda switch_id: self.controller.switches[switch_id].interfaces.values(),
+                window.switches
+            )
+        )
+        implicit_interface_ids = map(
+            lambda interface: interface.id,
+            implicit_interfaces
+        )
+
+        explicit_interfaces = map(
+            lambda interface_id: self.controller.get_interface_by_id(interface_id),
+            window.interfaces
+        )
+
+        tot_interfaces = chain(implicit_interfaces, explicit_interfaces)
+        tot_interface_ids = chain(implicit_interface_ids, window.interfaces)
+
+        implicit_links = filter(
+            lambda link: link is not None,
+            map(
+                lambda interface_id: self.controller.get_interface_by_id(interface_id).link,
+                tot_interfaces
+            )
+        )
+        implicit_link_ids = map(
+            lambda link: link.id,
+            implicit_links
+        )
+
+        tot_link_ids = chain(implicit_link_ids, window.links)
+
+        old_device_set = frozenset(self.maintenance_devices)
+        self.maintenance_devices.subtract(chain(window.switches, tot_interface_ids, tot_link_ids))
+        new_device_set = frozenset(self.maintenance_devices)
+
+        affected_device_set = old_device_set - new_device_set
+
+        affected_links = frozenset(tot_link_ids) - affected_device_set
+        affected_interfaces = frozenset(tot_interface_ids) - affected_device_set
+        affected_switches = frozenset(window.switches) - affected_device_set
+
+        self._maintenance_event(
+            {
+                'links': list(affected_links),
+                'interfaces': list(affected_interfaces),
+                'switches': list(affected_switches),
+            },
+            'end'
+        )
 
     def dev_in_maintenance(self, dev):
         """Checks if a given device is undergoing maintenance"""
