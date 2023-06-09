@@ -94,7 +94,7 @@ class TestDeployer(TestCase):
             switches=self.switches
         )
 
-        self.deployer = MaintenanceDeployer(self.controller, Counter())
+        self.deployer = MaintenanceDeployer(self.controller, Counter(), Counter(), Counter())
 
     def test_start_mw_case_1(self):
         """Test the method that starts a maintenance."""

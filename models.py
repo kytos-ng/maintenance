@@ -7,7 +7,9 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
+from functools import reduce
 from itertools import chain
+import operator
 from typing import NewType, Optional
 from uuid import uuid4
 
@@ -181,37 +183,39 @@ class OverlapError(Exception):
 class MaintenanceDeployer:
     """Class for deploying maintenances"""
     controller: Controller
-    maintenance_devices: Counter
+    maintenance_switches: Counter
+    maintenance_interfaces: Counter
+    maintenance_links: Counter
 
     @classmethod
     def new_deployer(cls, controller: Controller):
         """
         Creates a new MaintenanceDeployer from the given Kytos Controller
         """
-        instance = cls(controller, Counter())
+        instance = cls(controller, Counter(), Counter(), Counter())
         Switch.register_status_func(
             'maintenance_status',
-            instance.maintenance_status_func
+            instance.switch_status_func
         )
         Switch.register_status_reason_func(
             'maintenance_status',
-            instance.maintenance_status_reason_func
+            instance.switch_status_reason_func
         )
         Interface.register_status_func(
             'maintenance_status',
-            instance.maintenance_status_func
+            instance.interface_status_func
         )
         Interface.register_status_reason_func(
             'maintenance_status',
-            instance.maintenance_status_reason_func
+            instance.interface_status_reason_func
         )
         Link.register_status_func(
             'maintenance_status',
-            instance.maintenance_status_func
+            instance.link_status_func
         )
         Link.register_status_reason_func(
             'maintenance_status',
-            instance.maintenance_status_reason_func
+            instance.link_status_reason_func
         )
 
         return instance
@@ -227,26 +231,31 @@ class MaintenanceDeployer:
         )
         self.controller.buffers.app.put(event)
 
-    def start_mw(self, window: MaintenanceWindow):
-        """Actions taken when a maintenance window starts."""
-        implicit_interfaces = chain.from_iterable(
+    def _get_affected_ids(self, window: MaintenanceWindow) -> dict[str,list[str]]:
+        explicit_switches = filter(
+            lambda switch: switch is not None,
             map(
-                lambda switch_id: self.controller.switches[switch_id].interfaces.values(),
+                lambda switch_id: self.controller.switches.get(switch_id, None),
                 window.switches
             )
         )
-        implicit_interface_ids = map(
-            lambda interface: interface.id,
-            implicit_interfaces
+
+        implicit_interfaces = chain.from_iterable(
+            map(
+                lambda switch: switch.interfaces.values(),
+                explicit_switches
+            )
         )
 
-        explicit_interfaces = map(
-            lambda interface_id: self.controller.get_interface_by_id(interface_id),
-            window.interfaces
+        explicit_interfaces = filter(
+            lambda interface: interface is not None,
+            map(
+                lambda interface_id: self.controller.get_interface_by_id(interface_id),
+                window.interfaces
+            )
         )
 
         tot_interfaces = chain(implicit_interfaces, explicit_interfaces)
-        tot_interface_ids = chain(implicit_interface_ids, window.interfaces)
 
         implicit_links = filter(
             lambda link: link is not None,
@@ -255,99 +264,121 @@ class MaintenanceDeployer:
                 tot_interfaces
             )
         )
-        implicit_link_ids = map(
-            lambda link: link.id,
-            implicit_links
+
+        explicit_links = filter(
+            lambda link: link is not None,
+            map(
+                lambda link_id: self.controller.napps[('kytos','topology')].links.get(link_id, None),
+                window.links
+            )
         )
 
-        tot_link_ids = chain(implicit_link_ids, window.links)
+        affected_switch_ids = map(
+            lambda switch: switch.id,
+            filter(
+                lambda switch: 'maintenace' not in self.switch_status_reason_func(switch),
+                explicit_switches
+            )
+        )
 
-        old_device_set = frozenset(self.maintenance_devices)
-        self.maintenance_devices.update(chain(window.switches, tot_interface_ids, tot_link_ids))
-        new_device_set = frozenset(self.maintenance_devices)
-        
-        affected_device_set = new_device_set - old_device_set
+        affected_interface_ids = map(
+            lambda interface: interface.id,
+            filter(
+                lambda interface: 'maintenace' not in self.interface_status_reason_func(interface),
+                chain(explicit_interfaces, implicit_interfaces)
+            )
+        )
 
-        affected_links = frozenset(tot_link_ids) - affected_device_set
-        affected_interfaces = frozenset(tot_interface_ids) - affected_device_set
-        affected_switches = frozenset(window.switches) - affected_device_set
+        affected_link_ids = map(
+            lambda link: link.id,
+            filter(
+                lambda link: 'maintenace' not in self.link_status_reason_func(link),
+                chain(explicit_links, implicit_links)
+            )
+        )
 
+        return {
+            'switches': list(set(affected_switch_ids)),
+            'interfaces': list(set(affected_interface_ids)),
+            'links': list(set(affected_link_ids)),
+        }
 
-        self.maintenance_devices.update(chain(window.switches, tot_interface_ids, tot_link_ids))
+    def start_mw(self, window: MaintenanceWindow):
+        """Actions taken when a maintenance window starts."""
+        affected_ids = self._get_affected_ids(window)
+
+        self.maintenance_switches.update(window.switches)
+        self.maintenance_interfaces.update(window.interfaces)
+        self.maintenance_links.update(window.links)
+
         self._maintenance_event(
-            {
-                'links': list(affected_links),
-                'interfaces': list(affected_interfaces),
-                'switches': list(affected_switches),
-            },
+            affected_ids,
             'start'
         )
 
     def end_mw(self, window: MaintenanceWindow):
         """Actions taken when a maintenance window finishes."""
-        implicit_interfaces = chain.from_iterable(
-            map(
-                lambda switch_id: self.controller.switches[switch_id].interfaces.values(),
-                window.switches
-            )
-        )
-        implicit_interface_ids = map(
-            lambda interface: interface.id,
-            implicit_interfaces
-        )
 
-        explicit_interfaces = map(
-            lambda interface_id: self.controller.get_interface_by_id(interface_id),
-            window.interfaces
-        )
+        self.maintenance_switches.subtract(window.switches)
+        self.maintenance_interfaces.subtract(window.interfaces)
+        self.maintenance_links.subtract(window.links)
 
-        tot_interfaces = chain(implicit_interfaces, explicit_interfaces)
-        tot_interface_ids = chain(implicit_interface_ids, window.interfaces)
-
-        implicit_links = filter(
-            lambda link: link is not None,
-            map(
-                lambda interface_id: self.controller.get_interface_by_id(interface_id).link,
-                tot_interfaces
-            )
-        )
-        implicit_link_ids = map(
-            lambda link: link.id,
-            implicit_links
-        )
-
-        tot_link_ids = chain(implicit_link_ids, window.links)
-
-        old_device_set = frozenset(self.maintenance_devices)
-        self.maintenance_devices.subtract(chain(window.switches, tot_interface_ids, tot_link_ids))
-        new_device_set = frozenset(self.maintenance_devices)
-
-        affected_device_set = old_device_set - new_device_set
-
-        affected_links = frozenset(tot_link_ids) - affected_device_set
-        affected_interfaces = frozenset(tot_interface_ids) - affected_device_set
-        affected_switches = frozenset(window.switches) - affected_device_set
+        affected_ids = self._get_affected_ids(window)
 
         self._maintenance_event(
-            {
-                'links': list(affected_links),
-                'interfaces': list(affected_interfaces),
-                'switches': list(affected_switches),
-            },
+            affected_ids,
             'end'
         )
 
-    def maintenance_status_func(self, dev):
+    def switch_status_func(self, dev: Switch):
         """Checks if a given device is undergoing maintenance"""
-        if self.maintenance_devices[dev.id]:
+        if self.maintenance_switches[dev.id]:
             return EntityStatus.DOWN
         return EntityStatus.UP
 
-    def maintenance_status_reason_func(self, dev):
+    def switch_status_reason_func(self, dev: Switch):
         """Checks if a given device is undergoing maintenance"""
-        if self.maintenance_devices[dev.id]:
+        if self.maintenance_switches[dev.id]:
             return frozenset({'maintenance'})
         return frozenset()
+    
+    def interface_status_func(self, dev: Interface):
+        """Checks if a given device is undergoing maintenance"""
+        if self.maintenance_interfaces[dev.id]:
+            return EntityStatus.DOWN
+        return self.switch_status_func(dev.switch)
+
+    def interface_status_reason_func(self, dev: Interface):
+        """Checks if a given device is undergoing maintenance"""
+        if self.maintenance_interfaces[dev.id]:
+            return frozenset({'maintenance'})
+        return self.switch_status_reason_func(dev.switch)
+    
+    def link_status_func(self, dev: Link):
+        """Checks if a given device is undergoing maintenance"""
+        if self.maintenance_links[dev.id]:
+            return EntityStatus.DOWN
+        return EntityStatus.DOWN if any(
+            map(
+            lambda status: status == EntityStatus.DOWN,
+                map(
+                    self.interface_status_func,
+                    (dev.endpoint_a, dev.endpoint_b)
+                )
+            )
+        ) else EntityStatus.UP
+
+    def link_status_reason_func(self, dev: Link):
+        """Checks if a given device is undergoing maintenance"""
+        if self.maintenance_links[dev.id]:
+            return frozenset({'maintenance'})
+        return reduce(
+            operator.or_,
+            map(
+                self.interface_status_reason_func,
+                (dev.endpoint_a, dev.endpoint_b)
+            )
+        )
 
 
 @dataclass
