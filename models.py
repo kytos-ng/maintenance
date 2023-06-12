@@ -7,9 +7,7 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from functools import reduce
 from itertools import chain
-import operator
 from typing import NewType, Optional
 from uuid import uuid4
 
@@ -19,16 +17,14 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.base import BaseScheduler
 # pylint: disable=no-name-in-module
 from pydantic import BaseModel, Field, root_validator, validator
-# pylint: enable=no-name-in-module
 
+# pylint: enable=no-name-in-module
 from kytos.core import KytosEvent, log
 from kytos.core.common import EntityStatus
 from kytos.core.controller import Controller
-
 from kytos.core.interface import Interface
 from kytos.core.link import Link
 from kytos.core.switch import Switch
-
 
 TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
 
@@ -231,11 +227,14 @@ class MaintenanceDeployer:
         )
         self.controller.buffers.app.put(event)
 
-    def _get_affected_ids(self, window: MaintenanceWindow) -> dict[str,list[str]]:
+    def _get_affected_ids(
+        self,
+        window: MaintenanceWindow
+    ) -> dict[str, list[str]]:
         explicit_switches = filter(
             lambda switch: switch is not None,
             map(
-                lambda switch_id: self.controller.switches.get(switch_id, None),
+                self.controller.switches.get,
                 window.switches
             )
         )
@@ -250,7 +249,7 @@ class MaintenanceDeployer:
         explicit_interfaces = filter(
             lambda interface: interface is not None,
             map(
-                lambda interface_id: self.controller.get_interface_by_id(interface_id),
+                self.controller.get_interface_by_id,
                 window.interfaces
             )
         )
@@ -260,7 +259,7 @@ class MaintenanceDeployer:
         implicit_links = filter(
             lambda link: link is not None,
             map(
-                lambda interface_id: self.controller.get_interface_by_id(interface_id).link,
+                lambda interface: interface.link,
                 tot_interfaces
             )
         )
@@ -268,7 +267,7 @@ class MaintenanceDeployer:
         explicit_links = filter(
             lambda link: link is not None,
             map(
-                lambda link_id: self.controller.napps[('kytos','topology')].links.get(link_id, None),
+                self.controller.napps[('kytos', 'topology')].links.get,
                 window.links
             )
         )
@@ -276,7 +275,7 @@ class MaintenanceDeployer:
         affected_switch_ids = map(
             lambda switch: switch.id,
             filter(
-                lambda switch: 'maintenace' not in self.switch_status_reason_func(switch),
+                self.switch_not_in_maintenance,
                 explicit_switches
             )
         )
@@ -284,7 +283,7 @@ class MaintenanceDeployer:
         affected_interface_ids = map(
             lambda interface: interface.id,
             filter(
-                lambda interface: 'maintenace' not in self.interface_status_reason_func(interface),
+                self.interface_not_in_maintenance,
                 chain(explicit_interfaces, implicit_interfaces)
             )
         )
@@ -292,7 +291,7 @@ class MaintenanceDeployer:
         affected_link_ids = map(
             lambda link: link.id,
             filter(
-                lambda link: 'maintenace' not in self.link_status_reason_func(link),
+                self.link_not_in_maintenance,
                 chain(explicit_links, implicit_links)
             )
         )
@@ -330,55 +329,64 @@ class MaintenanceDeployer:
             'end'
         )
 
-    def switch_status_func(self, dev: Switch):
-        """Checks if a given device is undergoing maintenance"""
-        if self.maintenance_switches[dev.id]:
-            return EntityStatus.DOWN
-        return EntityStatus.UP
+    def switch_not_in_maintenance(self, dev: Switch):
+        """Checks if a switch is not undergoing maintenance"""
+        return not self.maintenance_switches[dev.id]
 
-    def switch_status_reason_func(self, dev: Switch):
-        """Checks if a given device is undergoing maintenance"""
-        if self.maintenance_switches[dev.id]:
-            return frozenset({'maintenance'})
-        return frozenset()
-    
-    def interface_status_func(self, dev: Interface):
-        """Checks if a given device is undergoing maintenance"""
-        if self.maintenance_interfaces[dev.id]:
-            return EntityStatus.DOWN
-        return self.switch_status_func(dev.switch)
+    def interface_not_in_maintenance(self, dev: Interface):
+        """Checks if a interface is not undergoing maintenance"""
+        return (
+            not self.maintenance_interfaces[dev.id] and
+            self.switch_not_in_maintenance(dev.switch)
+        )
 
-    def interface_status_reason_func(self, dev: Interface):
-        """Checks if a given device is undergoing maintenance"""
-        if self.maintenance_interfaces[dev.id]:
-            return frozenset({'maintenance'})
-        return self.switch_status_reason_func(dev.switch)
-    
-    def link_status_func(self, dev: Link):
-        """Checks if a given device is undergoing maintenance"""
-        if self.maintenance_links[dev.id]:
-            return EntityStatus.DOWN
-        return EntityStatus.DOWN if any(
-            map(
-            lambda status: status == EntityStatus.DOWN,
+    def link_not_in_maintenance(self, dev: Link):
+        """Checks if a link is not undergoing maintenance"""
+        return (
+            not self.maintenance_links[dev.id] and
+            all(
                 map(
-                    self.interface_status_func,
+                    self.interface_not_in_maintenance,
                     (dev.endpoint_a, dev.endpoint_b)
                 )
             )
-        ) else EntityStatus.UP
+        )
+
+    def switch_status_func(self, dev: Switch):
+        """Checks if a given device is undergoing maintenance"""
+        if self.switch_not_in_maintenance(dev):
+            return EntityStatus.UP
+        return EntityStatus.DOWN
+
+    def switch_status_reason_func(self, dev: Switch):
+        """Checks if a given device is undergoing maintenance"""
+        if self.switch_not_in_maintenance(dev):
+            return frozenset()
+        return frozenset({'maintenance'})
+
+    def interface_status_func(self, dev: Interface):
+        """Checks if a given device is undergoing maintenance"""
+        if self.interface_not_in_maintenance(dev):
+            return EntityStatus.UP
+        return EntityStatus.DOWN
+
+    def interface_status_reason_func(self, dev: Interface):
+        """Checks if a given device is undergoing maintenance"""
+        if self.interface_not_in_maintenance(dev):
+            return frozenset()
+        return frozenset({'maintenance'})
+
+    def link_status_func(self, dev: Link):
+        """Checks if a given device is undergoing maintenance"""
+        if self.link_not_in_maintenance(dev):
+            return EntityStatus.UP
+        return EntityStatus.DOWN
 
     def link_status_reason_func(self, dev: Link):
         """Checks if a given device is undergoing maintenance"""
-        if self.maintenance_links[dev.id]:
-            return frozenset({'maintenance'})
-        return reduce(
-            operator.or_,
-            map(
-                self.interface_status_reason_func,
-                (dev.endpoint_a, dev.endpoint_b)
-            )
-        )
+        if self.link_not_in_maintenance(dev):
+            return frozenset()
+        return frozenset({'maintenance'})
 
 
 @dataclass
