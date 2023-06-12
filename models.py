@@ -239,10 +239,12 @@ class MaintenanceDeployer:
             )
         )
 
+        tot_switches = list(explicit_switches)
+
         implicit_interfaces = chain.from_iterable(
             map(
                 lambda switch: switch.interfaces.values(),
-                explicit_switches
+                tot_switches
             )
         )
 
@@ -254,7 +256,7 @@ class MaintenanceDeployer:
             )
         )
 
-        tot_interfaces = chain(implicit_interfaces, explicit_interfaces)
+        tot_interfaces = list(chain(implicit_interfaces, explicit_interfaces))
 
         implicit_links = filter(
             lambda link: link is not None,
@@ -272,34 +274,36 @@ class MaintenanceDeployer:
             )
         )
 
-        affected_switch_ids = map(
+        tot_links = list(chain(implicit_links, explicit_links))
+
+        affected_switch_ids = list(set(map(
             lambda switch: switch.id,
             filter(
                 self.switch_not_in_maintenance,
-                explicit_switches
+                tot_switches
             )
-        )
+        )))
 
-        affected_interface_ids = map(
+        affected_interface_ids = list(set(map(
             lambda interface: interface.id,
             filter(
                 self.interface_not_in_maintenance,
-                chain(explicit_interfaces, implicit_interfaces)
+                tot_interfaces
             )
-        )
+        )))
 
-        affected_link_ids = map(
+        affected_link_ids = list(set(map(
             lambda link: link.id,
             filter(
                 self.link_not_in_maintenance,
-                chain(explicit_links, implicit_links)
+                tot_links
             )
-        )
+        )))
 
         return {
-            'switches': list(set(affected_switch_ids)),
-            'interfaces': list(set(affected_interface_ids)),
-            'links': list(set(affected_link_ids)),
+            'switches': affected_switch_ids,
+            'interfaces': affected_interface_ids,
+            'links': affected_link_ids,
         }
 
     def start_mw(self, window: MaintenanceWindow):
