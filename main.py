@@ -98,6 +98,8 @@ class Main(KytosNApp):
             self.scheduler.add(maintenance, force=force)
         except OverlapError as err:
             raise HTTPException(400, detail=f'{err}') from err
+        except ValueError as err:
+            raise HTTPException(400, detail=f'{err}') from err
         return JSONResponse({'mw_id': maintenance.id}, status_code=201)
 
     @rest('/v1/{mw_id}', methods=['PATCH'])

@@ -8,7 +8,7 @@ from typing import Optional
 
 from bson.codec_options import CodecOptions
 import pymongo
-from pymongo.errors import AutoReconnect
+from pymongo.errors import AutoReconnect, DuplicateKeyError
 from tenacity import retry_if_exception_type, stop_after_attempt, wait_random
 
 from kytos.core import log
@@ -61,12 +61,14 @@ class MaintenanceController:
 
     def insert_window(self, window: MaintenanceWindow):
         now = datetime.now(pytz.utc)
-        self.windows.insert_one({
-                    **window.dict(exclude={'inserted_at', 'updated_at'}),
-                    'inserted_at': now,
-                    'updated_at': now,
-        })
-
+        try:
+            self.windows.insert_one({
+                        **window.dict(exclude={'inserted_at', 'updated_at'}),
+                        'inserted_at': now,
+                        'updated_at': now,
+            })
+        except DuplicateKeyError as err:
+            raise ValueError(f'Window with id: {window.id} already exists') from err
 
     def update_window(self, window: MaintenanceWindow):
         self.windows.update_one(
