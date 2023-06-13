@@ -2,7 +2,6 @@
   <k-toolbar-item icon="gear" tooltip="Maintenace">
     <k-accordion>
       <k-accordion-item title = "Create Maintenance Window" :key = "componentKey">
-        <k-input placeholder = "Id" :value.sync ="id"></k-input>
         <k-input placeholder = "Description" :value.sync = "description"></k-input>
         <k-input placeholder = "Start time" :value.sync = "start"></k-input>
         <k-input placeholder = "End time" :value.sync = "end"></k-input>
@@ -115,8 +114,7 @@
                     dataType: "json",
                     type: "POST",
                     contentType: "application/json",
-                    data: JSON.stringify({"id": self.id,
-                                          "description": self.description,
+                    data: JSON.stringify({"description": self.description,
                                           "start": self.start,
                                           "end": self.end,
                                           "switches": filteredSwitches,
@@ -127,11 +125,11 @@
                     url:this.$kytos_server_api + "kytos/maintenance/v1",
                 });
 
-                request.done(function() {
+                request.done(function(data) {
                     let notification = {
                         icon: 'gear',
                         title: 'Maintenance Window Created',
-                        description: 'Maintenance Window with id ' + self.id + ' was created.'
+                        description: 'Maintenance Window with id ' + data.mw_id + ' was created.'
                     }
                     self.$kytos.$emit("setNotification", notification);
                     // Clearing fields if POST is a success
@@ -151,7 +149,7 @@
                     let notification = {
                         icon: 'gear',
                         title: 'Maintenance Window not created',
-                        description: 'Maintenance Window with id ' + self.id + ' was not created. Error: ' + error_message
+                        description: 'Maintenance Window was not created. Error: ' + error_message
                     }
                    self.$kytos.$emit("setNotification", notification);
                 })
@@ -232,7 +230,6 @@
                 This method clears all fields and makes them empty.
            */
            forceRenderer(){
-              this.id =  "";
               this.description = "";
               this.start =  "";
               this.end =  "";
@@ -246,7 +243,6 @@
         },
         data() {
             return{
-                id: "",
                 description: "",
                 start: "",
                 end: "",

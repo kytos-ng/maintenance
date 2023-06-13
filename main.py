@@ -84,9 +84,11 @@ class Main(KytosNApp):
             raise HTTPException(
                 400, detail='Setting a maintenance status is not allowed'
             )
+        if 'id' in data:
+            raise HTTPException(
+                400, detail='Setting a maintenance id is not allowed'
+            )
         try:
-            if data.get('id') == '':
-                del data['id']
             maintenance = MW.parse_obj(data)
             force = data.get('force', False)
         except ValidationError as err:
