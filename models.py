@@ -219,7 +219,7 @@ class MaintenanceDeployer:
     def _maintenance_event(self, window_devices: dict, operation: str):
         """Create events to start/end a maintenance."""
         event = KytosEvent(
-            f'kytos/topology.interruption.{operation}',
+            f'topology.interruption.{operation}',
             content={
                 'type': 'maintenance',
                 **window_devices
