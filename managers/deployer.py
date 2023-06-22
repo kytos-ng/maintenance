@@ -1,4 +1,4 @@
-
+"""Module for handling the deployment of maintenance windows."""
 from collections import Counter
 from dataclasses import dataclass
 from itertools import chain

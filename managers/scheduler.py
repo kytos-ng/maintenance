@@ -1,3 +1,4 @@
+"""Module for handling the scheduled execution of maintenance windows."""
 import pytz
 from dataclasses import dataclass
 
