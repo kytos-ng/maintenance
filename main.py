@@ -5,9 +5,11 @@ devices (switch, link, and interface) without receiving alerts.
 """
 from datetime import timedelta
 
-from napps.kytos.maintenance.models import MaintenanceDeployer, MaintenanceID
+from napps.kytos.maintenance.managers import MaintenanceDeployer as Deployer
+from napps.kytos.maintenance.managers import MaintenanceScheduler as Scheduler
+from napps.kytos.maintenance.models import MaintenanceID
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
-from napps.kytos.maintenance.models import OverlapError, Scheduler, Status
+from napps.kytos.maintenance.models import OverlapError, Status
 from pydantic import ValidationError
 
 from kytos.core import KytosNApp, rest
@@ -29,8 +31,7 @@ class Main(KytosNApp):
 
         So, if you have any setup routine, insert it here.
         """
-        self.maintenance_deployer = \
-            MaintenanceDeployer.new_deployer(self.controller)
+        self.maintenance_deployer = Deployer.new_deployer(self.controller)
         self.scheduler = Scheduler.new_scheduler(self.maintenance_deployer)
         self.scheduler.start()
 

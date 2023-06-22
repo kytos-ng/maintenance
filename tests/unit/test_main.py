@@ -22,7 +22,7 @@ class TestMain:
         """Initialize before tests are executed."""
         self.controller = get_controller_mock()
         self.scheduler = MagicMock()
-        new_sched = 'napps.kytos.maintenance.models.Scheduler.new_scheduler'
+        new_sched = 'napps.kytos.maintenance.managers.MaintenanceScheduler.new_scheduler'
         with patch(new_sched) as new_scheduler:
             new_scheduler.return_value = self.scheduler
             self.napp = Main(self.controller)

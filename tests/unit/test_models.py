@@ -10,9 +10,17 @@ from apscheduler.triggers.date import DateTrigger
 from datetime import datetime, timedelta
 import pytz
 from kytos.lib.helpers import get_controller_mock
-from napps.kytos.maintenance.models import MaintenanceDeployer
-from napps.kytos.maintenance.models import MaintenanceWindow as MW, Status, Scheduler
-from napps.kytos.maintenance.models import MaintenanceStart, MaintenanceEnd
+from napps.kytos.maintenance.models import MaintenanceWindow as MW, Status
+
+from napps.kytos.maintenance.managers.deployer import (
+    MaintenanceDeployer,
+)
+
+from napps.kytos.maintenance.managers.scheduler import (
+    MaintenanceScheduler as Scheduler,
+    MaintenanceStart,
+    MaintenanceEnd,
+)
 TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
 
 
