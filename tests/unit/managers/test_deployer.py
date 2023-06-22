@@ -7,6 +7,7 @@ from collections import Counter
 
 from datetime import datetime, timedelta
 import pytz
+from kytos.core.common import EntityStatus
 from kytos.lib.helpers import get_controller_mock
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
 
@@ -381,3 +382,91 @@ class TestDeployer(TestCase):
         assert     self.deployer.link_not_in_maintenance(self.link_1)
         assert     self.deployer.link_not_in_maintenance(self.link_2)
         assert     self.deployer.link_not_in_maintenance(self.link_3)
+
+    def test_dev_status(self):
+        switch_1 = MagicMock(
+            id = 'test-switch-1',
+            interfaces = {},
+        )
+        switch_2 = MagicMock(
+            id = 'test-switch-2',
+            interfaces = {},
+        )
+        interface_1 = MagicMock(
+            id = 'test-interface-1',
+            switch = switch_1,
+            link = None,
+        )
+        switch_1.interfaces[0] = interface_1
+        interface_2 = MagicMock(
+            id = 'test-interface-2',
+            switch = switch_2,
+            link = None,
+        )
+        switch_2.interfaces[0] = interface_2
+        link = MagicMock(
+            id = 'test-link',
+            endpoint_a = interface_1,
+            endpoint_b = interface_2,
+        )
+
+        # No active maintenances
+        assert self.deployer.link_status_func(link) != EntityStatus.DOWN
+        assert self.deployer.interface_status_func(interface_1) != EntityStatus.DOWN
+        assert self.deployer.interface_status_func(interface_2) != EntityStatus.DOWN
+        assert self.deployer.switch_status_func(switch_1) != EntityStatus.DOWN
+        assert self.deployer.switch_status_func(switch_2) != EntityStatus.DOWN
+
+        assert self.deployer.link_status_reason_func(link) == set()
+        assert self.deployer.interface_status_reason_func(interface_1) == set()
+        assert self.deployer.interface_status_reason_func(interface_2) == set()
+        assert self.deployer.switch_status_reason_func(switch_1) == set()
+        assert self.deployer.switch_status_reason_func(switch_2) == set()
+
+        # Active switch maintenance
+        self.deployer.maintenance_switches['test-switch-1'] = 1
+
+        assert self.deployer.link_status_func(link) == EntityStatus.DOWN
+        assert self.deployer.interface_status_func(interface_1) == EntityStatus.DOWN
+        assert self.deployer.interface_status_func(interface_2) != EntityStatus.DOWN
+        assert self.deployer.switch_status_func(switch_1) == EntityStatus.DOWN
+        assert self.deployer.switch_status_func(switch_2) != EntityStatus.DOWN
+
+        assert self.deployer.link_status_reason_func(link) == {'maintenance'}
+        assert self.deployer.interface_status_reason_func(interface_1) == {'maintenance'}
+        assert self.deployer.interface_status_reason_func(interface_2) == set()
+        assert self.deployer.switch_status_reason_func(switch_1) == {'maintenance'}
+        assert self.deployer.switch_status_reason_func(switch_2) == set()
+
+        # Active interface maintenance
+        self.deployer.maintenance_switches['test-switch-1'] = 0
+        self.deployer.maintenance_interfaces['test-interface-1'] = 1
+
+        assert self.deployer.link_status_func(link) == EntityStatus.DOWN
+        assert self.deployer.interface_status_func(interface_1) == EntityStatus.DOWN
+        assert self.deployer.interface_status_func(interface_2) != EntityStatus.DOWN
+        assert self.deployer.switch_status_func(switch_1) != EntityStatus.DOWN
+        assert self.deployer.switch_status_func(switch_2) != EntityStatus.DOWN
+
+        assert self.deployer.link_status_reason_func(link) == {'maintenance'}
+        assert self.deployer.interface_status_reason_func(interface_1) == {'maintenance'}
+        assert self.deployer.interface_status_reason_func(interface_2) == set()
+        assert self.deployer.switch_status_reason_func(switch_1) == set()
+        assert self.deployer.switch_status_reason_func(switch_2) == set()
+
+        # Active link maintenance
+        self.deployer.maintenance_switches['test-switch-1'] = 0
+        self.deployer.maintenance_interfaces['test-interface-1'] = 0
+        self.deployer.maintenance_links['test-link'] = 1
+
+        assert self.deployer.link_status_func(link) == EntityStatus.DOWN
+        assert self.deployer.interface_status_func(interface_1) != EntityStatus.DOWN
+        assert self.deployer.interface_status_func(interface_2) != EntityStatus.DOWN
+        assert self.deployer.switch_status_func(switch_1) != EntityStatus.DOWN
+        assert self.deployer.switch_status_func(switch_2) != EntityStatus.DOWN
+
+        assert self.deployer.link_status_reason_func(link) == {'maintenance'}
+        assert self.deployer.interface_status_reason_func(interface_1) == set()
+        assert self.deployer.interface_status_reason_func(interface_2) == set()
+        assert self.deployer.switch_status_reason_func(switch_1) == set()
+        assert self.deployer.switch_status_reason_func(switch_2) == set()
