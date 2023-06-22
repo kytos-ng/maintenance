@@ -216,7 +216,7 @@ class TestDeployer(TestCase):
         self.deployer.start_mw(maintenance)
         args, kwargs = buffer_put_mock.call_args
         event = args[0]
-        assert event.name == 'kytos/topology.interruption.start'
+        assert event.name == 'topology.interruption.start'
         assert event.content['type'] == 'maintenance'
         assert sorted(event.content['switches']) == [
             '01:23:45:67:65:ab:cd:ef',
@@ -255,7 +255,7 @@ class TestDeployer(TestCase):
         self.deployer.end_mw(maintenance)
         args, kwargs = buffer_put_mock.call_args
         event = args[0]
-        assert event.name == 'kytos/topology.interruption.end'
+        assert event.name == 'topology.interruption.end'
         assert event.content['type'] == 'maintenance'
         assert sorted(event.content['switches']) == [
             '01:23:45:67:65:ab:cd:ef',
@@ -309,7 +309,7 @@ class TestDeployer(TestCase):
         self.deployer.start_mw(maintenance)
         args, kwargs = buffer_put_mock.call_args
         event = args[0]
-        assert event.name == 'kytos/topology.interruption.start'
+        assert event.name == 'topology.interruption.start'
         assert event.content['type'] == 'maintenance'
         assert sorted(event.content['switches']) == []
         assert sorted(event.content['interfaces']) == [
@@ -348,7 +348,7 @@ class TestDeployer(TestCase):
         self.deployer.end_mw(maintenance)
         args, kwargs = buffer_put_mock.call_args
         event = args[0]
-        assert event.name == 'kytos/topology.interruption.end'
+        assert event.name == 'topology.interruption.end'
         assert event.content['type'] == 'maintenance'
         assert sorted(event.content['switches']) == []
         assert sorted(event.content['switches']) == []
@@ -392,7 +392,7 @@ class TestDeployer(TestCase):
         self.deployer.start_mw(maintenance)
         args, kwargs = buffer_put_mock.call_args
         event = args[0]
-        assert event.name == 'kytos/topology.interruption.start'
+        assert event.name == 'topology.interruption.start'
         assert event.content['type'] == 'maintenance'
         assert sorted(event.content['switches']) == []
         assert sorted(event.content['interfaces']) == []
@@ -421,7 +421,7 @@ class TestDeployer(TestCase):
         self.deployer.end_mw(maintenance)
         args, kwargs = buffer_put_mock.call_args
         event = args[0]
-        assert event.name == 'kytos/topology.interruption.end'
+        assert event.name == 'topology.interruption.end'
         assert event.content['type'] == 'maintenance'
         assert sorted(event.content['switches']) == []
         assert sorted(event.content['interfaces']) == []
