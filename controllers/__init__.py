@@ -8,7 +8,7 @@ from typing import Optional
 
 from bson.codec_options import CodecOptions
 import pymongo
-from pymongo.errors import AutoReconnect, DuplicateKeyError
+from pymongo.errors import AutoReconnect
 from tenacity import retry_if_exception_type, stop_after_attempt, wait_random
 
 from kytos.core import log
@@ -121,16 +121,19 @@ class MaintenanceController:
         # then the start of one time period must occur in the other time period
         windows = self.windows.find(
             {
-                '$or': [
-                    {'$and': [
-                        {'start': {'$lte': window.start}},
-                        {'end': {'$gt': window.start}},
+                '$and': [
+                    {'status': {'$ne': Status.FINISHED}},
+                    {'$or': [
+                        {'$and': [
+                            {'start': {'$lte': window.start}},
+                            {'end': {'$gt': window.start}},
+                        ]},
+                        {'$and': [
+                            {'start': {'$gte': window.start}},
+                            {'start': {'$lt': window.end}},
+                        ]},
                     ]},
-                    {'$and': [
-                        {'start': {'$gte': window.start}},
-                        {'start': {'$lt': window.end}},
-                    ]}
-                ]
+                ],
             },
             {'_id': False}
         )
