@@ -21,6 +21,8 @@ class TestMain:
     def setup_method(self):
         """Initialize before tests are executed."""
         self.controller = get_controller_mock()
+        self.controller.napps[('kytos', 'topology')] = MagicMock()
+        self.controller.switches = MagicMock()
         self.scheduler = MagicMock()
         new_sched = 'napps.kytos.maintenance.managers.MaintenanceScheduler.new_scheduler'
         with patch(new_sched) as new_scheduler:
@@ -47,8 +49,8 @@ class TestMain:
             ],
         }
         response = await self.api.post(url, json=payload)
-        assert response.status_code == 201
         current_data = response.json()
+        assert response.status_code == 201, current_data
         args, kwargs = self.scheduler.add.call_args
         window: MW = args[0]
     

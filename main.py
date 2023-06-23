@@ -93,11 +93,12 @@ class Main(KytosNApp):
         try:
             maintenance = MW.parse_obj(data)
             force = data.get('force', False)
+            if not force:
+                self.validate_item_existence(maintenance)
+            self.scheduler.add(maintenance, force=force)
         except ValidationError as err:
             msg = error_msg(err.errors())
             raise HTTPException(400, detail=msg) from err
-        try:
-            self.scheduler.add(maintenance, force=force)
         except DuplicateKeyError as err:
             raise HTTPException(
                 409,
@@ -219,3 +220,45 @@ class Main(KytosNApp):
 
         self.scheduler.update(new_maintenance)
         return JSONResponse({'response': f'Maintenance {mw_id} extended'})
+
+    def validate_item_existence(self, window: MW):
+        """Validate that all items in a maintenance window exist."""
+        non_existant_switches = list(
+            filter(
+                lambda switch_id:
+                    self.controller.switches.get(switch_id)
+                    is None,
+                window.switches
+            )
+        )
+        non_existant_interfaces = list(
+            filter(
+                lambda interface_id:
+                    self.controller.get_interface_by_id(interface_id)
+                    is None,
+                window.interfaces
+            )
+        )
+        non_existant_links = list(
+            filter(
+                lambda interface_id:
+                    self.controller.napps[('kytos', 'topology')]
+                    .links.get(interface_id)
+                    is None,
+                window.interfaces
+            )
+        )
+
+        if (
+            non_existant_switches
+            or non_existant_interfaces
+            or non_existant_links
+        ):
+            items = {
+                'switches': non_existant_switches,
+                'interfaces': non_existant_interfaces,
+                'links': non_existant_links,
+            }
+            raise HTTPException(
+                400,
+                f"Window contains non-existant items: {items}")
