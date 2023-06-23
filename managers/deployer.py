@@ -77,7 +77,10 @@ class MaintenanceDeployer:
             )
         )
 
-        tot_switches = list(explicit_switches)
+        tot_switches = list(filter(
+            self.switch_not_in_maintenance,
+            explicit_switches
+        ))
 
         implicit_interfaces = chain.from_iterable(
             map(
@@ -94,7 +97,12 @@ class MaintenanceDeployer:
             )
         )
 
-        tot_interfaces = list(chain(implicit_interfaces, explicit_interfaces))
+        tot_interfaces = list(
+            filter(
+                self.interface_not_in_maintenance,
+                chain(implicit_interfaces, explicit_interfaces)
+            )
+        )
 
         implicit_links = filter(
             lambda link: link is not None,
@@ -112,32 +120,33 @@ class MaintenanceDeployer:
             )
         )
 
-        tot_links = list(chain(implicit_links, explicit_links))
-
-        affected_switch_ids = list(set(map(
-            lambda switch: switch.id,
-            filter(
-                self.switch_not_in_maintenance,
-                tot_switches
-            )
-        )))
-
-        affected_interface_ids = list(set(map(
-            lambda interface: interface.id,
-            filter(
-                self.interface_not_in_maintenance,
-                tot_interfaces
-            )
-        )))
-
-        affected_link_ids = list(set(map(
-            lambda link: link.id,
+        tot_links = list(
             filter(
                 self.link_not_in_maintenance,
+                chain(implicit_links, explicit_links)
+            )
+        )
+
+        affected_switch_ids = frozenset(
+            map(
+                lambda switch: switch.id,
+                tot_switches
+            )
+        )
+
+        affected_interface_ids = frozenset(
+            map(
+                lambda interface: interface.id,
+                tot_interfaces
+            )
+        )
+
+        affected_link_ids = frozenset(
+            map(
+                lambda link: link.id,
                 tot_links
             )
-        )))
-
+        )
         return {
             'switches': affected_switch_ids,
             'interfaces': affected_interface_ids,
