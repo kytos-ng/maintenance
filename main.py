@@ -11,10 +11,11 @@ from napps.kytos.maintenance.models import MaintenanceID
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
 from napps.kytos.maintenance.models import OverlapError, Status
 from pydantic import ValidationError
+from pymongo.errors import DuplicateKeyError
 
 from kytos.core import KytosNApp, rest
 from kytos.core.rest_api import (HTTPException, JSONResponse, Request,
-                                 Response, get_json_or_400)
+                                 Response, error_msg, get_json_or_400)
 
 
 class Main(KytosNApp):
@@ -93,10 +94,15 @@ class Main(KytosNApp):
             maintenance = MW.parse_obj(data)
             force = data.get('force', False)
         except ValidationError as err:
-            raise HTTPException(400,
-                                detail=f'{err.errors()[0]["msg"]}') from err
+            msg = error_msg(err.errors())
+            raise HTTPException(400, detail=msg) from err
         try:
             self.scheduler.add(maintenance, force=force)
+        except DuplicateKeyError as err:
+            raise HTTPException(
+                409,
+                detail=f'Window with id: {maintenance.id} already exists'
+            ) from err
         except OverlapError as err:
             raise HTTPException(400, detail=f'{err}') from err
         except ValueError as err:
@@ -127,8 +133,8 @@ class Main(KytosNApp):
         try:
             new_maintenance = MW.parse_obj({**old_maintenance.dict(), **data})
         except ValidationError as err:
-            detail = f'{err.errors()[0]["msg"]}'
-            raise HTTPException(400, detail=detail) from err
+            msg = error_msg(err.errors())
+            raise HTTPException(400, detail=msg) from err
         if new_maintenance.id != old_maintenance.id:
             raise HTTPException(400, detail='Updated id must match old id')
         self.scheduler.update(new_maintenance)

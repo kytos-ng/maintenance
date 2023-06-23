@@ -96,7 +96,7 @@ class TestMain:
         current_data = response.json()
         assert response.status_code == 400
         assert current_data['description'] == \
-                         'Start in the past not allowed'
+                         'start: Start in the past not allowed'
         self.scheduler.add.assert_not_called()
 
     async def test_create_mw_case_4(self, event_loop):
@@ -120,7 +120,7 @@ class TestMain:
 
         assert response.status_code == 400
         assert current_data['description'] == \
-                         'End before start not allowed'
+                         'end: End before start not allowed'
         self.scheduler.add.assert_not_called()
 
     async def test_create_mw_case_5(self, event_loop):
@@ -447,7 +447,7 @@ class TestMain:
         current_data = response.json()
         assert response.status_code == 400
         assert current_data['description'] == \
-                         'Start in the past not allowed'
+                         'start: Start in the past not allowed'
         self.scheduler.get_maintenance.assert_called_once_with('1234')
         self.scheduler.update.assert_not_called()
 
@@ -475,7 +475,7 @@ class TestMain:
         current_data = response.json()
         assert response.status_code == 400
         assert current_data['description'] == \
-                         'End before start not allowed'
+                         'end: End before start not allowed'
         self.scheduler.get_maintenance.assert_called_once_with('1234')
         self.scheduler.update.assert_not_called()
 
@@ -505,7 +505,7 @@ class TestMain:
         current_data = response.json()
         assert response.status_code == 400
         assert current_data['description'] == \
-                         'At least one item must be provided'
+                         '__root__: At least one item must be provided'
         self.scheduler.get_maintenance.assert_called_once_with('1234')
         self.scheduler.update.assert_not_called()
 

@@ -61,14 +61,11 @@ class MaintenanceController:
 
     def insert_window(self, window: MaintenanceWindow):
         now = datetime.now(pytz.utc)
-        try:
-            self.windows.insert_one({
-                        **window.dict(exclude={'inserted_at', 'updated_at'}),
-                        'inserted_at': now,
-                        'updated_at': now,
-            })
-        except DuplicateKeyError as err:
-            raise ValueError(f'Window with id: {window.id} already exists') from err
+        self.windows.insert_one({
+                    **window.dict(exclude={'inserted_at', 'updated_at'}),
+                    'inserted_at': now,
+                    'updated_at': now,
+        })
 
     def update_window(self, window: MaintenanceWindow):
         self.windows.update_one(
