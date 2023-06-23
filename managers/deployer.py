@@ -2,6 +2,7 @@
 from collections import Counter
 from dataclasses import dataclass
 from itertools import chain
+from threading import Lock
 
 from kytos.core.common import EntityStatus
 from kytos.core.controller import Controller
@@ -20,13 +21,14 @@ class MaintenanceDeployer:
     maintenance_switches: Counter
     maintenance_interfaces: Counter
     maintenance_links: Counter
+    lock: Lock
 
     @classmethod
     def new_deployer(cls, controller: Controller):
         """
         Creates a new MaintenanceDeployer from the given Kytos Controller
         """
-        instance = cls(controller, Counter(), Counter(), Counter())
+        instance = cls(controller, Counter(), Counter(), Counter(), Lock())
         Switch.register_status_func(
             'maintenance_status',
             instance.switch_status_func
@@ -155,30 +157,31 @@ class MaintenanceDeployer:
 
     def start_mw(self, window: MaintenanceWindow):
         """Actions taken when a maintenance window starts."""
-        affected_ids = self._get_affected_ids(window)
+        with self.lock:
+            affected_ids = self._get_affected_ids(window)
 
-        self.maintenance_switches.update(window.switches)
-        self.maintenance_interfaces.update(window.interfaces)
-        self.maintenance_links.update(window.links)
+            self.maintenance_switches.update(window.switches)
+            self.maintenance_interfaces.update(window.interfaces)
+            self.maintenance_links.update(window.links)
 
-        self._maintenance_event(
-            affected_ids,
-            'start'
-        )
+            self._maintenance_event(
+                affected_ids,
+                'start'
+            )
 
     def end_mw(self, window: MaintenanceWindow):
         """Actions taken when a maintenance window finishes."""
+        with self.lock:
+            self.maintenance_switches.subtract(window.switches)
+            self.maintenance_interfaces.subtract(window.interfaces)
+            self.maintenance_links.subtract(window.links)
 
-        self.maintenance_switches.subtract(window.switches)
-        self.maintenance_interfaces.subtract(window.interfaces)
-        self.maintenance_links.subtract(window.links)
+            affected_ids = self._get_affected_ids(window)
 
-        affected_ids = self._get_affected_ids(window)
-
-        self._maintenance_event(
-            affected_ids,
-            'end'
-        )
+            self._maintenance_event(
+                affected_ids,
+                'end'
+            )
 
     def switch_not_in_maintenance(self, dev: Switch) -> bool:
         """Checks if a switch is not undergoing maintenance"""

@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 from collections import Counter
 
 from datetime import datetime, timedelta
+from threading import Lock
 import pytz
 from kytos.core.common import EntityStatus
 from kytos.lib.helpers import get_controller_mock
@@ -31,7 +32,7 @@ class TestDeployer(TestCase):
             switches=self.switches
         )
 
-        self.deployer = MaintenanceDeployer(self.controller, Counter(), Counter(), Counter())
+        self.deployer = MaintenanceDeployer(self.controller, Counter(), Counter(), Counter(), Lock())
         # Initialize Switches
         self.controller.switches = {
             '01:23:45:67:89:ab:cd:ef': MagicMock(
