@@ -8,6 +8,7 @@ All notable changes to the Maintenance NApp will be documented in this file.
 
 Added
 =====
+- Added ``status_func`` and ``status_reason_func`` for maintenance windows.
 
 Deprecated
 ==========
@@ -17,12 +18,17 @@ Removed
 
 Fixed
 =====
+- Prevented potential race conditions when starting/stopping maintenance windows.
+- Fixed error 500 when user attempts to add maintenance window with duplicate IDs
+- Fixed handling of all device types to properly express all affected devices.
 
 Security
 ========
 
 Changed
 =======
+- Maintenance start and end no longer produce ``kytos/maintenance.*`` events, and instead produce ``topology.interruption.[start|end]`` events to work with blueprint EP0037
+- Creating a maintenance window now checks if all devs exist and rejects the window, except when the attribute ``ignore_no_exists`` is set to True
 
 General Information
 ===================
