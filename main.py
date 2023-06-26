@@ -93,7 +93,8 @@ class Main(KytosNApp):
         try:
             maintenance = MW.parse_obj(data)
             force = data.get('force', False)
-            if not force:
+            ignore_no_exists = data.get('ignore_no_exists')
+            if not ignore_no_exists:
                 self.validate_item_existence(maintenance)
             self.scheduler.add(maintenance, force=force)
         except ValidationError as err:
