@@ -67,7 +67,6 @@ class MaintenanceController:
                     'updated_at': now,
         })
 
-
     def update_window(self, window: MaintenanceWindow):
         self.windows.update_one(
             {'id': window.id},
@@ -122,16 +121,19 @@ class MaintenanceController:
         # then the start of one time period must occur in the other time period
         windows = self.windows.find(
             {
-                '$or': [
-                    {'$and': [
-                        {'start': {'$lte': window.start}},
-                        {'end': {'$gt': window.start}},
+                '$and': [
+                    {'status': {'$ne': Status.FINISHED}},
+                    {'$or': [
+                        {'$and': [
+                            {'start': {'$lte': window.start}},
+                            {'end': {'$gt': window.start}},
+                        ]},
+                        {'$and': [
+                            {'start': {'$gte': window.start}},
+                            {'start': {'$lt': window.end}},
+                        ]},
                     ]},
-                    {'$and': [
-                        {'start': {'$gte': window.start}},
-                        {'start': {'$lt': window.end}},
-                    ]}
-                ]
+                ],
             },
             {'_id': False}
         )
@@ -141,6 +143,15 @@ class MaintenanceController:
 
     def get_windows(self) -> MaintenanceWindows:
         windows = self.windows.find(projection={'_id': False})
+        return MaintenanceWindows.construct(
+            __root__ = [MaintenanceWindow.construct(**window) for window in windows]
+        )
+
+    def get_unfinished_windows(self) -> MaintenanceWindows:
+        windows = self.windows.find(
+            {'status': {'$ne': Status.FINISHED}},
+            projection={'_id': False}
+        )
         return MaintenanceWindows.construct(
             __root__ = [MaintenanceWindow.construct(**window) for window in windows]
         )

@@ -5,20 +5,17 @@ devices (switch, link, and interface) without receiving alerts.
 """
 from datetime import timedelta
 
-from napps.kytos.maintenance.models import MaintenanceDeployer, MaintenanceID
+from napps.kytos.maintenance.managers import MaintenanceDeployer as Deployer
+from napps.kytos.maintenance.managers import MaintenanceScheduler as Scheduler
+from napps.kytos.maintenance.models import MaintenanceID
 from napps.kytos.maintenance.models import MaintenanceWindow as MW
-from napps.kytos.maintenance.models import OverlapError, Scheduler, Status
+from napps.kytos.maintenance.models import OverlapError, Status
 from pydantic import ValidationError
+from pymongo.errors import DuplicateKeyError
 
 from kytos.core import KytosNApp, rest
-# pylint: disable=unused-import
-from kytos.core.interface import Interface
-from kytos.core.link import Link
 from kytos.core.rest_api import (HTTPException, JSONResponse, Request,
-                                 Response, get_json_or_400)
-from kytos.core.switch import Switch
-
-# pylint: enable=unused-import
+                                 Response, error_msg, get_json_or_400)
 
 
 class Main(KytosNApp):
@@ -35,21 +32,7 @@ class Main(KytosNApp):
 
         So, if you have any setup routine, insert it here.
         """
-        self.maintenance_deployer = \
-            MaintenanceDeployer.new_deployer(self.controller)
-
-        # Switch.register_status_func(
-        #     'maintenance_status',
-        #     self.maintenance_deployer.dev_in_maintenance
-        # )
-        # Interface.register_status_func(
-        #     'maintenance_status',
-        #     self.maintenance_deployer.dev_in_maintenance
-        # )
-        # Link.register_status_func(
-        #     'maintenance_status',
-        #     self.maintenance_deployer.dev_in_maintenance
-        # )
+        self.maintenance_deployer = Deployer.new_deployer(self.controller)
         self.scheduler = Scheduler.new_scheduler(self.maintenance_deployer)
         self.scheduler.start()
 
@@ -103,17 +86,28 @@ class Main(KytosNApp):
             raise HTTPException(
                 400, detail='Setting a maintenance status is not allowed'
             )
+        # if 'id' in data:
+        #     raise HTTPException(
+        #         400, detail='Setting a maintenance id is not allowed'
+        #     )
         try:
-            if data.get('id') == '':
-                del data['id']
             maintenance = MW.parse_obj(data)
             force = data.get('force', False)
-        except ValidationError as err:
-            raise HTTPException(400,
-                                detail=f'{err.errors()[0]["msg"]}') from err
-        try:
+            ignore_no_exists = data.get('ignore_no_exists')
+            if not ignore_no_exists:
+                self.validate_item_existence(maintenance)
             self.scheduler.add(maintenance, force=force)
+        except ValidationError as err:
+            msg = error_msg(err.errors())
+            raise HTTPException(400, detail=msg) from err
+        except DuplicateKeyError as err:
+            raise HTTPException(
+                409,
+                detail=f'Window with id: {maintenance.id} already exists'
+            ) from err
         except OverlapError as err:
+            raise HTTPException(400, detail=f'{err}') from err
+        except ValueError as err:
             raise HTTPException(400, detail=f'{err}') from err
         return JSONResponse({'mw_id': maintenance.id}, status_code=201)
 
@@ -141,8 +135,8 @@ class Main(KytosNApp):
         try:
             new_maintenance = MW.parse_obj({**old_maintenance.dict(), **data})
         except ValidationError as err:
-            detail = f'{err.errors()[0]["msg"]}'
-            raise HTTPException(400, detail=detail) from err
+            msg = error_msg(err.errors())
+            raise HTTPException(400, detail=msg) from err
         if new_maintenance.id != old_maintenance.id:
             raise HTTPException(400, detail='Updated id must match old id')
         self.scheduler.update(new_maintenance)
@@ -227,3 +221,45 @@ class Main(KytosNApp):
 
         self.scheduler.update(new_maintenance)
         return JSONResponse({'response': f'Maintenance {mw_id} extended'})
+
+    def validate_item_existence(self, window: MW):
+        """Validate that all items in a maintenance window exist."""
+        non_existant_switches = list(
+            filter(
+                lambda switch_id:
+                    self.controller.switches.get(switch_id)
+                    is None,
+                window.switches
+            )
+        )
+        non_existant_interfaces = list(
+            filter(
+                lambda interface_id:
+                    self.controller.get_interface_by_id(interface_id)
+                    is None,
+                window.interfaces
+            )
+        )
+        non_existant_links = list(
+            filter(
+                lambda interface_id:
+                    self.controller.napps[('kytos', 'topology')]
+                    .links.get(interface_id)
+                    is None,
+                window.interfaces
+            )
+        )
+
+        if (
+            non_existant_switches
+            or non_existant_interfaces
+            or non_existant_links
+        ):
+            items = {
+                'switches': non_existant_switches,
+                'interfaces': non_existant_interfaces,
+                'links': non_existant_links,
+            }
+            raise HTTPException(
+                400,
+                f"Window contains non-existant items: {items}")

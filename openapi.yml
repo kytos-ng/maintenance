@@ -42,7 +42,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MaintenanceWindow'
+              $ref: '#/components/schemas/MaintenanceWindowCreate'
       responses:
         '201':
            description: Maintenance window created.
@@ -281,6 +281,14 @@ components:
           type: array
           items:
             type: string
+    MaintenanceWindowCreate:
+      allOf:
+        - $ref: '#/components/schemas/MaintenanceWindow'
+        - properties:
+            force:
+              type: boolean
+            ignore_no_exists:
+              type: boolean
     MaintenanceWindowGet:
       allOf:
         - $ref: '#/components/schemas/MaintenanceWindow'
