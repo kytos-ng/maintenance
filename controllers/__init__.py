@@ -147,6 +147,15 @@ class MaintenanceController:
             __root__ = [MaintenanceWindow.construct(**window) for window in windows]
         )
 
+    def get_unfinished_windows(self) -> MaintenanceWindows:
+        windows = self.windows.find(
+            {'status': {'$ne': Status.FINISHED}},
+            projection={'_id': False}
+        )
+        return MaintenanceWindows.construct(
+            __root__ = [MaintenanceWindow.construct(**window) for window in windows]
+        )
+
     def remove_window(self, mw_id: MaintenanceID):
         self.windows.delete_one({'id': mw_id})
 

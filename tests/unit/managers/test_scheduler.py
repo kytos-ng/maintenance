@@ -62,7 +62,7 @@ class TestScheduler(TestCase):
             run_date = running_window.end),
         ]
 
-        self.db_controller.get_windows.return_value = [
+        self.db_controller.get_unfinished_windows.return_value = [
             pending_window,
             running_window,
             finished_window,

@@ -67,7 +67,7 @@ class MaintenanceScheduler:
         self.db_controller.prepare_start()
 
         # Populate the scheduler with all pending tasks
-        windows = self.db_controller.get_windows()
+        windows = self.db_controller.get_unfinished_windows()
         for window in windows:
             if window.status == Status.RUNNING:
                 self.deployer.start_mw(window)
