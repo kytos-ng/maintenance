@@ -4,6 +4,7 @@ from unittest.mock import patch, MagicMock
 from datetime import datetime, timedelta
 
 import pytz
+import pytest
 
 from kytos.lib.helpers import get_controller_mock, get_test_client
 from napps.kytos.maintenance.main import Main
@@ -125,30 +126,31 @@ class TestMain:
                          'end: End before start not allowed'
         self.scheduler.add.assert_not_called()
 
-    # async def test_create_mw_case_5(self, event_loop):
-    #     """Test a fail case of the REST to create a maintenance window."""
-    #     self.napp.controller.loop = event_loop
-    #     url = f'{self.base_endpoint}'
-    #     start = datetime.now(pytz.utc) + timedelta(days=1)
-    #     end = start + timedelta(hours=2)
-    #     payload = {
-    #         'id': '1234',
-    #         "start": start.strftime(TIME_FMT),
-    #         "end": end.strftime(TIME_FMT),
-    #         "switches": [
-    #             "00:00:00:00:00:00:02",
-    #         ],
-    #         'interfaces': [
-    #             "00:00:00:00:00:00:00:03:3",
-    #         ],
-    #     }
-    #     response = await self.api.post(url, json=payload)
-    #     current_data = response.json()
+    @pytest.mark.skip(reason="Future feature")
+    async def test_create_mw_case_5(self, event_loop):
+        """Test a fail case of the REST to create a maintenance window."""
+        self.napp.controller.loop = event_loop
+        url = f'{self.base_endpoint}'
+        start = datetime.now(pytz.utc) + timedelta(days=1)
+        end = start + timedelta(hours=2)
+        payload = {
+            'id': '1234',
+            "start": start.strftime(TIME_FMT),
+            "end": end.strftime(TIME_FMT),
+            "switches": [
+                "00:00:00:00:00:00:02",
+            ],
+            'interfaces': [
+                "00:00:00:00:00:00:00:03:3",
+            ],
+        }
+        response = await self.api.post(url, json=payload)
+        current_data = response.json()
 
-    #     assert response.status_code == 400
-    #     assert current_data['description'] == \
-    #                      'Setting a maintenance id is not allowed'
-    #     self.scheduler.add.assert_not_called()
+        assert response.status_code == 400
+        assert current_data['description'] == \
+                         'Setting a maintenance id is not allowed'
+        self.scheduler.add.assert_not_called()
 
     async def test_create_mw_case_6(self, event_loop):
         """Test a fail case of the REST to create a maintenance window."""
