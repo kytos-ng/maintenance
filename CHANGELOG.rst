@@ -37,9 +37,6 @@ Fixed
 - Fixed error 500 when user attempts to add maintenance window with duplicate IDs
 - Fixed handling of all device types to properly express all affected devices.
 
-Security
-========
-
 Changed
 =======
 - Maintenance start and end no longer produce ``kytos/maintenance.*`` events, and instead produce ``topology.interruption.[start|end]`` events to work with blueprint EP0037
