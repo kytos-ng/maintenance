@@ -8,7 +8,6 @@ All notable changes to the Maintenance NApp will be documented in this file.
 
 Added
 =====
-- Added ``status_func`` and ``status_reason_func`` for maintenance windows.
 
 Deprecated
 ==========
@@ -18,12 +17,25 @@ Removed
 
 Fixed
 =====
-- Prevented potential race conditions when starting/stopping maintenance windows.
-- Fixed error 500 when user attempts to add maintenance window with duplicate IDs
-- Fixed handling of all device types to properly express all affected devices.
 
 Security
 ========
+
+Changed
+=======
+
+[2023.1.0] - 2023-06-26
+***********************
+
+Added
+=====
+- Added ``status_func`` and ``status_reason_func`` for maintenance windows.
+
+Fixed
+=====
+- Prevented potential race conditions when starting/stopping maintenance windows.
+- Fixed error 500 when user attempts to add maintenance window with duplicate IDs
+- Fixed handling of all device types to properly express all affected devices.
 
 Changed
 =======
