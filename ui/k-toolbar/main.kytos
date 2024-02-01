@@ -22,14 +22,14 @@
         </k-checkbox>
         <p></p>
 
-        <k-button title = "Reset Fields" :on_click = "forceRenderer"></k-button>
-        <k-button title = "Create Maintenance Window" :on_click = "post_window"></k-button>
+        <k-button title="Reset Fields" @click="forceRenderer"></k-button>
+        <k-button title="Create Maintenance Window" @click="post_window"></k-button>
       </k-accordion-item>
       <k-accordion-item title="List Maintenance Windows">
         <k-button tooltip="Maintenance Windows"
           title="List Maintenance Windows"
           icon="desktop"
-          :on_click="list_windows">
+          @click="list_windows">
         </k-button>
       </k-accordion-item>
     </k-accordion>
