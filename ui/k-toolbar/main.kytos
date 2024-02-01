@@ -2,30 +2,30 @@
   <k-toolbar-item icon="gear" tooltip="Maintenace">
     <k-accordion>
       <k-accordion-item title = "Create Maintenance Window" :key = "componentKey">
-        <k-input placeholder = "Description" :value.sync = "description"></k-input>
-        <k-input placeholder = "Start time" :value.sync = "start"></k-input>
-        <k-input placeholder = "End time" :value.sync = "end"></k-input>
+        <k-input placeholder = "Description" v-model:value = "description"></k-input>
+        <k-input placeholder = "Start time" v-model:value = "start"></k-input>
+        <k-input placeholder = "End time" v-model:value = "end"></k-input>
 
         <k-select icon = "link" title = "List of Switches"
-          :options = "dpid_names" :value.sync = "switches">
+          :options = "dpid_names" v-model:value = "switches">
         </k-select>
 
         <k-select icon = "link" title = "List of Interfaces"
-          :options = "interface_names" :value.sync = "interfaces">
+          :options = "interface_names" v-model:value = "interfaces">
         </k-select>
 
         <k-select icon = "link" title = "List of Links"
-          :options = "link_names" :value.sync = "links">
+          :options = "link_names" v-model:value = "links">
         </k-select>
 
-        <k-checkbox title = "Force" :model.sync = "checked_list" :value = "'force'">
+        <k-checkbox title = "Force" v-model:model = "checked_list" :value = "'force'">
         </k-checkbox>
         <p></p>
 
         <k-button title = "Reset Fields" :on_click = "forceRenderer"></k-button>
         <k-button title = "Create Maintenance Window" :on_click = "post_window"></k-button>
       </k-accordion-item>
-      <k-accordion-item title = "List Maintenance Windows">
+      <k-accordion-item title="List Maintenance Windows">
         <k-button tooltip="Maintenance Windows"
           title="List Maintenance Windows"
           icon="desktop"
@@ -72,7 +72,7 @@
             /*
                 Gets the data fields after button click and consumes POST api to post maintenace window.
             */
-            post_window(){
+            post_window: function() {
                 var self = this
                 filteredLinks = []
                 filteredSwitches = []
@@ -229,7 +229,7 @@
            /*
                 This method clears all fields and makes them empty.
            */
-           forceRenderer(){
+           forceRenderer: function() {
               this.description = "";
               this.start =  "";
               this.end =  "";

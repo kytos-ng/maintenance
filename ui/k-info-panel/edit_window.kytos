@@ -31,13 +31,13 @@
                                 <th>Items</th>
                                 <td>
                                     <div :class="'editable-' + property_editable['Links']">
-                                        <k-select icon="link" title="Links" :options="links_options" :value.sync="chosen_links"></k-select>
+                                        <k-select icon="link" title="Links" :options="links_options" v-model:value="chosen_links"></k-select>
                                     </div>
                                     <div :class="'editable-' + property_editable['Switches']">
-                                        <k-select icon="link" title="Switches" :options="switches_options" :value.sync="chosen_switches"></k-select>
+                                        <k-select icon="link" title="Switches" :options="switches_options" v-model:value="chosen_switches"></k-select>
                                     </div>
                                     <div :class="'editable-' + property_editable['Interfaces']">
-                                        <k-select  icon="link" title="Interfaces" :options="interfaces_options" :value.sync="chosen_interfaces"></k-select>
+                                        <k-select  icon="link" title="Interfaces" :options="interfaces_options" v-model:value="chosen_interfaces"></k-select>
                                     </div>
                                 </td>
                         </template>
@@ -77,7 +77,7 @@
                     <k-button title="Extend Window" :on_click="extendWindow"></k-button>
                 </div>
                 <div class = "minute-input-field">
-                    <k-input placeholder = "Enter minutes (click extend)" :value.sync ="minutes"></k-input>  
+                    <k-input placeholder = "Enter minutes (click extend)" v-model:value ="minutes"></k-input>  
                 </div>
             </div>
         </div>
