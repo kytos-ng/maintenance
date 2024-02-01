@@ -54,7 +54,7 @@
                 Hides the k-info-panel.
             */
             hideInfoPanel: function() {
-                this.$kytos.$emit("hideInfoPanel")
+                this.$kytos.eventBus.$emit("hideInfoPanel")
             },
             /*
                 Shows the k-info-panel.
@@ -67,7 +67,7 @@
                     "title": "View Windows",
                     "subtitle": "by kytos/Maintenance"
                 }
-                this.$kytos.$emit("showInfoPanel", listWindows)
+                this.$kytos.eventBus.$emit("showInfoPanel", listWindows)
             },
             /*
                 Gets the data fields after button click and consumes POST api to post maintenace window.
@@ -131,7 +131,7 @@
                         title: 'Maintenance Window Created',
                         description: 'Maintenance Window with id ' + data.mw_id + ' was created.'
                     }
-                    self.$kytos.$emit("setNotification", notification);
+                    self.$kytos.eventBus.$emit("setNotification", notification);
                     // Clearing fields if POST is a success
                     self.forceRenderer();
                 }),
@@ -151,7 +151,7 @@
                         title: 'Maintenance Window not created',
                         description: 'Maintenance Window was not created. Error: ' + error_message
                     }
-                   self.$kytos.$emit("setNotification", notification);
+                   self.$kytos.eventBus.$emit("setNotification", notification);
                 })
             },
             /*

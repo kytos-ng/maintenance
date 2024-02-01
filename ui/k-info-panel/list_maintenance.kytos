@@ -238,7 +238,7 @@
             "title": "Maintenance Window Details",
             "subtitle": "by kytos/maintenance"
          }
-         this.$kytos.$emit("showInfoPanel", content);
+         this.$kytos.eventBus.$emit("showInfoPanel", content);
      }
    },
    computed: {

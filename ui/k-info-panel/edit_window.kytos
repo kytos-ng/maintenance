@@ -119,7 +119,7 @@
                     "title": "View Windows",
                     "subtitle": "by kytos/Maintenance"
                 }
-                this.$kytos.$emit("showInfoPanel", listWindows)
+                this.$kytos.eventBus.$emit("showInfoPanel", listWindows)
             },
             /*
                 Saves the maintenance window.
@@ -184,7 +184,7 @@
                         description: ''
                     }
                     // Notify on success.
-                    _this.$kytos.$emit("setNotification", notification)
+                    _this.$kytos.eventBus.$emit("setNotification", notification)
                     // Refresh the window.
                     _this.resetItemSelection()
                     _this.loadMaintenanceWindow(_this.window_data.Id)
@@ -202,7 +202,7 @@
                         description: 'Error updating window "' + _this.window_data.Id + '". ' + _this.capitalize(status) + ': ' +  error_message
                     }
                     // Notify on failure.
-                    _this.$kytos.$emit("setNotification", notification)
+                    _this.$kytos.eventBus.$emit("setNotification", notification)
                 })
             },
             /*
@@ -250,7 +250,7 @@
                         description: 'Error loading window "' + _this.window_data.id + '". ' + _this.capitalize(status) + ': ' +  JSON.parse(jqXHR.responseText).response
                     }
                     // Notify on failure.
-                    _this.$kytos.$emit("setNotification", notification)
+                    _this.$kytos.eventBus.$emit("setNotification", notification)
                 })
             },
             /*
@@ -353,7 +353,7 @@
                         description: 'Error deleting window "' + _this.window_data.Id + '". ' + _this.capitalize(status) + ': ' +  JSON.parse(jqXHR.responseText).response
                     }
                     // Notify failure.
-                    _this.$kytos.$emit("setNotification" , notification);
+                    _this.$kytos.eventBus.$emit("setNotification" , notification);
                 });
             },
             /*
@@ -413,7 +413,7 @@
                         description: 'Error getting links for editing',
                     }
                     // Notify failure.
-                    _this.$kytos.$emit("setNotification" , notification);
+                    _this.$kytos.eventBus.$emit("setNotification" , notification);
                 })
             },
             /*
@@ -455,7 +455,7 @@
                         description: 'Error getting switches for editing',
                     }
                     // Notify failure.
-                    _this.$kytos.$emit("setNotification" , notification);
+                    _this.$kytos.eventBus.$emit("setNotification" , notification);
                 })
             },
             /*
@@ -497,7 +497,7 @@
                         description: 'Error getting interfaces for editing',
                     }
                     // Notify failure
-                    _this.$kytos.$emit("setNotification" , notification);
+                    _this.$kytos.eventBus.$emit("setNotification" , notification);
                 })
             },
             /*
@@ -594,7 +594,7 @@
                         description: ''
                     }
                     // Notify on success.
-                    _this.$kytos.$emit("setNotification", notification)
+                    _this.$kytos.eventBus.$emit("setNotification", notification)
                     // Refresh the window.
                     _this.resetItemSelection()
                     _this.loadMaintenanceWindow(_this.window_data.Id)
@@ -612,7 +612,7 @@
                         description: 'Error finishing window "' + _this.window_data.Id + '". ' + _this.capitalize(status) + ': ' +  error_message
                     }
                     // Notify on failure.
-                    _this.$kytos.$emit("setNotification", notification)
+                    _this.$kytos.eventBus.$emit("setNotification", notification)
                 })
             },
             /*
@@ -635,7 +635,7 @@
                         description: ''
                     }
                     // Notify on success.
-                    _this.$kytos.$emit("setNotification", notification)
+                    _this.$kytos.eventBus.$emit("setNotification", notification)
                     // Refresh the window.
                     _this.resetItemSelection()
                     _this.loadMaintenanceWindow(_this.window_data.Id)
@@ -653,7 +653,7 @@
                         description: 'Error extending window "' + _this.window_data.Id + '". ' + _this.capitalize(status) + ': ' +  error_message
                     }
                     // Notify on failure.
-                    _this.$kytos.$emit("setNotification", notification)
+                    _this.$kytos.eventBus.$emit("setNotification", notification)
                 })           
              },
         },
