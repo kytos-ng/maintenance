@@ -662,7 +662,7 @@
             this.loadTopologyForEditing()
             $('.k-info-panel:has(.maintenance-window-container)').addClass('maintenance-window-k-info-panel');
         },
-        destroyed() {
+        unmounted() {
             $('.k-info-panel').removeClass('maintenance-window-k-info-panel');
         },
     }
