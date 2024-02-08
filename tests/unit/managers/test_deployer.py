@@ -1,6 +1,5 @@
 """Tests for the deployer module."""
 
-from unittest import TestCase
 from unittest.mock import MagicMock
 
 from collections import Counter
@@ -16,9 +15,9 @@ from napps.kytos.maintenance.managers.deployer import (
     MaintenanceDeployer,
 )
 
-class TestDeployer(TestCase):
+class TestDeployer:
     """Test of the MaintenanceDeployer class."""
-    def setUp(self):
+    def setup_method(self):
         self.controller = get_controller_mock()
         self.start = datetime.now(pytz.utc)
         self.start += timedelta(days=1)

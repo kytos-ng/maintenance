@@ -1,6 +1,5 @@
 """Module to test MaintenanceController"""
 
-from unittest import TestCase
 from unittest.mock import MagicMock, patch, call
 
 from datetime import datetime, timedelta
@@ -9,10 +8,10 @@ import pytz
 from napps.kytos.maintenance.controllers import MaintenanceController
 from napps.kytos.maintenance.models import MaintenanceWindow, MaintenanceWindows
 
-class TestMaintenanceController(TestCase):
+class TestMaintenanceController:
     """Test the MaintenanceController Class"""
 
-    def setUp(self) -> None:
+    def setup_method(self) -> None:
         self.controller = MaintenanceController(MagicMock())
         self.now = datetime.now(pytz.utc)
         self.window_dict = {
@@ -49,7 +48,7 @@ class TestMaintenanceController(TestCase):
         ]
         mock = self.controller.mongo.bootstrap_index
         indexes = mock.call_args_list
-        self.assertEqual(indexes, expected_indexes)
+        assert indexes == expected_indexes
 
     @patch('napps.kytos.maintenance.controllers.datetime')
     def test_insert_window(self, dt_class):
@@ -86,18 +85,18 @@ class TestMaintenanceController(TestCase):
         mw_id = 'Test Window'
         self.controller.windows.find_one.return_value = self.window_dict
         result = self.controller.get_window(mw_id)
-        self.assertEqual(result, self.window)
+        assert result == self.window
 
     def test_get_window_2(self):
         """Test getting a window that does not exist."""
         mw_id = 'Test Window'
         self.controller.windows.find_one.return_value = None
         result = self.controller.get_window(mw_id)
-        self.assertEqual(result, None)
+        assert result == None
 
     def test_get_windows(self):
         """Test getting the set of windows."""
         self.controller.windows.find.return_value = [self.window_dict]
         expected = MaintenanceWindows.construct(__root__ = [self.window])
         result = self.controller.get_windows()
-        self.assertEqual(result, expected)
+        assert result == expected
