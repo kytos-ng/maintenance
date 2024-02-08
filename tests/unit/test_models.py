@@ -1,6 +1,5 @@
 """Tests for the models module."""
-
-from unittest import TestCase
+import pytest
 
 from datetime import datetime, timedelta
 import pytz
@@ -10,12 +9,12 @@ from napps.kytos.maintenance.models import MaintenanceWindow as MW, Status
 TIME_FMT = "%Y-%m-%dT%H:%M:%S%z"
 
 
-class TestMW(TestCase):
+class TestMW:
     """Test of the MaintenanceWindow class."""
 
     # pylint: disable=protected-access
 
-    def setUp(self):
+    def setup_method(self):
         """Initialize before tests are executed."""
         self.controller = get_controller_mock()
         self.start = datetime.now(pytz.utc)
@@ -45,12 +44,12 @@ class TestMW(TestCase):
             'inserted_at': None,
             'updated_at': None,
         }
-        self.assertEqual(mw_dict, expected_dict)
+        assert mw_dict == expected_dict
 
     def test_start_in_past(self):
         start = datetime.now(pytz.utc) - timedelta(days=1)
 
-        self.assertRaises(ValueError, MW,
+        pytest.raises(ValueError, MW,
             start=start,
             end=self.end,
             switches=self.switches,
@@ -59,7 +58,7 @@ class TestMW(TestCase):
     def test_end_before_start(self):
         end = datetime.now(pytz.utc) - timedelta(days=1)
 
-        self.assertRaises(ValueError, MW,
+        pytest.raises(ValueError, MW,
             start=self.start,
             end=end,
             switches=self.switches,
@@ -67,7 +66,7 @@ class TestMW(TestCase):
 
     def test_items_empty(self):
 
-        self.assertRaises(ValueError, MW,
+        pytest.raises(ValueError, MW,
             start=self.start,
             end=self.end,
         )

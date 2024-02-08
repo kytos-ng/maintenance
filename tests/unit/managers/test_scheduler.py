@@ -1,6 +1,5 @@
 """Tests for the scheduler module."""
 
-from unittest import TestCase
 from unittest.mock import  MagicMock, call
 
 from apscheduler.jobstores.base import JobLookupError
@@ -16,10 +15,10 @@ from napps.kytos.maintenance.managers.scheduler import (
     MaintenanceEnd,
 )
 
-class TestScheduler(TestCase):
+class TestScheduler:
     """Test of the Scheduler Class"""
     
-    def setUp(self) -> None:
+    def setup_method(self) -> None:
         self.maintenance_deployer = MagicMock()
         self.db_controller = MagicMock()
         self.task_scheduler = MagicMock()
@@ -70,7 +69,7 @@ class TestScheduler(TestCase):
         self.scheduler.start()
 
         resultant_schedule_calls = self.task_scheduler.add_job.call_args_list
-        self.assertEqual(resultant_schedule_calls, expected_schedule_calls)
+        assert resultant_schedule_calls == expected_schedule_calls
 
         self.maintenance_deployer.start_mw.assert_called_once_with(running_window)
 
@@ -135,7 +134,7 @@ class TestScheduler(TestCase):
 
         def side_effect(job_id, trigger):
             throw, expected_trigger = modify_job_effects[job_id]
-            self.assertEqual(trigger.run_date, expected_trigger.run_date)
+            assert trigger.run_date == expected_trigger.run_date
             if throw:
                 raise JobLookupError(job_id)
             else:
@@ -181,4 +180,3 @@ class TestScheduler(TestCase):
         end = MaintenanceEnd(self.scheduler, running_window.id)
         end()
         self.maintenance_deployer.end_mw.assert_called_once_with(next_window)
-
