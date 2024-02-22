@@ -246,7 +246,7 @@ class Main(KytosNApp):
                     self.controller.napps[('kytos', 'topology')]
                     .links.get(interface_id)
                     is None,
-                window.interfaces
+                window.links
             )
         )
 

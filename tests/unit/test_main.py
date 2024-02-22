@@ -43,10 +43,13 @@ class TestMain:
             "start": start.strftime(TIME_FMT),
             "end": end.strftime(TIME_FMT),
             "switches": [
-                "00:00:00:00:00:00:02",
+                "00:00:00:00:00:00:00:02", "00:00:00:00:00:00:00:03"
             ],
             'interfaces': [
-                "00:00:00:00:00:00:00:03:3",
+                "00:00:00:00:00:00:00:03:3", "00:00:00:00:00:00:00:02:1"
+            ],
+            "links": [
+                "cf0f4071be426b3f745027f5d22bc61f8312ae86293c9b28e7e66015607a9260", "4d42dc0852278accac7d9df15418f6d921db160b13d674029a87cef1b5f67f30"
             ],
         }
         response = await self.api.post(url, json=payload)
@@ -57,13 +60,94 @@ class TestMain:
     
         assert window.start == start.replace(microsecond=0)
         assert window.end == end.replace(microsecond=0)
-        assert window.switches == ['00:00:00:00:00:00:02']
-        assert window.interfaces == ['00:00:00:00:00:00:00:03:3']
-        assert window.links == []
+        assert window.switches == ['00:00:00:00:00:00:00:02', '00:00:00:00:00:00:00:03']
+        assert window.interfaces == ['00:00:00:00:00:00:00:03:3', '00:00:00:00:00:00:00:02:1']
+        assert window.links == ['cf0f4071be426b3f745027f5d22bc61f8312ae86293c9b28e7e66015607a9260', '4d42dc0852278accac7d9df15418f6d921db160b13d674029a87cef1b5f67f30']
         
         assert current_data == {'mw_id': window.id}
 
     async def test_create_mw_case_2(self, event_loop):
+        """Test a successful case of the REST to create."""
+        self.napp.controller.loop = event_loop
+        url = f'{self.base_endpoint}'
+        start = datetime.now(pytz.utc) + timedelta(days=1)
+        end = start + timedelta(hours=2)
+        payload = {
+            "start": start.strftime(TIME_FMT),
+            "end": end.strftime(TIME_FMT),
+            "switches": [
+                "00:00:00:00:00:00:00:01",
+            ]
+        }
+        response = await self.api.post(url, json=payload)
+        current_data = response.json()
+        assert response.status_code == 201, current_data
+        args, kwargs = self.scheduler.add.call_args
+        window: MW = args[0]
+    
+        assert window.start == start.replace(microsecond=0)
+        assert window.end == end.replace(microsecond=0)
+        assert window.switches == ['00:00:00:00:00:00:00:01']
+        assert window.interfaces == []
+        assert window.links == []
+        
+        assert current_data == {'mw_id': window.id}
+
+    async def test_create_mw_case_3(self, event_loop):
+        """Test a successful case of the REST to create."""
+        self.napp.controller.loop = event_loop
+        url = f'{self.base_endpoint}'
+        start = datetime.now(pytz.utc) + timedelta(days=1)
+        end = start + timedelta(hours=2)
+        payload = {
+            "start": start.strftime(TIME_FMT),
+            "end": end.strftime(TIME_FMT),
+            'interfaces': [
+                "00:00:00:00:00:00:00:01:1",
+            ],
+        }
+        response = await self.api.post(url, json=payload)
+        current_data = response.json()
+        assert response.status_code == 201, current_data
+        args, kwargs = self.scheduler.add.call_args
+        window: MW = args[0]
+    
+        assert window.start == start.replace(microsecond=0)
+        assert window.end == end.replace(microsecond=0)
+        assert window.switches == []
+        assert window.interfaces == ['00:00:00:00:00:00:00:01:1']
+        assert window.links == []
+        
+        assert current_data == {'mw_id': window.id}
+
+    async def test_create_mw_case_4(self, event_loop):
+        """Test a successful case of the REST to create."""
+        self.napp.controller.loop = event_loop
+        url = f'{self.base_endpoint}'
+        start = datetime.now(pytz.utc) + timedelta(days=1)
+        end = start + timedelta(hours=2)
+        payload = {
+            "start": start.strftime(TIME_FMT),
+            "end": end.strftime(TIME_FMT),
+            "links": [
+                "cf0f4071be426b3f745027f5d22bc61f8312ae86293c9b28e7e66015607a9260",
+            ]
+        }
+        response = await self.api.post(url, json=payload)
+        current_data = response.json()
+        assert response.status_code == 201, current_data
+        args, kwargs = self.scheduler.add.call_args
+        window: MW = args[0]
+    
+        assert window.start == start.replace(microsecond=0)
+        assert window.end == end.replace(microsecond=0)
+        assert window.switches == []
+        assert window.interfaces == []
+        assert window.links == ['cf0f4071be426b3f745027f5d22bc61f8312ae86293c9b28e7e66015607a9260']
+        
+        assert current_data == {'mw_id': window.id}
+
+    async def test_create_mw_case_5(self, event_loop):
         """Test a fail case of the REST to create a maintenance window."""
         self.napp.controller.loop = event_loop
         url = f'{self.base_endpoint}'
@@ -79,7 +163,7 @@ class TestMain:
         assert response.status_code == 400
         self.scheduler.add.assert_not_called()
 
-    async def test_create_mw_case_3(self, event_loop):
+    async def test_create_mw_case_6(self, event_loop):
         """Test a fail case of the REST to create a maintenance window."""
         self.napp.controller.loop = event_loop
         url = f'{self.base_endpoint}'
@@ -102,7 +186,7 @@ class TestMain:
                          'start: Start in the past not allowed'
         self.scheduler.add.assert_not_called()
 
-    async def test_create_mw_case_4(self, event_loop):
+    async def test_create_mw_case_7(self, event_loop):
         """Test a fail case of the REST to create a maintenance window."""
         self.napp.controller.loop = event_loop
         url = f'{self.base_endpoint}'
@@ -127,7 +211,7 @@ class TestMain:
         self.scheduler.add.assert_not_called()
 
     @pytest.mark.skip(reason="Future feature")
-    async def test_create_mw_case_5(self, event_loop):
+    async def test_create_mw_case_8(self, event_loop):
         """Test a fail case of the REST to create a maintenance window."""
         self.napp.controller.loop = event_loop
         url = f'{self.base_endpoint}'
@@ -152,7 +236,7 @@ class TestMain:
                          'Setting a maintenance id is not allowed'
         self.scheduler.add.assert_not_called()
 
-    async def test_create_mw_case_6(self, event_loop):
+    async def test_create_mw_case_9(self, event_loop):
         """Test a fail case of the REST to create a maintenance window."""
         self.napp.controller.loop = event_loop
         url = f'{self.base_endpoint}'
