@@ -16,21 +16,21 @@ from setuptools.command.develop import develop
 from setuptools.command.egg_info import egg_info
 from setuptools.command.install import install
 
-if 'bdist_wheel' in sys.argv:
+if "bdist_wheel" in sys.argv:
     raise RuntimeError("This setup.py does not support wheels")
 
 # Paths setup with virtualenv detection
-BASE_ENV = Path(os.environ.get('VIRTUAL_ENV', '/'))
+BASE_ENV = Path(os.environ.get("VIRTUAL_ENV", "/"))
 
-NAPP_NAME = 'maintenance'
+NAPP_NAME = "maintenance"
 
 # Kytos var folder
-VAR_PATH = BASE_ENV / 'var' / 'lib' / 'kytos'
+VAR_PATH = BASE_ENV / "var" / "lib" / "kytos"
 # Path for enabled NApps
-ENABLED_PATH = VAR_PATH / 'napps'
+ENABLED_PATH = VAR_PATH / "napps"
 # Path to install NApps
-INSTALLED_PATH = VAR_PATH / 'napps' / '.installed'
-CURRENT_DIR = Path('.').resolve()
+INSTALLED_PATH = VAR_PATH / "napps" / ".installed"
+CURRENT_DIR = Path(".").resolve()
 
 CORE_NAPPS = []
 
@@ -80,13 +80,13 @@ class TestCommand(Command):
 class Cleaner(SimpleCommand):
     """Custom clean command to tidy up the project root."""
 
-    description = 'clean build, dist, pyc and egg from package and docs'
+    description = "clean build, dist, pyc and egg from package and docs"
 
     def run(self):
         """Clean build, dist, pyc and egg from package and docs."""
-        call('rm -vrf ./build ./dist ./*.egg-info', shell=True)
-        call('find . -name __pycache__ -type d | xargs rm -rf', shell=True)
-        call('make -C docs/ clean', shell=True)
+        call("rm -vrf ./build ./dist ./*.egg-info", shell=True)
+        call("find . -name __pycache__ -type d | xargs rm -rf", shell=True)
+        call("make -C docs/ clean", shell=True)
 
 
 class Test(TestCommand):
@@ -101,7 +101,7 @@ class Test(TestCommand):
             check_call(cmd, shell=True)
         except CalledProcessError as exc:
             print(exc)
-            print('Unit tests failed. Fix the errors above and try again.')
+            print("Unit tests failed. Fix the errors above and try again.")
             sys.exit(-1)
 
 
@@ -117,24 +117,24 @@ class TestCoverage(Test):
             check_call(cmd, shell=True)
         except CalledProcessError as exc:
             print(exc)
-            print('Coverage tests failed. Fix the errors above and try again.')
+            print("Coverage tests failed. Fix the errors above and try again.")
             sys.exit(-1)
 
 
 class Linter(SimpleCommand):
     """Code linters."""
 
-    description = 'lint Python source code'
+    description = "lint Python source code"
 
     def run(self):
         """Run Yala."""
-        print('Yala is running. It may take several seconds...')
+        print("Yala is running. It may take several seconds...")
         try:
-            cmd = 'yala *.py tests/*.py'
+            cmd = "yala *.py tests/*.py"
             check_call(cmd, shell=True)
-            print('No linter error found.')
+            print("No linter error found.")
         except RuntimeError as error:
-            print('Linter check failed. Fix the error(s) above and try again.')
+            print("Linter check failed. Fix the error(s) above and try again.")
             print(error)
             sys.exit(-1)
 
@@ -145,9 +145,9 @@ class KytosInstall:
     @staticmethod
     def enable_core_napps():
         """Enable a NAPP by creating a symlink."""
-        (ENABLED_PATH / 'kytos').mkdir(parents=True, exist_ok=True)
+        (ENABLED_PATH / "kytos").mkdir(parents=True, exist_ok=True)
         for napp in CORE_NAPPS:
-            napp_path = Path('kytos', napp)
+            napp_path = Path("kytos", napp)
             src = ENABLED_PATH / napp_path
             dst = INSTALLED_PATH / napp_path
             symlink_if_different(src, dst)
@@ -174,9 +174,10 @@ class EggInfo(egg_info):
     @staticmethod
     def _install_deps_wheels():
         """Python wheels are much faster (no compiling)."""
-        print('Installing dependencies...')
-        check_call([sys.executable, '-m', 'pip', 'install', '-r',
-                    'requirements/run.txt'])
+        print("Installing dependencies...")
+        check_call(
+            [sys.executable, "-m", "pip", "install", "-r", "requirements/run.txt"]
+        )
 
 
 class DevelopMode(develop):
@@ -186,7 +187,7 @@ class DevelopMode(develop):
     created on the system aiming the current source code.
     """
 
-    description = 'Install NApps in development mode'
+    description = "Install NApps in development mode"
 
     def run(self):
         """Install the package in a developer mode."""
@@ -205,21 +206,21 @@ class DevelopMode(develop):
         ./napps/kytos/napp_name will generate a link in
         var/lib/kytos/napps/.installed/kytos/napp_name.
         """
-        links = INSTALLED_PATH / 'kytos'
+        links = INSTALLED_PATH / "kytos"
         links.mkdir(parents=True, exist_ok=True)
         code = CURRENT_DIR
         src = links / NAPP_NAME
         symlink_if_different(src, code)
 
-        (ENABLED_PATH / 'kytos').mkdir(parents=True, exist_ok=True)
-        dst = ENABLED_PATH / Path('kytos', NAPP_NAME)
+        (ENABLED_PATH / "kytos").mkdir(parents=True, exist_ok=True)
+        dst = ENABLED_PATH / Path("kytos", NAPP_NAME)
         symlink_if_different(dst, src)
 
     @staticmethod
     def _create_file_symlinks():
         """Symlink to required files."""
-        src = ENABLED_PATH / '__init__.py'
-        dst = CURRENT_DIR / 'napps' / '__init__.py'
+        src = ENABLED_PATH / "__init__.py"
+        dst = CURRENT_DIR / "napps" / "__init__.py"
         symlink_if_different(src, dst)
 
 
@@ -238,43 +239,41 @@ def symlink_if_different(path, target):
 
 def read_version_from_json():
     """Read the NApp version from NApp kytos.json file."""
-    file = Path('kytos.json')
+    file = Path("kytos.json")
     metadata = json.loads(file.read_text(encoding="utf8"))
-    return metadata['version']
+    return metadata["version"]
 
 
 def read_requirements(path="requirements/run.txt"):
     """Read requirements file and return a list."""
     with open(path, "r", encoding="utf8") as file:
-        return [
-            line.strip()
-            for line in file.readlines()
-            if not line.startswith("#")
-        ]
+        return [line.strip() for line in file.readlines() if not line.startswith("#")]
 
 
-setup(name=f'kytos_{NAPP_NAME}',
-      version=read_version_from_json(),
-      description='Core NApps developed by Kytos Team',
-      url='http://github.com/kytos/{NAPP_NAME}',
-      author='Kytos Team',
-      author_email='of-ng-dev@ncc.unesp.br',
-      license='MIT',
-      install_requires=read_requirements(),
-      packages=[],
-      cmdclass={
-          'clean': Cleaner,
-          'coverage': TestCoverage,
-          'develop': DevelopMode,
-          'install': InstallMode,
-          'lint': Linter,
-          'egg_info': EggInfo,
-          'test': Test
-      },
-      zip_safe=False,
-      classifiers=[
-          'License :: OSI Approved :: MIT License',
-          'Operating System :: POSIX :: Linux',
-          'Programming Language :: Python :: 3.6',
-          'Topic :: System :: Networking',
-      ])
+setup(
+    name=f"kytos_{NAPP_NAME}",
+    version=read_version_from_json(),
+    description="Core NApps developed by Kytos Team",
+    url="http://github.com/kytos/{NAPP_NAME}",
+    author="Kytos Team",
+    author_email="of-ng-dev@ncc.unesp.br",
+    license="MIT",
+    install_requires=read_requirements(),
+    packages=[],
+    cmdclass={
+        "clean": Cleaner,
+        "coverage": TestCoverage,
+        "develop": DevelopMode,
+        "install": InstallMode,
+        "lint": Linter,
+        "egg_info": EggInfo,
+        "test": Test,
+    },
+    zip_safe=False,
+    classifiers=[
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: POSIX :: Linux",
+        "Programming Language :: Python :: 3.6",
+        "Topic :: System :: Networking",
+    ],
+)
