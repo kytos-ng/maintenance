@@ -1,6 +1,6 @@
 """Tests for the main madule."""
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, call, MagicMock
 from datetime import datetime, timedelta
 
 import pytz
@@ -39,6 +39,16 @@ class TestMain:
         url = f'{self.base_endpoint}'
         start = datetime.now(pytz.utc) + timedelta(days=1)
         end = start + timedelta(hours=2)
+        self.controller.switches = MagicMock()
+        self.controller.get_interface_by_id = MagicMock()
+        self.controller.napps[('kytos', 'topology')].links = MagicMock()
+        switches = {"00:00:00:00:00:00:00:02": 1, "00:00:00:00:00:00:00:03": 2}
+        interfaces = {"00:00:00:00:00:00:00:03:3": 1, "00:00:00:00:00:00:00:02:1": 2}
+        links = {"cf0f4071be426b3f745027f5d22bc61f8312ae86293c9b28e7e66015607a9260": 1, "4d42dc0852278accac7d9df15418f6d921db160b13d674029a87cef1b5f67f30": 2}
+        self.controller.switches.get.side_effect = switches.get
+        get_interface_side_effect = lambda interface_id: interfaces.get(interface_id)
+        self.controller.get_interface_by_id.side_effect = get_interface_side_effect
+        self.controller.napps[('kytos', 'topology')].links.get.side_effect = links.get
         payload = {
             "start": start.strftime(TIME_FMT),
             "end": end.strftime(TIME_FMT),
@@ -54,10 +64,16 @@ class TestMain:
         }
         response = await self.api.post(url, json=payload)
         current_data = response.json()
+        switch_calls = [call("00:00:00:00:00:00:00:02"), call("00:00:00:00:00:00:00:03")]
+        self.controller.switches.get.assert_has_calls(switch_calls)
+        interface_calls = [call("00:00:00:00:00:00:00:03:3"), call("00:00:00:00:00:00:00:02:1")]
+        self.controller.get_interface_by_id.assert_has_calls(interface_calls)
+        link_calls = [call("cf0f4071be426b3f745027f5d22bc61f8312ae86293c9b28e7e66015607a9260"), call("4d42dc0852278accac7d9df15418f6d921db160b13d674029a87cef1b5f67f30")]
+        self.controller.napps[('kytos', 'topology')].links.get.assert_has_calls(link_calls)
         assert response.status_code == 201, current_data
         args, kwargs = self.scheduler.add.call_args
         window: MW = args[0]
-    
+
         assert window.start == start.replace(microsecond=0)
         assert window.end == end.replace(microsecond=0)
         assert window.switches == ['00:00:00:00:00:00:00:02', '00:00:00:00:00:00:00:03']
@@ -72,6 +88,9 @@ class TestMain:
         url = f'{self.base_endpoint}'
         start = datetime.now(pytz.utc) + timedelta(days=1)
         end = start + timedelta(hours=2)
+        self.controller.switches = MagicMock()
+        switches = {"00:00:00:00:00:00:00:01": 1}
+        self.controller.switches.get.side_effect = switches.get
         payload = {
             "start": start.strftime(TIME_FMT),
             "end": end.strftime(TIME_FMT),
@@ -81,6 +100,7 @@ class TestMain:
         }
         response = await self.api.post(url, json=payload)
         current_data = response.json()
+        self.controller.switches.get.assert_called_with("00:00:00:00:00:00:00:01")
         assert response.status_code == 201, current_data
         args, kwargs = self.scheduler.add.call_args
         window: MW = args[0]
@@ -99,26 +119,34 @@ class TestMain:
         url = f'{self.base_endpoint}'
         start = datetime.now(pytz.utc) + timedelta(days=1)
         end = start + timedelta(hours=2)
+        self.controller.get_interface_by_id = MagicMock()
+        interfaces = {"00:00:00:00:00:00:00:01:1": 1}
+        get_interface_side_effect = lambda interface_id: interfaces.get(interface_id)
+        self.controller.get_interface_by_id.side_effect = get_interface_side_effect
         payload = {
+            "id": "some_mw",
+            "description": "some_mw",
             "start": start.strftime(TIME_FMT),
             "end": end.strftime(TIME_FMT),
-            'interfaces': [
+            "interfaces": [
                 "00:00:00:00:00:00:00:01:1",
             ],
         }
         response = await self.api.post(url, json=payload)
         current_data = response.json()
+        self.controller.get_interface_by_id.assert_called_with("00:00:00:00:00:00:00:01:1")
         assert response.status_code == 201, current_data
         args, kwargs = self.scheduler.add.call_args
+        response = await self.api.get(f'{url}/some_mw')
         window: MW = args[0]
-    
+
         assert window.start == start.replace(microsecond=0)
         assert window.end == end.replace(microsecond=0)
         assert window.switches == []
         assert window.interfaces == ['00:00:00:00:00:00:00:01:1']
         assert window.links == []
         
-        assert current_data == {'mw_id': window.id}
+        assert current_data == {'mw_id': "some_mw"}
 
     async def test_create_mw_case_4(self, event_loop):
         """Test a successful case of the REST to create."""
@@ -126,6 +154,9 @@ class TestMain:
         url = f'{self.base_endpoint}'
         start = datetime.now(pytz.utc) + timedelta(days=1)
         end = start + timedelta(hours=2)
+        self.controller.napps[('kytos', 'topology')].links = MagicMock()
+        links = {"cf0f4071be426b3f745027f5d22bc61f8312ae86293c9b28e7e66015607a9260": 1}
+        self.controller.napps[('kytos', 'topology')].links.get.side_effect = links.get
         payload = {
             "start": start.strftime(TIME_FMT),
             "end": end.strftime(TIME_FMT),
@@ -135,6 +166,7 @@ class TestMain:
         }
         response = await self.api.post(url, json=payload)
         current_data = response.json()
+        self.controller.napps[('kytos', 'topology')].links.get.assert_called_with("cf0f4071be426b3f745027f5d22bc61f8312ae86293c9b28e7e66015607a9260")
         assert response.status_code == 201, current_data
         args, kwargs = self.scheduler.add.call_args
         window: MW = args[0]

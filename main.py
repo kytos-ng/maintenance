@@ -242,11 +242,11 @@ class Main(KytosNApp):
         )
         non_existant_links = list(
             filter(
-                lambda interface_id:
+                lambda link_id:
                     self.controller.napps[('kytos', 'topology')]
-                    .links.get(interface_id)
+                    .links.get(link_id)
                     is None,
-                window.links
+                window.interfaces
             )
         )
 
