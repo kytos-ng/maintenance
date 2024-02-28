@@ -66,6 +66,7 @@ class TestMain:
         }
         response = await self.api.post(url, json=payload)
         current_data = response.json()
+        assert response.status_code == 201, current_data
         switch_calls = [
             call("00:00:00:00:00:00:00:02"),
             call("00:00:00:00:00:00:00:03"),
@@ -83,7 +84,6 @@ class TestMain:
         self.controller.napps[("kytos", "topology")].links.get.assert_has_calls(
             link_calls
         )
-        assert response.status_code == 201, current_data
         args, kwargs = self.scheduler.add.call_args
         window: MW = args[0]
 
@@ -119,8 +119,8 @@ class TestMain:
         }
         response = await self.api.post(url, json=payload)
         current_data = response.json()
-        self.controller.switches.get.assert_called_with("00:00:00:00:00:00:00:01")
         assert response.status_code == 201, current_data
+        self.controller.switches.get.assert_called_with("00:00:00:00:00:00:00:01")
         args, kwargs = self.scheduler.add.call_args
         window: MW = args[0]
 
@@ -153,6 +153,7 @@ class TestMain:
         }
         response = await self.api.post(url, json=payload)
         current_data = response.json()
+        assert response.status_code == 201, current_data
         self.controller.get_interface_by_id.assert_called_with(
             "00:00:00:00:00:00:00:01:1"
         )
@@ -187,6 +188,7 @@ class TestMain:
         }
         response = await self.api.post(url, json=payload)
         current_data = response.json()
+        assert response.status_code == 201, current_data
         self.controller.napps[("kytos", "topology")].links.get.assert_called_with(
             "cf0f4071be426b3f745027f5d22bc61f8312ae86293c9b28e7e66015607a9260"
         )
