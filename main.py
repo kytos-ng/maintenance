@@ -232,7 +232,7 @@ class Main(KytosNApp):
                     link_id
                 )
                 is None,
-                window.interfaces,
+                window.links,
             )
         )
 
