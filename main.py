@@ -158,7 +158,7 @@ class Main(KytosNApp):
             )
         self.scheduler.remove(mw_id)
         return JSONResponse(
-            {"response": f"Maintenance with id {mw_id} " f"successfully removed"}
+            {"response": f"Maintenance with id {mw_id} successfully removed"}
         )
 
     @rest("/v1/{mw_id}/end", methods=["PATCH"])
