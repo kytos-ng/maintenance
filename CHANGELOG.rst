@@ -17,6 +17,7 @@ Removed
 
 Fixed
 =====
+- Fixed bug that caused links to be filtered incorrectly with interfaces
 
 Security
 ========
