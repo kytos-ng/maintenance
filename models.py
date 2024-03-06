@@ -3,6 +3,7 @@
 This module define models for the maintenance window itself and the
 scheduler.
 """
+
 from datetime import datetime
 from enum import Enum
 from typing import NewType, Optional
@@ -11,7 +12,14 @@ from uuid import uuid4
 import pytz
 
 # pylint: disable=no-name-in-module
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import (
+    BaseModel,
+    Field,
+    RootModel,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 
 # pylint: enable=no-name-in-module
 
@@ -45,39 +53,43 @@ class MaintenanceWindow(BaseModel):
 
     # pylint: disable=no-self-argument
 
-    @validator("start", "end", pre=True)
+    @field_validator("start", "end", mode="before")
+    @classmethod
     def convert_time(cls, time):
         """Convert time strings using TIME_FMT"""
         if isinstance(time, str):
             time = datetime.strptime(time, TIME_FMT)
         return time
 
-    @validator("start")
+    @field_validator("start")
+    @classmethod
     def check_start_in_past(cls, start_time):
         """Check if the start is set to occur before now."""
         if start_time < datetime.now(pytz.utc):
             raise ValueError("Start in the past not allowed")
         return start_time
 
-    @validator("end")
-    def check_end_before_start(cls, end_time, values):
+    @field_validator("end")
+    @classmethod
+    def check_end_before_start(cls, end_time, values: ValidationInfo):
         """Check if the end is set to occur before the start."""
-        if "start" in values and end_time <= values["start"]:
+        if "start" in values.data and end_time <= values.data["start"]:
             raise ValueError("End before start not allowed")
         return end_time
 
-    @root_validator
-    def check_items_empty(cls, values):
+    @model_validator(mode="after")
+    def check_items_empty(self):
         """Check if no items are in the maintenance window."""
         no_items = all(
             map(
-                lambda key: key not in values or len(values[key]) == 0,
+                lambda key: key not in self.model_dump()
+                or len(self.model_dump()[key]) == 0,
                 ["switches", "links", "interfaces"],
             )
         )
         if no_items:
             raise ValueError("At least one item must be provided")
-        return values
+        return self
 
     # pylint: enable=no-self-argument
 
@@ -92,19 +104,19 @@ class MaintenanceWindow(BaseModel):
         }
 
 
-class MaintenanceWindows(BaseModel):
+class MaintenanceWindows(RootModel):
     """List of Maintenance Windows for json conversion."""
 
-    __root__: list[MaintenanceWindow]
+    root: list[MaintenanceWindow]
 
     def __iter__(self):
-        return iter(self.__root__)
+        return iter(self.root)
 
     def __getitem__(self, item):
-        return self.__root__[item]
+        return self.root[item]
 
     def __len__(self):
-        return len(self.__root__)
+        return len(self.root)
 
     class Config:
         """Config for encoding MaintenanceWindows class"""

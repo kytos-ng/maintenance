@@ -25,7 +25,7 @@ class TestScheduler:
         
         self.now = datetime.now(pytz.utc)
 
-        self.window = MW.construct(
+        self.window = MW.model_construct(
             id = 'Test Window',
             description = '',
             start = self.now + timedelta(hours=1),

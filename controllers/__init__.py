@@ -62,7 +62,7 @@ class MaintenanceController:
     def insert_window(self, window: MaintenanceWindow):
         now = datetime.now(pytz.utc)
         self.windows.insert_one({
-                    **window.dict(exclude={'inserted_at', 'updated_at'}),
+                    **window.model_dump(exclude={'inserted_at', 'updated_at'}),
                     'inserted_at': now,
                     'updated_at': now,
         })
@@ -72,7 +72,7 @@ class MaintenanceController:
             {'id': window.id},
             [{
                 '$set': {
-                    **window.dict(exclude={'inserted_at', 'updated_at'}),
+                    **window.model_dump(exclude={'inserted_at', 'updated_at'}),
                     'updated_at': '$$NOW',
                 },
             }],
@@ -86,7 +86,7 @@ class MaintenanceController:
         if window is None:
             return None
         else:
-            return MaintenanceWindow.construct(**window)
+            return MaintenanceWindow.model_construct(**window)
 
     def start_window(self, mw_id: MaintenanceID) -> MaintenanceWindow:
         window = self.windows.find_one_and_update(
@@ -100,7 +100,7 @@ class MaintenanceController:
             {'_id': False},
             return_document=pymongo.ReturnDocument.AFTER,
         )
-        return MaintenanceWindow.construct(**window)
+        return MaintenanceWindow.model_construct(**window)
 
     def end_window(self, mw_id: MaintenanceID) -> MaintenanceWindow:
         window = self.windows.find_one_and_update(
@@ -114,7 +114,7 @@ class MaintenanceController:
             {'_id': False},
             return_document=pymongo.ReturnDocument.AFTER,
         )
-        return MaintenanceWindow.construct(**window)
+        return MaintenanceWindow.model_construct(**window)
 
     def check_overlap(self, window):
         # If two time periods are overlapping,
@@ -137,14 +137,14 @@ class MaintenanceController:
             },
             {'_id': False}
         )
-        return MaintenanceWindows.construct(
-            __root__ = [MaintenanceWindow.construct(**window) for window in windows]
+        return MaintenanceWindows.model_construct(
+            root = [MaintenanceWindow.model_construct(**window) for window in windows]
         )
 
     def get_windows(self) -> MaintenanceWindows:
         windows = self.windows.find(projection={'_id': False})
-        return MaintenanceWindows.construct(
-            __root__ = [MaintenanceWindow.construct(**window) for window in windows]
+        return MaintenanceWindows.model_construct(
+            root = [MaintenanceWindow.model_construct(**window) for window in windows]
         )
 
     def get_unfinished_windows(self) -> MaintenanceWindows:
@@ -152,8 +152,8 @@ class MaintenanceController:
             {'status': {'$ne': Status.FINISHED}},
             projection={'_id': False}
         )
-        return MaintenanceWindows.construct(
-            __root__ = [MaintenanceWindow.construct(**window) for window in windows]
+        return MaintenanceWindows.model_construct(
+            root = [MaintenanceWindow.model_construct(**window) for window in windows]
         )
 
     def remove_window(self, mw_id: MaintenanceID):

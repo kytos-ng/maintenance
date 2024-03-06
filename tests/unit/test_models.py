@@ -31,7 +31,7 @@ class TestMW:
 
     def test_as_dict(self):
         """Test as_dict method."""
-        mw_dict = self.maintenance.dict()
+        mw_dict = self.maintenance.model_dump()
         expected_dict = {
             'description': '',
             'start': self.start,
