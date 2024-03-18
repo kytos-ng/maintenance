@@ -6,24 +6,12 @@ All notable changes to the Maintenance NApp will be documented in this file.
 [UNRELEASED] - Under development
 ********************************
 
-Added
-=====
-
-Deprecated
-==========
-
-Removed
-=======
+[2023.2.0] - 2024-02-16
+***********************
 
 Fixed
 =====
 - Fixed bug that caused links to be filtered incorrectly with interfaces
-
-Security
-========
-
-Changed
-=======
 
 [2023.1.0] - 2023-06-26
 ***********************
