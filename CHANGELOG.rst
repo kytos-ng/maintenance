@@ -11,27 +11,12 @@ Changed
 - Updated python environment installation from 3.9 to 3.11
 - Updated test dependencies
 
-[UNRELEASED] - Under development
-********************************
-
-Added
-=====
-
-Deprecated
-==========
-
-Removed
-=======
+[2023.2.0] - 2024-02-16
+***********************
 
 Fixed
 =====
 - Fixed bug that caused links to be filtered incorrectly with interfaces
-
-Security
-========
-
-Changed
-=======
 
 [2023.1.0] - 2023-06-26
 ***********************
