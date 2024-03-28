@@ -26,7 +26,7 @@ class TestMaintenanceController:
             'updated_at': self.now - timedelta(days=1),
             'inserted_at': self.now - timedelta(days=1),
         }
-        self.window = MaintenanceWindow.construct(
+        self.window = MaintenanceWindow.model_construct(
             id = 'Test Window',
             description = '',
             start = self.now + timedelta(hours=1),
@@ -97,6 +97,6 @@ class TestMaintenanceController:
     def test_get_windows(self):
         """Test getting the set of windows."""
         self.controller.windows.find.return_value = [self.window_dict]
-        expected = MaintenanceWindows.construct(__root__ = [self.window])
+        expected = MaintenanceWindows.model_construct(root = [self.window])
         result = self.controller.get_windows()
         assert result == expected

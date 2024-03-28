@@ -3,6 +3,7 @@
 This NApp creates maintenance windows, allowing the maintenance of network
 devices (switch, link, and interface) without receiving alerts.
 """
+
 from datetime import timedelta
 
 from napps.kytos.maintenance.managers import MaintenanceDeployer as Deployer
@@ -136,7 +137,7 @@ class Main(KytosNApp):
                 400, detail="Updating a maintenance status is not allowed"
             )
         try:
-            new_maintenance = MW.parse_obj({**old_maintenance.dict(), **data})
+            new_maintenance = MW.parse_obj({**old_maintenance.model_dump(), **data})
         except ValidationError as err:
             msg = error_msg(err.errors())
             raise HTTPException(400, detail=msg) from err
