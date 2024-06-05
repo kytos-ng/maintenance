@@ -39,7 +39,7 @@
     <div v-else>
         <div class="maintenance_container">
             <p class='empty-window-list' v-if='loading'>Loading maintenace windows. Please wait...</p>
-            <p class='empty-window-list' v-else>No maintenance windows available.<p>
+            <p class='empty-window-list' v-else>No maintenance windows available.</p>
         </div>
     </div>
 </template>
