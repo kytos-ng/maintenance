@@ -31,13 +31,13 @@
                                 <th>Items</th>
                                 <td>
                                     <div :class="'editable-' + property_editable['Links']">
-                                        <k-select icon="link" title="Links" :options="links_options" :value.sync="chosen_links"></k-select>
+                                        <k-select icon="link" title="Links" :options="links_options" v-model:value="chosen_links"></k-select>
                                     </div>
                                     <div :class="'editable-' + property_editable['Switches']">
-                                        <k-select icon="link" title="Switches" :options="switches_options" :value.sync="chosen_switches"></k-select>
+                                        <k-select icon="link" title="Switches" :options="switches_options" v-model:value="chosen_switches"></k-select>
                                     </div>
                                     <div :class="'editable-' + property_editable['Interfaces']">
-                                        <k-select  icon="link" title="Interfaces" :options="interfaces_options" :value.sync="chosen_interfaces"></k-select>
+                                        <k-select  icon="link" title="Interfaces" :options="interfaces_options" v-model:value="chosen_interfaces"></k-select>
                                     </div>
                                 </td>
                         </template>
@@ -68,6 +68,7 @@
                         </div>
                 </template>
             </div>
+        </div>
         <div class="window-buttons">
             <div class="window-buttons-bottom">
                 <div class="window-finish-button">
@@ -77,7 +78,7 @@
                     <k-button title="Extend Window" :on_click="extendWindow"></k-button>
                 </div>
                 <div class = "minute-input-field">
-                    <k-input placeholder = "Enter minutes (click extend)" :value.sync ="minutes"></k-input>  
+                    <k-input placeholder = "Enter minutes (click extend)" v-model:value ="minutes"></k-input>  
                 </div>
             </div>
         </div>
@@ -119,7 +120,7 @@
                     "title": "View Windows",
                     "subtitle": "by kytos/Maintenance"
                 }
-                this.$kytos.$emit("showInfoPanel", listWindows)
+                this.$kytos.eventBus.$emit("showInfoPanel", listWindows)
             },
             /*
                 Saves the maintenance window.
@@ -184,7 +185,7 @@
                         description: ''
                     }
                     // Notify on success.
-                    _this.$kytos.$emit("setNotification", notification)
+                    _this.$kytos.eventBus.$emit("setNotification", notification)
                     // Refresh the window.
                     _this.resetItemSelection()
                     _this.loadMaintenanceWindow(_this.window_data.Id)
@@ -202,7 +203,7 @@
                         description: 'Error updating window "' + _this.window_data.Id + '". ' + _this.capitalize(status) + ': ' +  error_message
                     }
                     // Notify on failure.
-                    _this.$kytos.$emit("setNotification", notification)
+                    _this.$kytos.eventBus.$emit("setNotification", notification)
                 })
             },
             /*
@@ -250,7 +251,7 @@
                         description: 'Error loading window "' + _this.window_data.id + '". ' + _this.capitalize(status) + ': ' +  JSON.parse(jqXHR.responseText).response
                     }
                     // Notify on failure.
-                    _this.$kytos.$emit("setNotification", notification)
+                    _this.$kytos.eventBus.$emit("setNotification", notification)
                 })
             },
             /*
@@ -353,7 +354,7 @@
                         description: 'Error deleting window "' + _this.window_data.Id + '". ' + _this.capitalize(status) + ': ' +  JSON.parse(jqXHR.responseText).response
                     }
                     // Notify failure.
-                    _this.$kytos.$emit("setNotification" , notification);
+                    _this.$kytos.eventBus.$emit("setNotification" , notification);
                 });
             },
             /*
@@ -413,7 +414,7 @@
                         description: 'Error getting links for editing',
                     }
                     // Notify failure.
-                    _this.$kytos.$emit("setNotification" , notification);
+                    _this.$kytos.eventBus.$emit("setNotification" , notification);
                 })
             },
             /*
@@ -455,7 +456,7 @@
                         description: 'Error getting switches for editing',
                     }
                     // Notify failure.
-                    _this.$kytos.$emit("setNotification" , notification);
+                    _this.$kytos.eventBus.$emit("setNotification" , notification);
                 })
             },
             /*
@@ -497,7 +498,7 @@
                         description: 'Error getting interfaces for editing',
                     }
                     // Notify failure
-                    _this.$kytos.$emit("setNotification" , notification);
+                    _this.$kytos.eventBus.$emit("setNotification" , notification);
                 })
             },
             /*
@@ -594,7 +595,7 @@
                         description: ''
                     }
                     // Notify on success.
-                    _this.$kytos.$emit("setNotification", notification)
+                    _this.$kytos.eventBus.$emit("setNotification", notification)
                     // Refresh the window.
                     _this.resetItemSelection()
                     _this.loadMaintenanceWindow(_this.window_data.Id)
@@ -612,7 +613,7 @@
                         description: 'Error finishing window "' + _this.window_data.Id + '". ' + _this.capitalize(status) + ': ' +  error_message
                     }
                     // Notify on failure.
-                    _this.$kytos.$emit("setNotification", notification)
+                    _this.$kytos.eventBus.$emit("setNotification", notification)
                 })
             },
             /*
@@ -635,7 +636,7 @@
                         description: ''
                     }
                     // Notify on success.
-                    _this.$kytos.$emit("setNotification", notification)
+                    _this.$kytos.eventBus.$emit("setNotification", notification)
                     // Refresh the window.
                     _this.resetItemSelection()
                     _this.loadMaintenanceWindow(_this.window_data.Id)
@@ -653,7 +654,7 @@
                         description: 'Error extending window "' + _this.window_data.Id + '". ' + _this.capitalize(status) + ': ' +  error_message
                     }
                     // Notify on failure.
-                    _this.$kytos.$emit("setNotification", notification)
+                    _this.$kytos.eventBus.$emit("setNotification", notification)
                 })           
              },
         },
@@ -662,7 +663,7 @@
             this.loadTopologyForEditing()
             $('.k-info-panel:has(.maintenance-window-container)').addClass('maintenance-window-k-info-panel');
         },
-        destroyed() {
+        unmounted() {
             $('.k-info-panel').removeClass('maintenance-window-k-info-panel');
         },
     }
