@@ -3,15 +3,15 @@
         <div class="window-buttons">
             <div class="window-buttons-left">
                 <div class="window-back-button">
-                    <k-button tooltip="List Maintenance Windows" title="< Back to list" :on_click="showInfoPanel"></k-button>
+                    <k-button tooltip="List Maintenance Windows" title="< Back to list" @click="showInfoPanel"></k-button>
                 </div>
             </div>
             <div class="window-buttons-right">
                 <div class="window-save-button">
-                    <k-button tooltip="Save Maintenace Window" title="Save Window" :on_click="saveWindow"></k-button>
+                    <k-button tooltip="Save Maintenace Window" title="Save Window" @click="saveWindow"></k-button>
                 </div>
                 <div class="window-delete-button">
-                    <k-button tooltip="Delete Maintenace Window" title="Delete Window" :on_click="showDeleteWindow"></k-button>
+                    <k-button tooltip="Delete Maintenace Window" title="Delete Window" @click="showDeleteWindow"></k-button>
                 </div>
             </div>
         </div>
@@ -72,10 +72,10 @@
         <div class="window-buttons">
             <div class="window-buttons-bottom">
                 <div class="window-finish-button">
-                    <k-button tooltip="Finish Maintenance Window" title="Finish Window" :on_click="finishMaintenanceWindow"></k-button> 
+                    <k-button tooltip="Finish Maintenance Window" title="Finish Window" @click="finishMaintenanceWindow"></k-button> 
                 </div>
                 <div class = "window-extend-button">
-                    <k-button title="Extend Window" :on_click="extendWindow"></k-button>
+                    <k-button title="Extend Window" @click="extendWindow"></k-button>
                 </div>
                 <div class = "minute-input-field">
                     <k-input placeholder = "Enter minutes (click extend)" v-model:value ="minutes"></k-input>  
