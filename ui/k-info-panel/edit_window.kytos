@@ -57,9 +57,9 @@
                                 </div>
                                 <div class="modal-footer">
                                     <slot name="footer">
-                                        <k-button tooltip="Cancel the deletion of the Maintenace Window" title="Cancel" :on_click="cancelDeleteWindow">
+                                        <k-button tooltip="Cancel the deletion of the Maintenace Window" title="Cancel" @click="cancelDeleteWindow">
                                         </k-button>
-                                        <k-button id="modalOK" tooltip="Delete the Maintenace Window" title="Delete" :on_click="okDeleteWindow">
+                                        <k-button id="modalOK" tooltip="Delete the Maintenace Window" title="Delete" @click="okDeleteWindow">
                                         </k-button>
                                     </slot>
                                 </div>
