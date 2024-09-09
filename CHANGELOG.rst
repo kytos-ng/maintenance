@@ -6,6 +6,13 @@ All notable changes to the Maintenance NApp will be documented in this file.
 [UNRELEASED] - Under development
 ********************************
 
+[2024.1.1] - 2024-09-09
+***********************
+
+Fixed
+=====
+- Fixed maintenance ``edit_windows.kytos`` buttons 
+
 [2024.1.0] - 2024-07-23
 ***********************
 
