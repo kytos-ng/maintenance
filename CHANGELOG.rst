@@ -6,6 +6,10 @@ All notable changes to the Maintenance NApp will be documented in this file.
 [UNRELEASED] - Under development
 ********************************
 
+Changed
+=======
+- The maintenance modal now uses the modal component
+
 [2024.1.1] - 2024-09-09
 ***********************
 
