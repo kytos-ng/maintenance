@@ -74,9 +74,9 @@
             */
             post_window: function() {
                 var self = this
-                filteredLinks = []
-                filteredSwitches = []
-                filteredInterfaces = []
+                var filteredLinks = []
+                var filteredSwitches = []
+                var filteredInterfaces = []
                 
                 // For every chosen link
                 for(item of this.links) {
@@ -137,7 +137,7 @@
                 }),
                 request.fail(function(jqXHR, status, error) {
 
-                    error_message = JSON.parse(jqXHR.responseText)
+                    var error_message = JSON.parse(jqXHR.responseText)
                     if (error_message.hasOwnProperty('response')) {
                         error_message = error_message.response
                     } else if (error_message.hasOwnProperty('description')) {
