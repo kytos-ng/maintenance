@@ -34,26 +34,6 @@ To install this NApp, make sure to have the same venv activated as you have ``ky
 To install the kytos environment, please follow our
 `development environment setup <https://github.com/kytos-ng/documentation/blob/master/tutorials/napps/development_environment_setup.rst>`_.
 
-Events
-======
-
-Published
----------
-
-kytos/maintenance.(start|end)_(switch|uni|link}
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Event reporting when a maintenance starts and ends for a switch, uni or link.
-
-Content:
-
-.. code-block:: python3
-
-   {
-     'switches|unis|links': List of <object>s,
-   }
-
-
 .. TAGs
 
 .. |License| image:: https://img.shields.io/github/license/kytos-ng/kytos.svg
