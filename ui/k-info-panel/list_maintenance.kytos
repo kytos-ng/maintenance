@@ -131,7 +131,7 @@
         Displays maintenance windows regardless of success or failure.
      */
      getTopologyForWindows: function() {
-         _this = this
+         var _this = this
          this.loading = true
          var request = $.ajax({
             url: this.$kytos_server_api + "kytos/topology/v3",
@@ -155,15 +155,15 @@
      */
     formatItems: function(in_links, in_switches, in_interfaces, topology) {
         // List of links, interfaces, and switches.
-        links_list = []
-        interfaces_list = []
-        switches_list = []
+        let links_list = []
+        let interfaces_list = []
+        let switches_list = []
 
         for(let i = 0; i < in_links.length; i++) {
             // LINK
-            data = in_links[i]
+            let data = in_links[i]
             try {
-                linkMetadata = topology.links[data].metadata
+                let linkMetadata = topology.links[data].metadata
                 // Check to avoid 'undefined' data
                 if(linkMetadata.hasOwnProperty('link_name')) {
                     data = linkMetadata.link_name
@@ -176,9 +176,9 @@
 
         for(let i = 0; i < in_switches.length; i++) {
             // SWITCH
-            data = in_switches[i]
+            let data = in_switches[i]
             try {
-                switchMetadata = topology.switches[data].metadata
+                let switchMetadata = topology.switches[data].metadata
                 // Check to avoid 'undefined' data
                 if(switchMetadata.hasOwnProperty('node_name')) {
                     data = switchMetadata.node_name
@@ -192,11 +192,11 @@
          // For every item in the list
          for(let i = 0; i < in_interfaces.length; i++) {
             // INTERFACE
-            data = in_interfaces[i]
+            let data = in_interfaces[i]
 
-            switch_id = this.correspondingSwitch(data)
+            let switch_id = this.correspondingSwitch(data)
             try {
-                interfaceMetadata = topology.switches[switch_id].interfaces[data].metadata
+                let interfaceMetadata = topology.switches[switch_id].interfaces[data].metadata
                 // Check to avoid 'undefined' data
                 if(interfaceMetadata.hasOwnProperty('port_name')) {
                     data = interfaceMetadata.port_name
@@ -208,12 +208,12 @@
          }
          return [links_list, switches_list, interfaces_list] 
      },
-     correspondingSwitch: function(interface) {
-         portIndex = interface.lastIndexOf(':')
+     correspondingSwitch: function(k_interface) {
+         let portIndex = k_interface.lastIndexOf(':')
          if(portIndex < 0) {
-             return interface
+             return k_interface
          }
-         return interface.substring(0, portIndex)
+         return k_interface.substring(0, portIndex)
      },
      /*
          Activates the re-rendering of the table.
