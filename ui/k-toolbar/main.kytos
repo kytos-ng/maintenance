@@ -74,9 +74,9 @@
             */
             post_window: function() {
                 var self = this
-                filteredLinks = []
-                filteredSwitches = []
-                filteredInterfaces = []
+                var filteredLinks = []
+                var filteredSwitches = []
+                var filteredInterfaces = []
                 
                 // For every chosen link
                 for(item of this.links) {
@@ -137,7 +137,7 @@
                 }),
                 request.fail(function(jqXHR, status, error) {
 
-                    error_message = JSON.parse(jqXHR.responseText)
+                    var error_message = JSON.parse(jqXHR.responseText)
                     if (error_message.hasOwnProperty('response')) {
                         error_message = error_message.response
                     } else if (error_message.hasOwnProperty('description')) {
@@ -180,12 +180,12 @@
                            _dpid_names.push({"value": sw.id, "description": sw.id})
                        }
                        if(sw.interfaces){
-                           $.each(sw.interfaces, function(j, interface){
-                           if(!interface.metadata.port_name){
-                               _interface_names.push({"value": interface.id, "description": interface.id})
+                           $.each(sw.interfaces, function(j, k_interface){
+                           if(!k_interface.metadata.port_name){
+                               _interface_names.push({"value": k_interface.id, "description": k_interface.id})
                            }
                            else{
-                               _interface_names.push({"value": interface.id, "description": interface.metadata.port_name})
+                               _interface_names.push({"value": k_interface.id, "description": k_interface.metadata.port_name})
                            }
                            });
                       }
