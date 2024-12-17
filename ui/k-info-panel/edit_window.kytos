@@ -264,17 +264,17 @@
                 }
                 for(let i = 0; i < window.interfaces.length; i++) {
                     // INTERFACE
-                    interface = window.interfaces[i]
+                    let k_interface = window.interfaces[i]
 
                     // Checks that interface is not in topology in case there were errors accessing topology
                     // or a deletion of the interface after the creation of the maintenance window.
-                    interfaceInTopology = this.interfaces_options.some(option => option.value == interface)
+                    interfaceInTopology = this.interfaces_options.some(option => option.value == k_interface)
                     if(!interfaceInTopology) {
                         // Add the interface as an option even if it not in topology.
-                        this.interfaces_options.push({"value":interface, "description":interface})
+                        this.interfaces_options.push({"value":k_interface, "description":k_interface})
                     }
                     // Add the interface into the list of interface auto-selection.
-                    auto_interfaces.push(interface)
+                    auto_interfaces.push(k_interface)
                 }
 
                 // Build the columns to be displayed in the table.
@@ -548,7 +548,7 @@
                 Finishes a maintenance window.
             */
             finishMaintenanceWindow: function() {
-                _this = this
+                var _this = this
 
                 // Call the Maintenace API to finish the maintenance window.
                 var request = $.ajax({

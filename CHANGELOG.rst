@@ -8,7 +8,8 @@ All notable changes to the Maintenance NApp will be documented in this file.
 
 Changed
 =======
-- The maintenance modal now uses the modal component
+- UI: The maintenance modal now uses the modal component
+- UI: changed variable name which was the reserved keyword interface to k_interface
 
 [2024.1.1] - 2024-09-09
 ***********************
