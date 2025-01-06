@@ -79,7 +79,7 @@
                 var filteredInterfaces = []
                 
                 // For every chosen link
-                for(item of this.links) {
+                for(let item of this.links) {
                     // If the link is not a string
                     if(typeof(item) != "string") {
                         // Skip it.
@@ -89,7 +89,7 @@
                     filteredLinks.push(item)
                 }
                 // For every chosen switch
-                for(item of this.switches) {
+                for(let item of this.switches) {
                     // If the switch is not a string
                     if(typeof(item) != "string") {
                         // Skip it.
@@ -99,7 +99,7 @@
                     filteredSwitches.push(item)
                 }
                 // For every chosen interface
-                for(item of this.interfaces) {
+                for(let item of this.interfaces) {
                     // If the interface is not a string
                     if(typeof(item) != "string") {
                         // Skip it.
