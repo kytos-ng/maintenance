@@ -110,9 +110,9 @@
             saveWindow: function() {
                 var _this = this
 
-                filteredLinks = []
-                filteredSwitches = []
-                filteredInterfaces = []
+                var filteredLinks = []
+                var filteredSwitches = []
+                var filteredInterfaces = []
                 
                 // For every chosen link
                 for(item of this.chosen_links) {
@@ -173,7 +173,7 @@
                     _this.loadMaintenanceWindow(_this.window_data.Id)
                 })
                 request.fail(function(jqXHR, status, error ) {
-                    error_message = JSON.parse(jqXHR.responseText)
+                    let error_message = JSON.parse(jqXHR.responseText)
                     if (error_message.hasOwnProperty('response')) {
                         error_message = error_message.response
                     } else if (error_message.hasOwnProperty('description')) {
@@ -229,18 +229,18 @@
                 // Translate the window API status into its corresponding word.
                 let status = window.status
 
-                auto_links = []
-                auto_switches = []
-                auto_interfaces = []
+                var auto_links = []
+                var auto_switches = []
+                var auto_interfaces = []
                 
                 // For every item in the list of items.
                 for(let i = 0; i < window.links.length; i++) {
                     // LINK
-                    link = window.links[i]
+                    let link = window.links[i]
 
                     // Checks that link is not in topology in case there were errors accessing topology
                     // or a deletion of the link after the creation of the maintenance window.
-                    linkInTopology = this.links_options.some(option => option.value == link)
+                    let linkInTopology = this.links_options.some(option => option.value == link)
                     if(!linkInTopology) {
                         // Add the link as an option even if it is not in topology.
                         this.links_options.push({"value":link, "description":link})
@@ -250,11 +250,11 @@
                 }
                 for(let i = 0; i < window.switches.length; i++) {
                     // SWITCH
-                    switch_item = window.switches[i]
+                    let switch_item = window.switches[i]
 
                     // Checks that switch_item is not in topology in case there were errors accessing topology
                     // or a deletion of the switch after the creation of the maintenance window.
-                    switchInTopology = this.switches_options.some(option => option.value == switch_item)
+                    let switchInTopology = this.switches_options.some(option => option.value == switch_item)
                     if(!switchInTopology) {
                         // Add the switch as an option even if it is not in topology.
                         this.switches_options.push({"value":switch_item, "description":switch_item})
@@ -268,7 +268,7 @@
 
                     // Checks that interface is not in topology in case there were errors accessing topology
                     // or a deletion of the interface after the creation of the maintenance window.
-                    interfaceInTopology = this.interfaces_options.some(option => option.value == k_interface)
+                    let interfaceInTopology = this.interfaces_options.some(option => option.value == k_interface)
                     if(!interfaceInTopology) {
                         // Add the interface as an option even if it not in topology.
                         this.interfaces_options.push({"value":k_interface, "description":k_interface})
@@ -334,8 +334,8 @@
                 if(this.content == null) {
                     return
                 }
-                _this = this
-                content_id = this.content.id
+                var _this = this
+                var content_id = this.content.id
                 // Asynchronously get the links, switches, and interfaces from the topology API.
                 Promise.all([this.loadLinksForEditing(), this.loadSwitchesForEditing(), this.loadInterfacesForEditing()])
                 .then(function() {
@@ -347,7 +347,7 @@
                 Get the links from the topology API.
             */
             loadLinksForEditing: function() {
-                _this = this
+                var _this = this
 
                 // Request the links from the API
                 var request = $.ajax({
@@ -357,14 +357,14 @@
                     contentType: "application/json"
                 })
                 request.done(function(data) {
-                    links = data.links
-                    linksKeys = Object.keys(links)
+                    let links = data.links
+                    let linksKeys = Object.keys(links)
 
                     // For every link in topology
                     for(let i = 0; i < linksKeys.length; i++) {
-                        description = linksKeys[i]
+                        let description = linksKeys[i]
                         try {
-                            linkMetadata = links[linksKeys[i]].metadata
+                            let linkMetadata = links[linksKeys[i]].metadata
                             // Check to avoid 'undefined' data.
                             if(linkMetadata.hasOwnProperty('link_name')) {
                                 description = links[linksKeys[i]].metadata.link_name
@@ -389,7 +389,7 @@
                 Get the switches from the topology API.
             */
             loadSwitchesForEditing: function() {
-                _this = this
+                var _this = this
 
                 // Request switches from the topology API.
                 var request = $.ajax({
@@ -399,14 +399,14 @@
                     contentType: "application/json"
                 })
                 request.done(function(data) {
-                    switches = data.switches
-                    switchesKeys = Object.keys(switches)
+                    let switches = data.switches
+                    let switchesKeys = Object.keys(switches)
 
                     // For every switch in the topology API
                     for(let i = 0; i < switchesKeys.length; i++) {
-                        description = switchesKeys[i]
+                        let description = switchesKeys[i]
                         try {
-                            switchMetadata = switches[switchesKeys[i]].metadata
+                            let switchMetadata = switches[switchesKeys[i]].metadata
                             // Check to avoid 'undefined' data.
                             if(switchMetadata.hasOwnProperty('node_name')) {
                                 description = switches[switchesKeys[i]].metadata.node_name
@@ -431,7 +431,7 @@
                 Get the interfaces from the topology API.
             */
             loadInterfacesForEditing: function() {
-                _this = this
+                var _this = this
 
                 // Request the interfaces from the topology API.
                 var request = $.ajax({
@@ -441,14 +441,14 @@
                     contentType: "application/json"
                 })
                 request.done(function(data) {
-                    interfaces = data.interfaces
-                    interfacesKeys = Object.keys(interfaces)
+                    let interfaces = data.interfaces
+                    let interfacesKeys = Object.keys(interfaces)
 
                     // For every interface in the topology API.
                     for(let i = 0; i < interfacesKeys.length; i++) {
-                        description = interfacesKeys[i]
+                        let description = interfacesKeys[i]
                         try {
-                            interfaceMetadata = interfaces[interfacesKeys[i]].metadata
+                            let interfaceMetadata = interfaces[interfacesKeys[i]].metadata
                             // Check to avoid 'undefined' data.
                             if(interfaceMetadata.hasOwnProperty('port_name')) {
                                 description = interfaces[interfacesKeys[i]].metadata.port_name
@@ -491,14 +491,14 @@
                 items to be added to the maintenance window.
             */
             autoSelectItems: function() {
-                auto_links = this.auto_items[0]
-                auto_switches = this.auto_items[1]
-                auto_interfaces = this.auto_items[2]
+                var auto_links = this.auto_items[0]
+                var auto_switches = this.auto_items[1]
+                var auto_interfaces = this.auto_items[2]
 
                 // If there are links to be auto-selected
                 if(auto_links) {
                     // For every link to be auto-selected
-                    for(i = 0; i < auto_links.length; i++) {
+                    for(let i = 0; i < auto_links.length; i++) {
                         // If the link is not in the chosen link list
                         if(!this.chosen_links.includes(auto_links[i])) {
                             // Add it.
@@ -509,7 +509,7 @@
                 // If there are switches to be auto-selected
                 if(auto_switches) {
                     // For every switch to be auto-selected
-                    for(i = 0; i < auto_switches.length; i++) {
+                    for(let i = 0; i < auto_switches.length; i++) {
                         // If the switch is not in the chosen switch list
                         if(!this.chosen_switches.includes(auto_switches[i])) {
                             // Add it.
@@ -520,7 +520,7 @@
                 // If there are interfaces to be auto-selected
                 if(auto_interfaces) {
                     // For every interface to be auto-selected
-                    for(i = 0; i < auto_interfaces.length; i++) {
+                    for(let i = 0; i < auto_interfaces.length; i++) {
                         // If the interface is not in the chosen interface list
                         if(!this.chosen_interfaces.includes(auto_interfaces[i])) {
                             // Add it.
@@ -569,7 +569,7 @@
                     _this.loadMaintenanceWindow(_this.window_data.Id)
                 })
                 request.fail(function(jqXHR, status) {
-                    error_message = JSON.parse(jqXHR.responseText)
+                    let error_message = JSON.parse(jqXHR.responseText)
                     if (error_message.hasOwnProperty('response')) {
                         error_message = error_message.response
                     } else if (error_message.hasOwnProperty('description')) {
@@ -588,7 +588,7 @@
             Extends a maintenance window.
             */
             extendWindow() {
-                _this = this
+                var _this = this
                 // Call the Maintenace API to extend the maintenance window.
                 var request = $.ajax({
                     url: this.$kytos_server_api + "kytos/maintenance/v1/" + _this.window_data.Id + "/extend",
@@ -610,7 +610,7 @@
                     _this.loadMaintenanceWindow(_this.window_data.Id)
                 })
                 request.fail(function(jqXHR, status) {
-                    error_message = JSON.parse(jqXHR.responseText)
+                    let error_message = JSON.parse(jqXHR.responseText)
                     if (error_message.hasOwnProperty('response')) {
                         error_message = error_message.response
                     } else if (error_message.hasOwnProperty('description')) {
