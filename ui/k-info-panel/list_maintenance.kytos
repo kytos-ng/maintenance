@@ -98,7 +98,7 @@
           $.each(data, function(i, window) {
               if(window) {
                   // Get the items formatted with metadata or id.
-                  items = _this.formatItems(window.links, window.switches, window.interfaces, topology)
+                  var items = _this.formatItems(window.links, window.switches, window.interfaces, topology)
                   
                   let row = {
                       "Id": window.id,
