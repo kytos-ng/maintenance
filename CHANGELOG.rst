@@ -10,6 +10,7 @@ Changed
 =======
 - UI: The maintenance modal now uses the modal component
 - UI: changed variable name which was the reserved keyword interface to k_interface
+- UI: Removed the use of this.$set() since it was deprecated
 
 [2024.1.1] - 2024-09-09
 ***********************
