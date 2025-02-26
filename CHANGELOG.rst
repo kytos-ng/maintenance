@@ -12,6 +12,10 @@ Changed
 - UI: changed variable name which was the reserved keyword interface to k_interface
 - UI: Removed the use of this.$set() since it was deprecated
 
+Fixed
+=====
+- DB controller now retries for ``ExecutionTimeout`` and ``ConnectionFailure`` instead of just ``AutoReconnect``
+
 [2024.1.1] - 2024-09-09
 ***********************
 
