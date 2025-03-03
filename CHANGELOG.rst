@@ -6,6 +6,13 @@ All notable changes to the Maintenance NApp will be documented in this file.
 [UNRELEASED] - Under development
 ********************************
 
+[2024.1.2] - 2025-03-03
+************************
+
+Fixed
+=====
+- DB controller now retries for ``ExecutionTimeout`` and ``ConnectionFailure`` instead of just ``AutoReconnect``
+
 [2024.1.1] - 2024-09-09
 ***********************
 
