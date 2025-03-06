@@ -8,7 +8,7 @@ from typing import Optional
 
 from bson.codec_options import CodecOptions
 import pymongo
-from pymongo.errors import AutoReconnect
+from pymongo.errors import ConnectionFailure, ExecutionTimeout
 from tenacity import retry_if_exception_type, stop_after_attempt, wait_random
 
 from kytos.core import log
@@ -32,7 +32,7 @@ from napps.kytos.maintenance.models import (
         max=int(os.environ.get("MONGO_AUTO_RETRY_WAIT_RANDOM_MAX", 1)),
     ),
     before_sleep=before_sleep,
-    retry=retry_if_exception_type((AutoReconnect,)),
+    retry=retry_if_exception_type((ConnectionFailure, ExecutionTimeout)),
 )
 class MaintenanceController:
     """MaintenanceController."""
