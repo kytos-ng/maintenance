@@ -1,5 +1,5 @@
 <template>
-  <k-toolbar-item icon="gear" tooltip="Maintenace">
+  <k-toolbar-item name="kytos-maintenance-k-toolbar-main" icon="gear" tooltip="Maintenace">
     <k-accordion>
       <k-accordion-item title = "Create Maintenance Window" :key = "componentKey">
         <k-input placeholder = "Description" v-model:value = "description"></k-input>
@@ -36,8 +36,8 @@
   </k-toolbar-item>
 </template>
 
-<script>
-    module.exports = {
+<script type="module">
+    export default {
         methods: {
             /*
                 Shows the maintenance windows in the k-info-panel.
