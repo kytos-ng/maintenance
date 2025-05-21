@@ -128,7 +128,7 @@ class TestDeployer:
         self.controller.switches['01:23:45:67:66:ab:cd:ef'].interfaces[2].link = self.link_3
 
 
-        self.controller.napps[('kytos', 'topology')] = MagicMock(
+        self.controller = MagicMock(
             links = {
                 'link_1': self.link_1,
                 'link_2': self.link_2,

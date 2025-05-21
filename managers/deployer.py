@@ -117,7 +117,7 @@ class MaintenanceDeployer:
         explicit_links = filter(
             lambda link: link is not None,
             map(
-                self.controller.napps[('kytos', 'topology')].links.get,
+                self.controller.links.get,
                 window.links
             )
         )
