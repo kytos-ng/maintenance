@@ -128,13 +128,11 @@ class TestDeployer:
         self.controller.switches['01:23:45:67:66:ab:cd:ef'].interfaces[2].link = self.link_3
 
 
-        self.controller.napps[('kytos', 'topology')] = MagicMock(
-            links = {
-                'link_1': self.link_1,
-                'link_2': self.link_2,
-                'link_3': self.link_3,
-            }
-        )
+        self.controller.links = {
+            'link_1': self.link_1,
+            'link_2': self.link_2,
+            'link_3': self.link_3,
+        }
 
     def test_mw_case_1(self):
         """Test deploying a maintenance window to switches."""
