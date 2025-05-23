@@ -22,7 +22,6 @@ class TestMain:
     def setup_method(self):
         """Initialize before tests are executed."""
         self.controller = get_controller_mock()
-        self.controller.napps[("kytos", "topology")] = MagicMock()
         self.controller.switches = MagicMock()
         self.scheduler = MagicMock()
         new_sched = (
@@ -43,7 +42,7 @@ class TestMain:
         end = start + timedelta(hours=2)
         self.controller.switches = MagicMock()
         self.controller.get_interface_by_id = MagicMock()
-        self.controller.napps[("kytos", "topology")].links = MagicMock()
+        self.controller.links = MagicMock()
         switches = {"00:00:00:00:00:00:00:02": 1, "00:00:00:00:00:00:00:03": 2}
         interfaces = {"00:00:00:00:00:00:00:03:3": 1, "00:00:00:00:00:00:00:02:1": 2}
         links = {
@@ -53,7 +52,7 @@ class TestMain:
         self.controller.switches.get.side_effect = switches.get
         get_interface_side_effect = lambda interface_id: interfaces.get(interface_id)
         self.controller.get_interface_by_id.side_effect = get_interface_side_effect
-        self.controller.napps[("kytos", "topology")].links.get.side_effect = links.get
+        self.controller.links.get.side_effect = links.get
         payload = {
             "start": start.strftime(TIME_FMT),
             "end": end.strftime(TIME_FMT),
@@ -81,7 +80,7 @@ class TestMain:
             call("cf0f4071be426b3f745027f5d22bc61f8312ae86293c9b28e7e66015607a9260"),
             call("4d42dc0852278accac7d9df15418f6d921db160b13d674029a87cef1b5f67f30"),
         ]
-        self.controller.napps[("kytos", "topology")].links.get.assert_has_calls(
+        self.controller.links.get.assert_has_calls(
             link_calls
         )
         args, kwargs = self.scheduler.add.call_args
@@ -176,9 +175,9 @@ class TestMain:
         url = f"{self.base_endpoint}"
         start = datetime.now(pytz.utc) + timedelta(days=1)
         end = start + timedelta(hours=2)
-        self.controller.napps[("kytos", "topology")].links = MagicMock()
+        self.controller.links = MagicMock()
         links = {"cf0f4071be426b3f745027f5d22bc61f8312ae86293c9b28e7e66015607a9260": 1}
-        self.controller.napps[("kytos", "topology")].links.get.side_effect = links.get
+        self.controller.links.get.side_effect = links.get
         payload = {
             "start": start.strftime(TIME_FMT),
             "end": end.strftime(TIME_FMT),
@@ -189,7 +188,7 @@ class TestMain:
         response = await self.api.post(url, json=payload)
         current_data = response.json()
         assert response.status_code == 201, current_data
-        self.controller.napps[("kytos", "topology")].links.get.assert_called_with(
+        self.controller.links.get.assert_called_with(
             "cf0f4071be426b3f745027f5d22bc61f8312ae86293c9b28e7e66015607a9260"
         )
         assert response.status_code == 201, current_data

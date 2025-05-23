@@ -229,7 +229,7 @@ class Main(KytosNApp):
         )
         non_existant_links = list(
             filter(
-                lambda link_id: self.controller.napps[("kytos", "topology")].links.get(
+                lambda link_id: self.controller.links.get(
                     link_id
                 )
                 is None,
