@@ -116,25 +116,32 @@ class MaintenanceController:
         )
         return MaintenanceWindow.model_construct(**window)
 
-    def check_overlap(self, window):
-        # If two time periods are overlapping,
-        # then the start of one time period must occur in the other time period
+    def check_overlap(self, window: MaintenanceWindow, force: bool):
+        """Check for overlap in the time periods of the MWs.
+         If force=False, check for overlapping between MWs.
+         If force=True, check for overlapping only between components.
+        """
+        query = {'$and': [
+            {'status': {'$ne': Status.FINISHED}},
+            {'$or': [
+                {'$and': [
+                    {'start': {'$lte': window.start}},
+                    {'end': {'$gt': window.start}},
+                ]},
+                {'$and': [
+                    {'start': {'$gte': window.start}},
+                    {'start': {'$lt': window.end}},
+                ]},
+            ]},
+        ]}
+        if force:
+            query['$and'].append({'$or': [
+                {'switches': {"$in": window.switches}},
+                {'interfaces': {"$in": window.interfaces}},
+                {'links': {"$in": window.links}},
+            ]})
         windows = self.windows.find(
-            {
-                '$and': [
-                    {'status': {'$ne': Status.FINISHED}},
-                    {'$or': [
-                        {'$and': [
-                            {'start': {'$lte': window.start}},
-                            {'end': {'$gt': window.start}},
-                        ]},
-                        {'$and': [
-                            {'start': {'$gte': window.start}},
-                            {'start': {'$lt': window.end}},
-                        ]},
-                    ]},
-                ],
-            },
+            query,
             {'_id': False}
         )
         return MaintenanceWindows.model_construct(

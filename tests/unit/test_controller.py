@@ -100,3 +100,21 @@ class TestMaintenanceController:
         expected = MaintenanceWindows.model_construct(root = [self.window])
         result = self.controller.get_windows()
         assert result == expected
+
+    def test_check_overlap(self):
+        """Test check_overlap method."""
+        aux_window = {'description': 'My description',
+                'start': self.now + timedelta(hours=1),
+                'end': self.now + timedelta(hours=2),
+                'switches': ['00:00:00:00:00:00:00:01'],
+                'interfaces': ['00:00:00:00:00:00:00:02:1']}
+        obj_mw = MaintenanceWindow.model_validate(aux_window)
+        self.controller.windows.find.return_value = []
+        self.controller.check_overlap(obj_mw, True)
+        query = self.controller.windows.find.call_args[0][0]
+        assert len(query["$and"]) == 3
+        assert "$or" in query["$and"][2]
+
+        self.controller.check_overlap(obj_mw, False)
+        query = self.controller.windows.find.call_args[0][0]
+        assert len(query["$and"]) == 2
