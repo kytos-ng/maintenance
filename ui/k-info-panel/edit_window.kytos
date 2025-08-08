@@ -639,7 +639,7 @@
 
 <style type="text/css">
     .maintenance-window-k-info-panel {
-        width: calc(100% - 300px);
+        width: calc(100% - 300px) !important;
     }
 
     .maintenance-window-container .window-buttons {
