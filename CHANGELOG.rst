@@ -6,6 +6,14 @@ All notable changes to the Maintenance NApp will be documented in this file.
 [UNRELEASED] - Under development
 ********************************
 
+[2025.1.1] - 2025-08-08
+***********************
+
+Fixed
+=====
+- UI: Fixed overridden CSS from the maintenance window list, which affected width
+
+
 [2025.1.0] - 2025-04-14
 ***********************
 
