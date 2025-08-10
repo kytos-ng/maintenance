@@ -9,6 +9,7 @@ All notable changes to the Maintenance NApp will be documented in this file.
 Changed
 =======
 - Internal refactoring updating UI components to use ``pinia``
+- Force option will not ignore time anymore. Instead it will check for time conflicts between assets (switches, interfaces, links).
 
 Fixed
 =======
