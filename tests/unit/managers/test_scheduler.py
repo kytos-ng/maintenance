@@ -166,6 +166,22 @@ class TestScheduler:
             id='pending window-end',
             run_date=pending_window.end
         )
+    
+    def test_maintenance_start_no_end(self):
+        """Test a MW with no end time."""
+        pending_window = self.window.copy(
+            update={'id': 'pending window', 'status': 'pending', 'end': None}
+        )
+        next_window = self.window.copy(
+            update={'id': 'pending window', 'status': 'running', 'end': None}
+        )
+
+        self.db_controller.start_window.return_value = next_window
+        start = MaintenanceStart(self.scheduler, pending_window.id)
+        start()
+        self.maintenance_deployer.start_mw.assert_called_once_with(next_window)
+
+        self.task_scheduler.add_job.assert_not_called()
 
     def test_maintenance_end(self):
 

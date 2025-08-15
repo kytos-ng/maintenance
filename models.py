@@ -41,7 +41,7 @@ class MaintenanceWindow(BaseModel):
     """Class for structure of maintenance windows."""
 
     start: datetime
-    end: datetime
+    end: Optional[datetime] = Field(default=None)
     switches: list[str] = Field(default_factory=list)
     interfaces: list[str] = Field(default_factory=list)
     links: list[str] = Field(default_factory=list)
@@ -73,7 +73,11 @@ class MaintenanceWindow(BaseModel):
     @classmethod
     def check_end_before_start(cls, end_time, values: ValidationInfo):
         """Check if the end is set to occur before the start."""
-        if "start" in values.data and end_time <= values.data["start"]:
+        if (
+            end_time is not None
+            and "start" in values.data
+            and end_time <= values.data["start"]
+        ):
             raise ValueError("End before start not allowed")
         return end_time
 

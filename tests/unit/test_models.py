@@ -70,3 +70,10 @@ class TestMW:
             start=self.start,
             end=self.end,
         )
+
+    def test_no_end(self):
+        """Test MW without end time."""
+        window = MW.model_validate(
+            {"start": self.start, "switches": self.switches}
+        )
+        assert window.end is None

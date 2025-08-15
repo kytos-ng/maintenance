@@ -98,7 +98,7 @@ class Main(KytosNApp):
         #         400, detail='Setting a maintenance id is not allowed'
         #     )
         try:
-            maintenance = MW.parse_obj(data)
+            maintenance = MW.model_validate(data)
             force = data.get("force", False)
             ignore_no_exists = data.get("ignore_no_exists")
             if not ignore_no_exists:
@@ -137,7 +137,9 @@ class Main(KytosNApp):
                 400, detail="Updating a maintenance status is not allowed"
             )
         try:
-            new_maintenance = MW.parse_obj({**old_maintenance.model_dump(), **data})
+            new_maintenance = MW.model_validate(
+                {**old_maintenance.model_dump(), **data}
+            )
         except ValidationError as err:
             msg = error_msg(err.errors())
             raise HTTPException(400, detail=msg) from err

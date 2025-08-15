@@ -161,7 +161,7 @@ class MaintenanceScheduler:
                 run_date=window.start
             )
             log.info(f'Scheduled "{window.id}" start at {window.start}')
-        if window.status == Status.RUNNING:
+        if window.status == Status.RUNNING and window.end:
             self.scheduler.add_job(
                 MaintenanceEnd(self, window.id),
                 'date',
