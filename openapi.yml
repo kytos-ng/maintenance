@@ -286,6 +286,8 @@ components:
         - $ref: '#/components/schemas/MaintenanceWindow'
         - properties:
             force:
+              description: >-
+                If true, restrictions in time conflict will be by component instead of MWs.
               type: boolean
             ignore_no_exists:
               type: boolean
