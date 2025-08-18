@@ -121,11 +121,9 @@ class MaintenanceScheduler:
 
     def add(self, window: MaintenanceWindow, force=False):
         """Add jobs to start and end a maintenance window."""
-
-        if force is False:
-            overlapping_windows = self.db_controller.check_overlap(window)
-            if overlapping_windows:
-                raise OverlapError(window, overlapping_windows)
+        overlapping_windows = self.db_controller.check_overlap(window, force)
+        if overlapping_windows:
+            raise OverlapError(window, overlapping_windows)
 
         # Add window to DB
         self.db_controller.insert_window(window)
