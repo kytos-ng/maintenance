@@ -1,7 +1,7 @@
 """Tests for the models module."""
 import pytest
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pytz
 from kytos.lib.helpers import get_controller_mock
 from napps.kytos.maintenance.models import MaintenanceWindow as MW, Status
@@ -70,3 +70,10 @@ class TestMW:
             start=self.start,
             end=self.end,
         )
+
+    def test_no_end(self):
+        """Test MW without end time."""
+        window = MW.model_validate(
+            {"start": self.start, "switches": self.switches}
+        )
+        assert window.end == datetime.max.replace(tzinfo=timezone.utc)

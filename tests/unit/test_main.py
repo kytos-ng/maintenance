@@ -509,11 +509,11 @@ class TestMain:
         self.scheduler.update.assert_not_called()
 
     async def test_update_mw_case_2(self):
-        """Test update no data."""
+        """Test update missing required field."""
         self.napp.controller.loop = asyncio.get_running_loop()
         start1 = datetime.now(pytz.utc) + timedelta(days=1)
         payload = {
-            "start": start1.strftime(TIME_FMT),
+            "end": start1.strftime(TIME_FMT),
         }
         url = f"{self.base_endpoint}/1234"
         response = await self.api.patch(url, json=payload)

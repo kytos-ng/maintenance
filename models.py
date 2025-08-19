@@ -4,7 +4,7 @@ This module define models for the maintenance window itself and the
 scheduler.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import NewType, Optional
 from uuid import uuid4
@@ -41,7 +41,7 @@ class MaintenanceWindow(BaseModel):
     """Class for structure of maintenance windows."""
 
     start: datetime
-    end: datetime
+    end: Optional[datetime] = Field(default=datetime.max.replace(tzinfo=timezone.utc))
     switches: list[str] = Field(default_factory=list)
     interfaces: list[str] = Field(default_factory=list)
     links: list[str] = Field(default_factory=list)
@@ -73,6 +73,8 @@ class MaintenanceWindow(BaseModel):
     @classmethod
     def check_end_before_start(cls, end_time, values: ValidationInfo):
         """Check if the end is set to occur before the start."""
+        if end_time is None:
+            end_time = cls.model_fields["end"].get_default()
         if "start" in values.data and end_time <= values.data["start"]:
             raise ValueError("End before start not allowed")
         return end_time

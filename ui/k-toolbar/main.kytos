@@ -21,9 +21,14 @@
         <k-checkbox title = "Force" v-model:model = "checked_list" :value = "'force'">
         </k-checkbox>
         <p></p>
-
         <k-button title="Reset Fields" @click="forceRenderer"></k-button>
-        <k-button title="Create Maintenance Window" @click="post_window"></k-button>
+        <k-modal
+            :message="modal_message_post"
+            button-title="Create MW"
+            :action="post_window"
+            v-model:show-modal="show_post_modal">
+        </k-modal>
+        <k-button title="Create Maintenance Window" @click="create_window"></k-button>
       </k-accordion-item>
       <k-accordion-item title="List Maintenance Windows">
         <k-button tooltip="Maintenance Windows"
@@ -70,7 +75,14 @@
                 this.$kytos.eventBus.$emit("showInfoPanel", listWindows)
             },
             /*
-                Gets the data fields after button click and consumes POST api to post maintenace window.
+                After trying to create a MW, show a modal if end_time is empty, otherwise creates it.
+            */
+            create_window: function() {
+                if (!this.end) {this.show_post_modal = true}
+                else {this.post_window()}
+            },
+            /*
+                Gets the data fields after button/modal click and consumes POST api to post maintenace window.
             */
             post_window: function() {
                 var self = this
@@ -116,7 +128,7 @@
                     contentType: "application/json",
                     data: JSON.stringify({"description": self.description,
                                           "start": self.start,
-                                          "end": self.end,
+                                          "end": self.end || null,
                                           "switches": filteredSwitches,
                                           "links": filteredLinks,
                                           "interfaces": filteredInterfaces,
@@ -239,7 +251,7 @@
               this.links = [];
               this.checked_list = [];
               this.componentKey +=1;
-           }
+           },
         },
         data() {
             return{
@@ -255,6 +267,8 @@
                 links: [],
                 checked_list: [],
                 componentKey: "",
+                show_post_modal: false,
+                modal_message_post: "Do you want to create a maintenance window with NO End Time?",
            }
        },
        mounted(){
