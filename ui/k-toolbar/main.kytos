@@ -3,7 +3,7 @@
     <k-accordion>
       <k-accordion-item title = "Create Maintenance Window" :key = "componentKey">
         <k-input placeholder = "Description" v-model:value = "description"></k-input>
-        <div class="k-time-date" v-if="time_date">
+        <div class="k-time-date" v-if="using_relative_date">
             <k-input placeholder = "Start time" v-model:value = "start"></k-input>
             <k-input placeholder = "End time" v-model:value = "end"></k-input>
         </div>
@@ -95,10 +95,13 @@
                 this.$kytos.eventBus.$emit("showInfoPanel", listWindows)
             },
             /*
-                After trying to create a MW, show a modal if end_time is empty, otherwise creates it.
+                After trying to create a MW, show a modal if the End Time is empty, otherwise creates it.
             */
             create_window: function() {
-                if (!this.end && this.time_date) {this.show_post_modal = true}
+                if (this.using_relative_date && !this.end) {this.show_post_modal = true}
+                else if (!this.using_relative_date && !(this.end_d || this.end_h || this.end_m || this.end_s)) {
+                    this.show_post_modal = true
+                }
                 else {this.post_window()}
             },
             /*
@@ -106,7 +109,7 @@
             */
             get_time_zone: function() {
                 var zone_min = new Date().getTimezoneOffset()
-                let sign = zone_min > 0 ? "-": "+"
+                let sign = zone_min > 0 ? "+": "-"
                 let hours = Math.floor(zone_min/60)
                 let minutes = zone_min % 60
                 return sign + String(hours).padStart(2, '0') + String(minutes).padStart(2, '0')
@@ -174,24 +177,28 @@
                 }
                 var start_time = ""
                 var end_time = ""
-                if (!this.time_date) {
+                if (!this.using_relative_date) {
                     let curr_start_time = new Date()
                     let curr_end_time = new Date(curr_start_time)
                     start_time = this.get_extra_time(
                                      curr_start_time, parseInt(this.start_d) || 0, parseInt(this.start_h) || 0,
                                      parseInt(this.start_m) || 0, parseInt(this.start_s) || 0
                                  )
-                    end_time = this.get_extra_time(
+                    if (this.end_d || this.end_h || this.end_m || this.end_s) {
+                        end_time = this.get_extra_time(
                                    curr_end_time, parseInt(this.end_d) || 0, parseInt(this.end_h) || 0,
                                    parseInt(this.end_m) || 0, parseInt(this.end_s) || 0
                                )
+                    }
+                    else {
+                        end_time = null
+                    }
+
                 }
                 else {
                     start_time = this.start
                     end_time = this.end || null
                 }
-                console.log("START -> ", start_time)
-                console.log("END -> ", end_time)
                 var request = $.ajax({
                     async: true,
                     dataType: "json",
@@ -335,7 +342,7 @@
                 Toggle between time dates or time periods
             */
             change_time: function() {
-                this.time_date = !this.time_date
+                this.using_relative_date = !this.using_relative_date
             },
         },
         data() {
@@ -354,7 +361,7 @@
                 componentKey: "",
                 show_post_modal: false,
                 modal_message_post: "Do you want to create a maintenance window with NO End Time?",
-                time_date: true,
+                using_relative_date: true,
                 start_d: "",
                 start_h: "",
                 start_m: "",
