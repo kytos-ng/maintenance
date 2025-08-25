@@ -12,6 +12,7 @@ Changed
 - Force option will not ignore time anymore. Instead it will check for time conflicts between assets (switches, interfaces, links).
 - MWs can now be created without an ``end``, meaning they will have no end time (actual value is ``9999-12-31T23:59:59.999Z`` which is unreachable). If such MW starts running, it can only be stopped by request and not by updating the MW.
 - UI: A modal will appear to confirm if a MW will be created without ``End Time``.
+- UI: Added option to enter time period to be added to the current time instead of entering the exact date.
 
 Fixed
 =======
