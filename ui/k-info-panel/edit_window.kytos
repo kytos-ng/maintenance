@@ -105,7 +105,6 @@
                 </div>
                 <div class = "window-extend-button">
                     <k-button title="Extend Window" @click="extendWindow"></k-button>
-                    <k-button title="CLICK ON ME" @click="clickME"></k-button>
                 </div>
                 <div class = "minute-input-field">
                     <k-input placeholder = "Enter minutes (click extend)" v-model:value ="minutes"></k-input>  
@@ -125,13 +124,6 @@
         data() {
             return {
                 window_data: [],
-                links_options: [],
-                switches_options: [],
-                interfaces_options: [],
-                chosen_links: [],
-                chosen_switches: [],
-                chosen_interfaces: [],
-                auto_items: [],
                 property_editable: [],
                 delete_window: false,
                 display: true,
@@ -139,9 +131,6 @@
                 mw_links_set: new Set(),
                 mw_switches_set: new Set(),
                 mw_interfaces_set: new Set(),
-                topo_links: [], 
-                topo_switches: [],
-                topo_interfaces: [],
                 sele_link_options: [],
                 sele_switch_options: [],
                 sele_interface_options: [],
@@ -182,36 +171,40 @@
                 var filteredInterfaces = []
                 
                 // For every chosen link
-                for(let item of this.chosen_links) {
+                for(let option of this.sele_link_options) {
                     // If the link is not a string
-                    if(typeof(item) != "string") {
+                    if(typeof(option.value) != "string") {
                         // Skip it.
                         continue
                     }
                     // Otherwise, add the link id to the list of links.
-                    filteredLinks.push(item)
+                    filteredLinks.push(option.value)
                 }
                 // For every chosen switch
-                for(let item of this.chosen_switches) {
+                for(let option of this.sele_switch_options) {
                     // If the switch is not a string
-                    if(typeof(item) != "string") {
+                    if(typeof(option.value) != "string") {
                         // Skip it.
                         continue
                     }
                     // Otherwise, add the switch id to the list of items.
-                    filteredSwitches.push(item)
+                    filteredSwitches.push(option.value)
                 }
                 // For every chosen interface
-                for(let item of this.chosen_interfaces) {
+                for(let option of this.sele_interface_options) {
                     // If the interface is not a string
-                    if(typeof(item) != "string") {
+                    if(typeof(option.value) != "string") {
                         // Skip it.
                         continue
                     }
                     // Otherwise, add the interface id to the list of links.
-                    filteredInterfaces.push(item)
+                    filteredInterfaces.push(option.value)
                 }
-                console.log("BEING SENT -> ", {
+                // Update the maitenance window with the new values.
+                var request = $.ajax({
+                    url: this.$kytos_server_api + "kytos/maintenance/v1/" + _this.window_data.Id,
+                    type: "PATCH",
+                    data: JSON.stringify({
                         "id": _this.window_data.Id,
                         "start": _this.window_data.Start,
                         "end": _this.window_data.End,
@@ -219,49 +212,34 @@
                         "links": filteredLinks,
                         "switches": filteredSwitches,
                         "interfaces": filteredInterfaces,
-                    })
-                // Update the maitenance window with the new values.
-                //var request = $.ajax({
-                //    url: this.$kytos_server_api + "kytos/maintenance/v1/" + _this.window_data.Id,
-                //    type: "PATCH",
-                //    data: JSON.stringify({
-                //        "id": _this.window_data.Id,
-                //        "start": _this.window_data.Start,
-                //        "end": _this.window_data.End,
-                //        "description": _this.window_data.Description,
-                //        "links": filteredLinks,
-                //        "switches": filteredSwitches,
-                //        "interfaces": filteredInterfaces,
-                //    }),
-                //    dataType: "json",
-                //    contentType: "application/json"
-                //})
-                //request.done( function(data) {
-                //    let notification = {
-                //        title: 'Window "' + _this.window_data.Id + '" updated.',
-                //        description: ''
-                //    }
-                //    // Notify on success.
-                //    _this.$kytos.eventBus.$emit("setNotification", notification)
-                //    // Refresh the window.
-                //    _this.resetItemSelection()
-                //    _this.loadMaintenanceWindow(_this.window_data.Id)
-                //})
-                //request.fail(function(jqXHR, status, error ) {
-                //    let error_message = JSON.parse(jqXHR.responseText)
-                //    if (error_message.hasOwnProperty('response')) {
-                //        error_message = error_message.response
-                //    } else if (error_message.hasOwnProperty('description')) {
-                //        error_message = error_message.description
-                //    }
-                //
-                //    let notification = {
-                //        title: 'Updated Window failed.',
-                //        description: 'Error updating window "' + _this.window_data.Id + '". ' + _this.capitalize(status) + ': ' +  error_message
-                //    }
-                //    // Notify on failure.
-                //    _this.$kytos.eventBus.$emit("setNotification", notification)
-                //})
+                    }),
+                    dataType: "json",
+                    contentType: "application/json"
+                })
+                request.done( function(data) {
+                    let notification = {
+                        title: 'Window "' + _this.window_data.Id + '" updated.',
+                        description: ''
+                    }
+                    // Notify on success.
+                    _this.$kytos.eventBus.$emit("setNotification", notification)
+                    _this.loadMaintenanceWindow(_this.window_data.Id)
+                })
+                request.fail(function(jqXHR, status, error ) {
+                    let error_message = JSON.parse(jqXHR.responseText)
+                    if (error_message.hasOwnProperty('response')) {
+                        error_message = error_message.response
+                    } else if (error_message.hasOwnProperty('description')) {
+                        error_message = error_message.description
+                    }
+                
+                    let notification = {
+                        title: 'Updated Window failed.',
+                        description: 'Error updating window "' + _this.window_data.Id + '". ' + _this.capitalize(status) + ': ' +  error_message
+                    }
+                    // Notify on failure.
+                    _this.$kytos.eventBus.$emit("setNotification", notification)
+                })
             },
             /*
                 Shows the modal delete window option.
@@ -270,7 +248,9 @@
                 this.delete_window = true
             },
             /*
-                Loads the given maintenance window into a table.
+                Loads the given maintenance window information and stores it.
+                In the UI it updates Id, Start, End, Description and Status.
+                Links, switches and Interfaces information is not updated.
             */
             loadMaintenanceWindow: function(id) {
                 var _this = this
@@ -547,17 +527,6 @@
                 this.property_editable = editable
             },
             /*
-                Resets the auto-selected items.
-            */
-            resetItemSelection: function() {
-                this.sele_chosen_links = []
-                this.sele_chosen_switches = []
-                this.sele_chosen_interfaces = []
-                this.aval_chosen_links = []
-                this.aval_chosen_switches = []
-                this.aval_chosen_interfaces = []
-            },
-            /*
                 Capitalizes the first letter of a given word.
             */
             capitalize: function(word) {
@@ -583,8 +552,6 @@
                     }
                     // Notify on success.
                     _this.$kytos.eventBus.$emit("setNotification", notification)
-                    // Refresh the window.
-                    _this.resetItemSelection()
                     _this.loadMaintenanceWindow(_this.window_data.Id)
                 })
                 request.fail(function(jqXHR, status) {
@@ -624,8 +591,6 @@
                     }
                     // Notify on success.
                     _this.$kytos.eventBus.$emit("setNotification", notification)
-                    // Refresh the window.
-                    _this.resetItemSelection()
                     _this.loadMaintenanceWindow(_this.window_data.Id)
                 })
                 request.fail(function(jqXHR, status) {
