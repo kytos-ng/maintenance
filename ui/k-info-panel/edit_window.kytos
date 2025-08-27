@@ -38,27 +38,51 @@
                                         <tr>
                                             <td>
                                                 <div :class="'editable-' + property_editable['Links']">
-                                                    <k-select icon="link" title="Links" :options="sele_link_options" v-model:value="sele_chosen_links"></k-select>
+                                                    <k-select icon="link" title="Links"
+                                                        :options="sele_link_options"
+                                                        v-model:value="sele_chosen_links"
+                                                        :key="componentKey">
+                                                    </k-select>
                                                 </div>
                                                 <div :class="'editable-' + property_editable['Switches']">
-                                                    <k-select icon="link" title="Switches" :options="sele_switch_options" v-model:value="sele_chosen_switches"></k-select>
+                                                    <k-select icon="link" title="Switches"
+                                                        :options="sele_switch_options"
+                                                        v-model:value="sele_chosen_switches"
+                                                        :key="componentKey">
+                                                    </k-select>
                                                 </div>
                                                 <div :class="'editable-' + property_editable['Interfaces']">
-                                                    <k-select  icon="link" title="Interfaces" :options="sele_interface_options" v-model:value="sele_chosen_interfaces"></k-select>
+                                                    <k-select  icon="link" title="Interfaces"
+                                                        :options="sele_interface_options"
+                                                        v-model:value="sele_chosen_interfaces"
+                                                        :key="componentKey">
+                                                    </k-select>
                                                 </div>
-                                                <k-button title="Remove Components"></k-button>
+                                                <k-button style="display: block; margin: auto;" title="Move to Available ->" @click="moveToAvailableBT"></k-button>
                                             </td>
                                             <td>
                                                 <div :class="'editable-' + property_editable['Links']">
-                                                    <k-select icon="link" title="Links" :options="aval_link_options" v-model:value="aval_chosen_links"></k-select>
+                                                    <k-select icon="link" title="Links"
+                                                        :options="aval_link_options"
+                                                        v-model:value="aval_chosen_links"
+                                                        :key="componentKey">
+                                                    </k-select>
                                                 </div>
                                                 <div :class="'editable-' + property_editable['Switches']">
-                                                    <k-select icon="link" title="Switches" :options="aval_switch_options" v-model:value="aval_chosen_switches"></k-select>
+                                                    <k-select icon="link" title="Switches"
+                                                        :options="aval_switch_options"
+                                                        v-model:value="aval_chosen_switches"
+                                                        :key="componentKey">
+                                                    </k-select>
                                                 </div>
                                                 <div :class="'editable-' + property_editable['Interfaces']">
-                                                    <k-select  icon="link" title="Interfaces" :options="aval_interface_options" v-model:value="aval_chosen_interfaces"></k-select>
+                                                    <k-select  icon="link" title="Interfaces"
+                                                        :options="aval_interface_options"
+                                                        v-model:value="aval_chosen_interfaces"
+                                                        :key="componentKey">
+                                                    </k-select>
                                                 </div>
-                                                <k-button title="Add Components" @click="finishMaintenanceWindow"></k-button>
+                                                <k-button style="display: block; margin: auto;" title="<- Move to Selected" @click="moveToSelectedBT"></k-button>
                                             </td>
                                         </tr>
                                     </table>
@@ -130,6 +154,7 @@
                 aval_chosen_links: [],
                 aval_chosen_switches: [],
                 aval_chosen_interfaces: [],
+                componentKey: "",
             }
         },
         methods: {
@@ -620,21 +645,51 @@
                 })           
             },
             /*
+                Updates two Array of options(value, description) from an Array of values.
+                 addToOptions, gets options added from removeFromOptions which "value" are in selectedOptions
+                 removeFromOptions, gets options searched, options which "value" are not in selectedOptions are saved
+                 
+                Return any saved options from searching removeFromOptions
+            */
+            updateOptions: function(addToOptions, removeFromOptions, selectedOptions) {
+                let selected_set = new Set(selectedOptions)
+
+                let leftover_options = removeFromOptions.filter((option) => {
+                    if (selected_set.has(option.value)) {
+                        addToOptions.push(option)
+                        return false
+                    }
+                    return true
+                })
+                return leftover_options
+            },
+            /*
                 Button: Move components inside select boxes under "Selected" section to "Available" section
             */
-            removeComponentsBT: function() {
-
+            moveToSelectedBT: function() {
+                this.aval_link_options = this.updateOptions(
+                    this.sele_link_options, this.aval_link_options, this.aval_chosen_links
+                )
+                this.aval_switch_options = this.updateOptions(
+                    this.sele_switch_options, this.aval_switch_options, this.aval_chosen_switches
+                )
+                this.aval_interface_options = this.updateOptions(
+                    this.sele_interface_options, this.aval_interface_options, this.aval_chosen_interfaces
+                )
             },
             /*
                 Button: Move components inside select boxes under "Available" section to "Selected" section
             */
-            addComponentsBT: function() {
-
-            },
-            clickME: function() {
-                console.log("LINKS -> ", this.sele_link_options)
-                console.log("SWITCHES -> ", this.sele_switch_options)
-                console.log("INTERFACES -> ", this.sele_interface_options)
+            moveToAvailableBT: function() {
+                this.sele_link_options = this.updateOptions(
+                    this.aval_link_options, this.sele_link_options, this.sele_chosen_links
+                )
+                this.sele_switch_options = this.updateOptions(
+                    this.aval_switch_options, this.sele_switch_options, this.sele_chosen_switches
+                )
+                this.sele_interface_options = this.updateOptions(
+                    this.aval_interface_options, this.sele_interface_options, this.sele_chosen_interfaces
+                )
             },
         },
         mounted() {
