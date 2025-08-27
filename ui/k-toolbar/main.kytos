@@ -8,14 +8,14 @@
             <k-input placeholder = "End time" v-model:value = "end"></k-input>
         </div>
         <div class="k-time-period" v-else>
-            <p style="font-size: .7em; color: #b3b3b3; margin: 0;">Start Time</p>
+            <p class="time-period-title">Start Time</p>
             <div class="time-period-start" style="display: flex; flex-wrap: wrap;">
                 <k-input placeholder = "DD" v-model:value = "start_d"></k-input>
                 <k-input placeholder = "HH" v-model:value = "start_h"></k-input>
                 <k-input placeholder = "MM" v-model:value = "start_m"></k-input>
                 <k-input placeholder = "SS" v-model:value = "start_s"></k-input>
             </div>
-            <p style="font-size: .7em; color: #b3b3b3; margin: 0;">End time</p>
+            <p class="time-period-title">End time</p>
             <div class="time-period-end" style="display: flex; flex-wrap: wrap;">
                 <k-input placeholder = "DD" v-model:value = "end_d"></k-input>
                 <k-input placeholder = "HH" v-model:value = "end_h"></k-input>
@@ -109,7 +109,10 @@
             */
             get_time_zone: function() {
                 var zone_min = new Date().getTimezoneOffset()
-                let sign = zone_min > 0 ? "+": "-"
+                // If timezone is -05:00 then zone_min will return a positive 300 which is in minutes
+                // Positive in minutes would be a negative in UTC hours
+                // E.g. +09:00 = -540 min
+                let sign = zone_min > 0 ? "-": "+"
                 let hours = Math.floor(zone_min/60)
                 let minutes = zone_min % 60
                 return sign + String(hours).padStart(2, '0') + String(minutes).padStart(2, '0')
@@ -397,5 +400,10 @@
         width: 24%;
         padding-left: 0;
         padding-right: 0;
+    }
+    .k-time-period .time-period-title {
+        font-size: .7em;
+        color: #b3b3b3;
+        margin: 0 !important;
     }
 </style>
