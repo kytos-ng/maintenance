@@ -15,6 +15,7 @@ Changed
 - UI: Maintenance Window Detail window now separates assets (switches, interfaces, links) between ``Selected`` and ``Available`` assets. When first loading the window, the ``Selected`` column will have all the assets that the MW will cover. ``Available`` column will present all assets not affected by the MW.
 - UI: Added buttons under ``Selected`` and ``Available`` columns to move assets from column to the other. The assets moved will be the ones selected from the boxes above each button to the other column.
 - UI: When pressing ``Save Window``, all the assets under ``Selected`` column will be patched/added to the MW if any were added to this column after opening the details window.
+- UI: Added option to enter time period to be added to the current time instead of entering the exact date.
 
 Fixed
 =======

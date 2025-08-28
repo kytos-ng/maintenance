@@ -3,8 +3,28 @@
     <k-accordion>
       <k-accordion-item title = "Create Maintenance Window" :key = "componentKey">
         <k-input placeholder = "Description" v-model:value = "description"></k-input>
-        <k-input placeholder = "Start time" v-model:value = "start"></k-input>
-        <k-input placeholder = "End time" v-model:value = "end"></k-input>
+        <div class="k-time-date" v-if="using_relative_date">
+            <k-input placeholder = "Start time" v-model:value = "start"></k-input>
+            <k-input placeholder = "End time" v-model:value = "end"></k-input>
+        </div>
+        <div class="k-time-period" v-else>
+            <p class="time-period-title">Start Time</p>
+            <div class="time-period-start" style="display: flex; flex-wrap: wrap;">
+                <k-input placeholder = "DD" v-model:value = "start_d"></k-input>
+                <k-input placeholder = "HH" v-model:value = "start_h"></k-input>
+                <k-input placeholder = "MM" v-model:value = "start_m"></k-input>
+                <k-input placeholder = "SS" v-model:value = "start_s"></k-input>
+            </div>
+            <p class="time-period-title">End time</p>
+            <div class="time-period-end" style="display: flex; flex-wrap: wrap;">
+                <k-input placeholder = "DD" v-model:value = "end_d"></k-input>
+                <k-input placeholder = "HH" v-model:value = "end_h"></k-input>
+                <k-input placeholder = "MM" v-model:value = "end_m"></k-input>
+                <k-input placeholder = "SS" v-model:value = "end_s"></k-input>
+            </div>
+        </div>
+        <k-checkbox title = "Time date" :action="change_time" :checked=true>
+        </k-checkbox>
 
         <k-select icon = "link" title = "List of Switches"
           :options = "dpid_names" v-model:value = "switches">
@@ -75,11 +95,49 @@
                 this.$kytos.eventBus.$emit("showInfoPanel", listWindows)
             },
             /*
-                After trying to create a MW, show a modal if end_time is empty, otherwise creates it.
+                After trying to create a MW, show a modal if the End Time is empty, otherwise creates it.
             */
             create_window: function() {
-                if (!this.end) {this.show_post_modal = true}
+                if (this.using_relative_date && !this.end) {this.show_post_modal = true}
+                else if (!this.using_relative_date && !(this.end_d || this.end_h || this.end_m || this.end_s)) {
+                    this.show_post_modal = true
+                }
                 else {this.post_window()}
+            },
+            /*
+                Get the time zone in +HHMM format
+            */
+            get_time_zone: function() {
+                var zone_min = new Date().getTimezoneOffset()
+                // If timezone is -05:00 then zone_min will return a positive 300 which is in minutes
+                // Positive in minutes would be a negative in UTC hours
+                // E.g. +09:00 = -540 min
+                let sign = zone_min > 0 ? "-": "+"
+                let hours = Math.floor(zone_min/60)
+                let minutes = zone_min % 60
+                return sign + String(hours).padStart(2, '0') + String(minutes).padStart(2, '0')
+            },
+            /*
+                Get the time in format %Y-%m-%dT%H:%M:%S+0000, adding the times in from the argument
+                curr_time: new Date()
+                days: number
+                hours: number
+                minutes: number
+                seconds: number
+            */
+            get_extra_time : function(curr_time, days, hours, minutes, seconds) {
+                curr_time.setSeconds(curr_time.getSeconds() + seconds)
+                curr_time.setMinutes(curr_time.getMinutes() + minutes)
+                curr_time.setHours(curr_time.getHours() + hours)
+                curr_time.setDate(curr_time.getDate() + days)
+
+                var str_time = curr_time.getFullYear() + "-"
+                str_time += String(curr_time.getMonth() + 1).padStart(2, '0') + '-' //+1 because months range starts with 0
+                str_time += String(curr_time.getDate()).padStart(2, '0') + "T"
+                str_time += String(curr_time.getHours()).padStart(2, '0') + ":"
+                str_time += String(curr_time.getMinutes()).padStart(2, '0') + ":" 
+                str_time += String(curr_time.getSeconds()).padStart(2, '0') + this.get_time_zone()
+                return str_time
             },
             /*
                 Gets the data fields after button/modal click and consumes POST api to post maintenace window.
@@ -120,15 +178,38 @@
                     // Otherwise, add the interface id to the list of links.
                     filteredInterfaces.push(item)
                 }
+                var start_time = ""
+                var end_time = ""
+                if (!this.using_relative_date) {
+                    let curr_start_time = new Date()
+                    let curr_end_time = new Date(curr_start_time)
+                    start_time = this.get_extra_time(
+                                     curr_start_time, parseInt(this.start_d) || 0, parseInt(this.start_h) || 0,
+                                     parseInt(this.start_m) || 0, parseInt(this.start_s) || 0
+                                 )
+                    if (this.end_d || this.end_h || this.end_m || this.end_s) {
+                        end_time = this.get_extra_time(
+                                   curr_end_time, parseInt(this.end_d) || 0, parseInt(this.end_h) || 0,
+                                   parseInt(this.end_m) || 0, parseInt(this.end_s) || 0
+                               )
+                    }
+                    else {
+                        end_time = null
+                    }
 
+                }
+                else {
+                    start_time = this.start
+                    end_time = this.end || null
+                }
                 var request = $.ajax({
                     async: true,
                     dataType: "json",
                     type: "POST",
                     contentType: "application/json",
                     data: JSON.stringify({"description": self.description,
-                                          "start": self.start,
-                                          "end": self.end || null,
+                                          "start": start_time,
+                                          "end": end_time,
                                           "switches": filteredSwitches,
                                           "links": filteredLinks,
                                           "interfaces": filteredInterfaces,
@@ -251,7 +332,21 @@
               this.links = [];
               this.checked_list = [];
               this.componentKey +=1;
+              this.start_d = "";
+              this.start_h = "";
+              this.start_m = "";
+              this.start_s = "";
+              this.end_d = "";
+              this.end_h = "";
+              this.end_m = "";
+              this.end_s = "";
            },
+            /*
+                Toggle between time dates or time periods
+            */
+            change_time: function() {
+                this.using_relative_date = !this.using_relative_date
+            },
         },
         data() {
             return{
@@ -269,6 +364,15 @@
                 componentKey: "",
                 show_post_modal: false,
                 modal_message_post: "Do you want to create a maintenance window with NO End Time?",
+                using_relative_date: true,
+                start_d: "",
+                start_h: "",
+                start_m: "",
+                start_s: "",
+                end_d: "",
+                end_h: "",
+                end_m: "",
+                end_s: "",
            }
        },
        mounted(){
@@ -280,3 +384,26 @@
     }
 </script>
 
+<style type="text/css">
+    .time-period-start .k-input-wrap{
+        width: 24%;
+    }
+    .time-period-start .k-input-wrap .k-input{
+        width: 24%;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    .time-period-end .k-input-wrap{
+        width: 24%;
+    }
+    .time-period-end .k-input-wrap .k-input{
+        width: 24%;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    .k-time-period .time-period-title {
+        font-size: .7em;
+        color: #b3b3b3;
+        margin: 0 !important;
+    }
+</style>
