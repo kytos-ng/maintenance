@@ -332,12 +332,6 @@
                 var _this = this
                 var content_id = this.content.id
                 // Asynchronously get the links, switches, and interfaces from the topology API.
-                //Promise.all([this.loadLinksForEditing(), this.loadSwitchesForEditing(), this.loadInterfacesForEditing()])
-                //.then(function() {
-                //    // Once the three things are done, continue loading.
-                //    _this.loadMaintenanceWindow(content_id)
-                //})
-
                 Promise.all([_this.loadMaintenanceWindow(content_id)])
                 .then(function() {
                     _this.loadLinksForEditing()
@@ -736,6 +730,9 @@
         padding-bottom: 8px;
         text-align: left;
         font-size: 0.9em;
+    }
+    .maintenance-window-table table td {
+        font-size: 1.1em;
     }
 
     .editable-false {
