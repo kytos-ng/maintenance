@@ -4,8 +4,10 @@
       <k-accordion-item title = "Create Maintenance Window" :key = "componentKey">
         <k-input placeholder = "Description" v-model:value = "description"></k-input>
         <div class="k-time-date" v-if="using_relative_date">
-            <k-input placeholder = "Start time" v-model:value = "start"></k-input>
-            <k-input placeholder = "End time" v-model:value = "end"></k-input>
+            <p class="k-time-date-title">Start Time</p>
+            <k-input placeholder = "YYY-MM-DDTHH:MM:SS-0000" v-model:value = "start"></k-input>
+            <p class="k-time-date-title">End Time</p>
+            <k-input placeholder = "YYY-MM-DDTHH:MM:SS-0000" v-model:value = "end"></k-input>
         </div>
         <div class="k-time-period" v-else>
             <p class="time-period-title">Start Time</p>
@@ -15,7 +17,7 @@
                 <k-input placeholder = "MM" v-model:value = "start_m"></k-input>
                 <k-input placeholder = "SS" v-model:value = "start_s"></k-input>
             </div>
-            <p class="time-period-title">End time</p>
+            <p class="time-period-title">End Time</p>
             <div class="time-period-end" style="display: flex; flex-wrap: wrap;">
                 <k-input placeholder = "DD" v-model:value = "end_d"></k-input>
                 <k-input placeholder = "HH" v-model:value = "end_h"></k-input>
@@ -385,6 +387,11 @@
 </script>
 
 <style type="text/css">
+    .k-time-date .k-time-date-title {
+        font-size: .9em;
+        color: #b3b3b3;
+        margin: 0 !important;
+    }
     .time-period-start .k-input-wrap{
         width: 24%;
     }
@@ -402,7 +409,7 @@
         padding-right: 0;
     }
     .k-time-period .time-period-title {
-        font-size: .7em;
+        font-size: .9em;
         color: #b3b3b3;
         margin: 0 !important;
     }
