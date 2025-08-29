@@ -30,15 +30,62 @@
                         <template v-else-if="property == 'Links'" class="window-table-items">
                                 <th>Items</th>
                                 <td>
-                                    <div :class="'editable-' + property_editable['Links']">
-                                        <k-select icon="link" title="Links" :options="links_options" v-model:value="chosen_links"></k-select>
-                                    </div>
-                                    <div :class="'editable-' + property_editable['Switches']">
-                                        <k-select icon="link" title="Switches" :options="switches_options" v-model:value="chosen_switches"></k-select>
-                                    </div>
-                                    <div :class="'editable-' + property_editable['Interfaces']">
-                                        <k-select  icon="link" title="Interfaces" :options="interfaces_options" v-model:value="chosen_interfaces"></k-select>
-                                    </div>
+                                    <table>
+                                        <tr>
+                                            <th style="text-align: center">Selected</th>
+                                            <th style="text-align: center">Available</th>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <div :class="'editable-' + property_editable['Links']">
+                                                    <k-select icon="link" title="Links"
+                                                        :options="sele_link_options"
+                                                        v-model:value="sele_chosen_links"
+                                                        :key="componentKey">
+                                                    </k-select>
+                                                </div>
+                                                <div :class="'editable-' + property_editable['Switches']">
+                                                    <k-select icon="link" title="Switches"
+                                                        :options="sele_switch_options"
+                                                        v-model:value="sele_chosen_switches"
+                                                        :key="componentKey">
+                                                    </k-select>
+                                                </div>
+                                                <div :class="'editable-' + property_editable['Interfaces']">
+                                                    <k-select  icon="link" title="Interfaces"
+                                                        :options="sele_interface_options"
+                                                        v-model:value="sele_chosen_interfaces"
+                                                        :key="componentKey">
+                                                    </k-select>
+                                                </div>
+                                                <k-button style="display: block; margin: auto;" title="Move to Available ->" @click="moveToAvailableBT"></k-button>
+                                            </td>
+                                            <td>
+                                                <div :class="'editable-' + property_editable['Links']">
+                                                    <k-select icon="link" title="Links"
+                                                        :options="aval_link_options"
+                                                        v-model:value="aval_chosen_links"
+                                                        :key="componentKey">
+                                                    </k-select>
+                                                </div>
+                                                <div :class="'editable-' + property_editable['Switches']">
+                                                    <k-select icon="link" title="Switches"
+                                                        :options="aval_switch_options"
+                                                        v-model:value="aval_chosen_switches"
+                                                        :key="componentKey">
+                                                    </k-select>
+                                                </div>
+                                                <div :class="'editable-' + property_editable['Interfaces']">
+                                                    <k-select  icon="link" title="Interfaces"
+                                                        :options="aval_interface_options"
+                                                        v-model:value="aval_chosen_interfaces"
+                                                        :key="componentKey">
+                                                    </k-select>
+                                                </div>
+                                                <k-button style="display: block; margin: auto;" title="<- Move to Selected" @click="moveToSelectedBT"></k-button>
+                                            </td>
+                                        </tr>
+                                    </table>
                                 </td>
                         </template>
                     </tr>
@@ -77,17 +124,26 @@
         data() {
             return {
                 window_data: [],
-                links_options: [],
-                switches_options: [],
-                interfaces_options: [],
-                chosen_links: [],
-                chosen_switches: [],
-                chosen_interfaces: [],
-                auto_items: [],
                 property_editable: [],
                 delete_window: false,
                 display: true,
                 minutes: "",
+                mw_links_set: new Set(),
+                mw_switches_set: new Set(),
+                mw_interfaces_set: new Set(),
+                sele_link_options: [],
+                sele_switch_options: [],
+                sele_interface_options: [],
+                sele_chosen_links: [],
+                sele_chosen_switches: [],
+                sele_chosen_interfaces: [],
+                aval_link_options: [],
+                aval_switch_options: [],
+                aval_interface_options: [],
+                aval_chosen_links: [],
+                aval_chosen_switches: [],
+                aval_chosen_interfaces: [],
+                componentKey: "",
             }
         },
         methods: {
@@ -115,36 +171,35 @@
                 var filteredInterfaces = []
                 
                 // For every chosen link
-                for(let item of this.chosen_links) {
+                for(let option of this.sele_link_options) {
                     // If the link is not a string
-                    if(typeof(item) != "string") {
+                    if(typeof(option.value) != "string") {
                         // Skip it.
                         continue
                     }
                     // Otherwise, add the link id to the list of links.
-                    filteredLinks.push(item)
+                    filteredLinks.push(option.value)
                 }
                 // For every chosen switch
-                for(let item of this.chosen_switches) {
+                for(let option of this.sele_switch_options) {
                     // If the switch is not a string
-                    if(typeof(item) != "string") {
+                    if(typeof(option.value) != "string") {
                         // Skip it.
                         continue
                     }
                     // Otherwise, add the switch id to the list of items.
-                    filteredSwitches.push(item)
+                    filteredSwitches.push(option.value)
                 }
                 // For every chosen interface
-                for(let item of this.chosen_interfaces) {
+                for(let option of this.sele_interface_options) {
                     // If the interface is not a string
-                    if(typeof(item) != "string") {
+                    if(typeof(option.value) != "string") {
                         // Skip it.
                         continue
                     }
                     // Otherwise, add the interface id to the list of links.
-                    filteredInterfaces.push(item)
+                    filteredInterfaces.push(option.value)
                 }
-
                 // Update the maitenance window with the new values.
                 var request = $.ajax({
                     url: this.$kytos_server_api + "kytos/maintenance/v1/" + _this.window_data.Id,
@@ -168,8 +223,6 @@
                     }
                     // Notify on success.
                     _this.$kytos.eventBus.$emit("setNotification", notification)
-                    // Refresh the window.
-                    _this.resetItemSelection()
                     _this.loadMaintenanceWindow(_this.window_data.Id)
                 })
                 request.fail(function(jqXHR, status, error ) {
@@ -179,7 +232,7 @@
                     } else if (error_message.hasOwnProperty('description')) {
                         error_message = error_message.description
                     }
-
+                
                     let notification = {
                         title: 'Updated Window failed.',
                         description: 'Error updating window "' + _this.window_data.Id + '". ' + _this.capitalize(status) + ': ' +  error_message
@@ -195,25 +248,23 @@
                 this.delete_window = true
             },
             /*
-                Loads the given maintenance window into a table.
+                Loads the given maintenance window information and stores it.
+                In the UI it updates Id, Start, End, Description and Status.
+                Links, switches and Interfaces information is not updated.
             */
             loadMaintenanceWindow: function(id) {
                 var _this = this
 
                 // Request the window data from the API.
-                var request = $.ajax({
+                return $.ajax({
                     url: this.$kytos_server_api + "kytos/maintenance/v1/" + id,
                     type: "GET",
                     dataType: "json",
                     contentType: "application/json"
-                })
-                request.done( function(data) {
+                }).done( function(data) {
                     // Build the maintenance window to be displayed.
                     _this.buildMaintenanceWindow(data)
-                    // Determine what can be edited and what can not.
-                    _this.setEditable(data)
-                })
-                request.fail(function(jqXHR, status) {
+                }).fail(function(jqXHR, status) {
                     let notification = {
                         title: "Error Loading Maintenace Window.",
                         description: 'Error loading window "' + _this.window_data.id + '". ' + _this.capitalize(status) + ': ' +  JSON.parse(jqXHR.responseText).response
@@ -227,55 +278,10 @@
             */
             buildMaintenanceWindow: function(window) {
                 // Translate the window API status into its corresponding word.
+                this.mw_links_set = new Set(window.links)
+                this.mw_switches_set = new Set(window.switches)
+                this.mw_interfaces_set = new Set(window.interfaces)
                 let status = window.status
-
-                var auto_links = []
-                var auto_switches = []
-                var auto_interfaces = []
-                
-                // For every item in the list of items.
-                for(let i = 0; i < window.links.length; i++) {
-                    // LINK
-                    let link = window.links[i]
-
-                    // Checks that link is not in topology in case there were errors accessing topology
-                    // or a deletion of the link after the creation of the maintenance window.
-                    let linkInTopology = this.links_options.some(option => option.value == link)
-                    if(!linkInTopology) {
-                        // Add the link as an option even if it is not in topology.
-                        this.links_options.push({"value":link, "description":link})
-                    }
-                    // Add the link into the list of link auto-selection.
-                    auto_links.push(link)
-                }
-                for(let i = 0; i < window.switches.length; i++) {
-                    // SWITCH
-                    let switch_item = window.switches[i]
-
-                    // Checks that switch_item is not in topology in case there were errors accessing topology
-                    // or a deletion of the switch after the creation of the maintenance window.
-                    let switchInTopology = this.switches_options.some(option => option.value == switch_item)
-                    if(!switchInTopology) {
-                        // Add the switch as an option even if it is not in topology.
-                        this.switches_options.push({"value":switch_item, "description":switch_item})
-                    }
-                    // Add the switch into the list of switch auto-selection.
-                    auto_switches.push(switch_item)
-                }
-                for(let i = 0; i < window.interfaces.length; i++) {
-                    // INTERFACE
-                    let k_interface = window.interfaces[i]
-
-                    // Checks that interface is not in topology in case there were errors accessing topology
-                    // or a deletion of the interface after the creation of the maintenance window.
-                    let interfaceInTopology = this.interfaces_options.some(option => option.value == k_interface)
-                    if(!interfaceInTopology) {
-                        // Add the interface as an option even if it not in topology.
-                        this.interfaces_options.push({"value":k_interface, "description":k_interface})
-                    }
-                    // Add the interface into the list of interface auto-selection.
-                    auto_interfaces.push(k_interface)
-                }
 
                 // Build the columns to be displayed in the table.
                 let column = {
@@ -289,17 +295,6 @@
                     "Interfaces": "k-select",   // k-select
                 }
                 this.window_data = column
-
-                // Add the list of auto-selected links, switches, and interfaces 
-                // to the list of auto-selected items.
-                this.auto_items.push(auto_links)
-                this.auto_items.push(auto_switches)
-                this.auto_items.push(auto_interfaces)
-
-                // Call the auto-select items after the k-selects have loaded.
-                this.$nextTick(() => {
-                    this.autoSelectItems()
-                });
             },
             /*
                 Delete a maintenance window.
@@ -337,11 +332,13 @@
                 var _this = this
                 var content_id = this.content.id
                 // Asynchronously get the links, switches, and interfaces from the topology API.
-                Promise.all([this.loadLinksForEditing(), this.loadSwitchesForEditing(), this.loadInterfacesForEditing()])
+                Promise.all([_this.loadMaintenanceWindow(content_id)])
                 .then(function() {
-                    // Once the three things are done, continue loading.
-                    _this.loadMaintenanceWindow(content_id)
+                    _this.loadLinksForEditing()
+                    _this.loadSwitchesForEditing()
+                    _this.loadInterfacesForEditing()
                 })
+                this.setEditable()
             },
             /*
                 Get the links from the topology API.
@@ -359,7 +356,6 @@
                 request.done(function(data) {
                     let links = data.links
                     let linksKeys = Object.keys(links)
-
                     // For every link in topology
                     for(let i = 0; i < linksKeys.length; i++) {
                         let description = linksKeys[i]
@@ -372,9 +368,22 @@
                         } catch(error) {
                             // Description is id
                         }
-                        // Add the link as an option to edit items.
-                        _this.links_options.push({"value":linksKeys[i], "description":description})
+
+                        // Populate options for selected and available links
+                        let option = {"value": linksKeys[i], "description": description}
+                        if (_this.mw_links_set.delete(linksKeys[i])) {
+                            _this.sele_link_options.push(option)
+                        }
+                        else {
+                            _this.aval_link_options.push(option)
+                        }
                     }
+
+                    // Links that are deleted in topology but still exists in the MW
+                    _this.mw_links_set.forEach(link_id => {
+                        _this.sele_link_options.push({"value": link_id, "description": link_id})
+                    });
+                    _this.mw_links_set.clear()
                 })
                 request.fail(function(jqXHR, status) {
                     let notification = {
@@ -414,9 +423,22 @@
                         } catch(error) {
                             // Description is id
                         }
-                        // Add the switch as an option to edit items.
-                        _this.switches_options.push({"value":switchesKeys[i], "description":description})
+
+                        // Populate options for selected and available switches
+                        let option = {"value": switchesKeys[i], "description": description}
+                        if (_this.mw_switches_set.delete(switchesKeys[i])) {
+                            _this.sele_switch_options.push(option)
+                        }
+                        else {
+                            _this.aval_switch_options.push(option)
+                        }
                     }
+                
+                    // Switches that are deleted in topology but still exists in the MW
+                    _this.mw_switches_set.forEach(switch_id => {
+                        _this.sele_switch_options.push({"value": switch_id, "description": switch_id})
+                    });
+                    _this.mw_switches_set.clear()
                 })
                 request.fail(function(jqXHR, status) {
                     let notification = {
@@ -456,9 +478,21 @@
                         } catch(error) {
                             // Description is id
                         }
-                        // Add the interface as an option to edit items.
-                        _this.interfaces_options.push({"value":interfacesKeys[i], "description":description})
+
+                        // Populate options for selected and available interfaces
+                        let option = {"value": interfacesKeys[i], "description": description}
+                        if (_this.mw_interfaces_set.delete(interfacesKeys[i])) {
+                            _this.sele_interface_options.push(option)
+                        }
+                        else {
+                            _this.aval_interface_options.push(option)
+                        }
                     }
+                    // Interfaces that are deleted in topology but still exists in the MW
+                    _this.mw_interfaces_set.forEach(interfaces_id => {
+                        _this.sele_interface_options.push({"value": interfaces_id, "description": interfaces_id})
+                    });
+                    _this.mw_interfaces_set.clear()
                 })
                 request.fail(function(jqXHR, status) {
                     let notification = {
@@ -473,7 +507,7 @@
                 Determines what can be edited and what can not be edited
                 in a maintenance window.
             */
-            setEditable: function(data) {
+            setEditable: function() {
                 let editable = {
                     "Id": false,
                     "Start": true,
@@ -485,58 +519,6 @@
                     "Interfaces": true,
                 }
                 this.property_editable = editable
-            },
-            /*
-                Auto-selects items that are already part of the maintenance window as
-                items to be added to the maintenance window.
-            */
-            autoSelectItems: function() {
-                var auto_links = this.auto_items[0]
-                var auto_switches = this.auto_items[1]
-                var auto_interfaces = this.auto_items[2]
-
-                // If there are links to be auto-selected
-                if(auto_links) {
-                    // For every link to be auto-selected
-                    for(let i = 0; i < auto_links.length; i++) {
-                        // If the link is not in the chosen link list
-                        if(!this.chosen_links.includes(auto_links[i])) {
-                            // Add it.
-                            this.chosen_links.push(auto_links[i])
-                        }
-                    }
-                }
-                // If there are switches to be auto-selected
-                if(auto_switches) {
-                    // For every switch to be auto-selected
-                    for(let i = 0; i < auto_switches.length; i++) {
-                        // If the switch is not in the chosen switch list
-                        if(!this.chosen_switches.includes(auto_switches[i])) {
-                            // Add it.
-                            this.chosen_switches.push(auto_switches[i])
-                        }
-                    }
-                }
-                // If there are interfaces to be auto-selected
-                if(auto_interfaces) {
-                    // For every interface to be auto-selected
-                    for(let i = 0; i < auto_interfaces.length; i++) {
-                        // If the interface is not in the chosen interface list
-                        if(!this.chosen_interfaces.includes(auto_interfaces[i])) {
-                            // Add it.
-                            this.chosen_interfaces.push(auto_interfaces[i])
-                        }
-                    }
-                }
-            },
-            /*
-                Resets the auto-selected items.
-            */
-            resetItemSelection: function() {
-                this.auto_items = []
-                this.chosen_links = []
-                this.chosen_switches = []
-                this.chosen_interfaces = []
             },
             /*
                 Capitalizes the first letter of a given word.
@@ -564,8 +546,6 @@
                     }
                     // Notify on success.
                     _this.$kytos.eventBus.$emit("setNotification", notification)
-                    // Refresh the window.
-                    _this.resetItemSelection()
                     _this.loadMaintenanceWindow(_this.window_data.Id)
                 })
                 request.fail(function(jqXHR, status) {
@@ -587,7 +567,7 @@
             /*
             Extends a maintenance window.
             */
-            extendWindow() {
+            extendWindow: function() {
                 var _this = this
                 // Call the Maintenace API to extend the maintenance window.
                 var request = $.ajax({
@@ -605,8 +585,6 @@
                     }
                     // Notify on success.
                     _this.$kytos.eventBus.$emit("setNotification", notification)
-                    // Refresh the window.
-                    _this.resetItemSelection()
                     _this.loadMaintenanceWindow(_this.window_data.Id)
                 })
                 request.fail(function(jqXHR, status) {
@@ -624,7 +602,54 @@
                     // Notify on failure.
                     _this.$kytos.eventBus.$emit("setNotification", notification)
                 })           
-             },
+            },
+            /*
+                Updates two Array of options(value, description) from an Array of values.
+                 addToOptions, gets options added from removeFromOptions which "value" are in selectedOptions
+                 removeFromOptions, gets options searched, options which "value" are not in selectedOptions are saved
+                 
+                Return any saved options from searching removeFromOptions
+            */
+            updateOptions: function(addToOptions, removeFromOptions, selectedOptions) {
+                let selected_set = new Set(selectedOptions)
+
+                let leftover_options = removeFromOptions.filter((option) => {
+                    if (selected_set.has(option.value)) {
+                        addToOptions.push(option)
+                        return false
+                    }
+                    return true
+                })
+                return leftover_options
+            },
+            /*
+                Button: Move components inside select boxes under "Selected" section to "Available" section
+            */
+            moveToSelectedBT: function() {
+                this.aval_link_options = this.updateOptions(
+                    this.sele_link_options, this.aval_link_options, this.aval_chosen_links
+                )
+                this.aval_switch_options = this.updateOptions(
+                    this.sele_switch_options, this.aval_switch_options, this.aval_chosen_switches
+                )
+                this.aval_interface_options = this.updateOptions(
+                    this.sele_interface_options, this.aval_interface_options, this.aval_chosen_interfaces
+                )
+            },
+            /*
+                Button: Move components inside select boxes under "Available" section to "Selected" section
+            */
+            moveToAvailableBT: function() {
+                this.sele_link_options = this.updateOptions(
+                    this.aval_link_options, this.sele_link_options, this.sele_chosen_links
+                )
+                this.sele_switch_options = this.updateOptions(
+                    this.aval_switch_options, this.sele_switch_options, this.sele_chosen_switches
+                )
+                this.sele_interface_options = this.updateOptions(
+                    this.aval_interface_options, this.sele_interface_options, this.sele_chosen_interfaces
+                )
+            },
         },
         mounted() {
             // Loads the topology API first for editing the maintenance window.
@@ -705,6 +730,9 @@
         padding-bottom: 8px;
         text-align: left;
         font-size: 0.9em;
+    }
+    .maintenance-window-table table td {
+        font-size: 1.1em;
     }
 
     .editable-false {
