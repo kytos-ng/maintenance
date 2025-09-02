@@ -106,8 +106,12 @@
                 <div class = "window-extend-button">
                     <k-button title="Extend Window" @click="extendWindow"></k-button>
                 </div>
-                <div class = "minute-input-field">
-                    <k-input placeholder = "Enter minutes (click extend)" v-model:value ="minutes"></k-input>  
+                <div class = "extend-input-field">
+                    <k-input placeholder = "SS" v-model:value ="extend_seconds"></k-input>
+                    <k-input placeholder = "MM" v-model:value ="extend_minutes"></k-input>
+                    <k-input placeholder = "HH" v-model:value ="extend_hours"></k-input>
+                    <k-input placeholder = "DD" v-model:value ="extend_days"></k-input>
+
                 </div>
             </div>
         </div>
@@ -127,7 +131,10 @@
                 property_editable: [],
                 delete_window: false,
                 display: true,
-                minutes: "",
+                extend_seconds: "",
+                extend_minutes: "",
+                extend_hours: "",
+                extend_days: "",
                 mw_links_set: new Set(),
                 mw_switches_set: new Set(),
                 mw_interfaces_set: new Set(),
@@ -575,7 +582,11 @@
                     type: "PATCH",
                     dataType: "json",
                     contentType: "application/json",
-                    data: JSON.stringify({"minutes": parseInt(_this.minutes),
+                    data: JSON.stringify({
+                        "seconds": parseInt(_this.extend_seconds) || 0,
+                        "minutes": parseInt(_this.extend_minutes) || 0,
+                        "hours": parseInt(_this.extend_hours) || 0,
+                        "days": parseInt(_this.extend_days) || 0,
                     }),
                 })
                 request.done(function(jqXHR, status) {
@@ -585,6 +596,7 @@
                     }
                     // Notify on success.
                     _this.$kytos.eventBus.$emit("setNotification", notification)
+                    _this.empty_extend_fields()
                     _this.loadMaintenanceWindow(_this.window_data.Id)
                 })
                 request.fail(function(jqXHR, status) {
@@ -650,6 +662,12 @@
                     this.aval_interface_options, this.sele_interface_options, this.sele_chosen_interfaces
                 )
             },
+            empty_extend_fields: function() {
+                this.extend_seconds = ""
+                this.extend_minutes = ""
+                this.extend_hours = ""
+                this.extend_days = ""
+            }
         },
         mounted() {
             // Loads the topology API first for editing the maintenance window.
@@ -686,22 +704,23 @@
 
     .window-buttons .window-buttons-bottom {
         margin-top: 1em;
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: flex-start;
     }
     
     .window-buttons .window-finish-button button {
-        float: right;
         background: #372C5E;
     }
     .window-buttons .window-extend-button button {
-        float: right;
         background: #372C5E;
-    } 
-    .minute-input-field {
-        float: right;
-        width: 200px;
-        display: flex; 
     }
-
+    .extend-input-field {
+        display: flex;
+    }
+    .extend-input-field input {
+        width: 40px;
+    }
     .maintenance-window-container table {
         border-collapse: collapse;
         width: 100%;
