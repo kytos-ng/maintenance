@@ -10,17 +10,17 @@
         <div class="k-time-period" v-else>
             <p class="time-period-title">Start Time</p>
             <div class="time-period-start" style="display: flex; flex-wrap: wrap;">
-                <k-input placeholder = "DD" v-model:value = "start_d"></k-input>
-                <k-input placeholder = "HH" v-model:value = "start_h"></k-input>
-                <k-input placeholder = "MM" v-model:value = "start_m"></k-input>
-                <k-input placeholder = "SS" v-model:value = "start_s"></k-input>
+                <k-input placeholder="DD" v-model:value="start_d" inputmode="numeric" :only_digits="true"></k-input>
+                <k-input placeholder="HH" v-model:value="start_h" inputmode="numeric" :only_digits="true"></k-input>
+                <k-input placeholder="MM" v-model:value="start_m" inputmode="numeric" :only_digits="true"></k-input>
+                <k-input placeholder="SS" v-model:value="start_s" inputmode="numeric" :only_digits="true"></k-input>
             </div>
             <p class="time-period-title">End time</p>
             <div class="time-period-end" style="display: flex; flex-wrap: wrap;">
-                <k-input placeholder = "DD" v-model:value = "end_d"></k-input>
-                <k-input placeholder = "HH" v-model:value = "end_h"></k-input>
-                <k-input placeholder = "MM" v-model:value = "end_m"></k-input>
-                <k-input placeholder = "SS" v-model:value = "end_s"></k-input>
+                <k-input placeholder="DD" v-model:value="end_d" inputmode="numeric" :only_digits="true"></k-input>
+                <k-input placeholder="HH" v-model:value="end_h" inputmode="numeric" :only_digits="true"></k-input>
+                <k-input placeholder="MM" v-model:value="end_m" inputmode="numeric" :only_digits="true"></k-input>
+                <k-input placeholder="SS" v-model:value="end_s" inputmode="numeric" :only_digits="true"></k-input>
             </div>
         </div>
         <k-checkbox title = "Time date" :action="change_time" :checked=true>

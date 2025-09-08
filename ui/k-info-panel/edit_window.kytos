@@ -107,10 +107,10 @@
                     <k-button title="Extend Window" @click="extendWindow"></k-button>
                 </div>
                 <div class = "extend-input-field">
-                    <k-input placeholder = "SS" v-model:value ="extend_seconds"></k-input>
-                    <k-input placeholder = "MM" v-model:value ="extend_minutes"></k-input>
-                    <k-input placeholder = "HH" v-model:value ="extend_hours"></k-input>
-                    <k-input placeholder = "DD" v-model:value ="extend_days"></k-input>
+                    <k-input placeholder = "SS" v-model:value ="extend_seconds" inputmode="numeric" :only_digits="true"></k-input>
+                    <k-input placeholder = "MM" v-model:value ="extend_minutes" inputmode="numeric" :only_digits="true"></k-input>
+                    <k-input placeholder = "HH" v-model:value ="extend_hours" inputmode="numeric" :only_digits="true"></k-input>
+                    <k-input placeholder = "DD" v-model:value ="extend_days" inputmode="numeric" :only_digits="true"></k-input>
 
                 </div>
             </div>
@@ -667,7 +667,7 @@
                 this.extend_minutes = ""
                 this.extend_hours = ""
                 this.extend_days = ""
-            }
+            },
         },
         mounted() {
             // Loads the topology API first for editing the maintenance window.
