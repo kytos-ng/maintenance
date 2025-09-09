@@ -181,12 +181,16 @@ paths:
               properties:
                 seconds:
                   type: integer
+                  minimum: 0
                 minutes:
                   type: integer
+                  minimum: 0
                 hours:
                   type: integer
+                  minimum: 0
                 days:
                   type: integer
+                  minimum: 0
       responses:
         '200':
           description: Maintenance window succesfully extended
