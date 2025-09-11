@@ -6,6 +6,10 @@ All notable changes to the Maintenance NApp will be documented in this file.
 [UNRELEASED] - Under development
 ********************************
 
+Added
+=====
+- Now seconds, hours and days are accepted as units of time to extend a maintenance window.
+
 Changed
 =======
 - Internal refactoring updating UI components to use ``pinia``
@@ -16,6 +20,7 @@ Changed
 - UI: Added buttons under ``Selected`` and ``Available`` columns to move assets from column to the other. The assets moved will be the ones selected from the boxes above each button to the other column.
 - UI: When pressing ``Save Window``, all the assets under ``Selected`` column will be patched/added to the MW if any were added to this column after opening the details window.
 - UI: Added option to enter time period to be added to the current time instead of entering the exact date.
+- UI: Added options for more unit of times when extending a MW (seconds, hours and days).
 
 Fixed
 =======

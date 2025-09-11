@@ -728,16 +728,16 @@ class TestMain:
         """Test successful extension."""
         self.napp.controller.loop = asyncio.get_running_loop()
         start1 = datetime.now(pytz.utc) - timedelta(hours=3)
-        end1 = start1 + timedelta(hours=4)
+        end1 = (start1 + timedelta(hours=4)).replace(microsecond=0)
         self.scheduler.get_maintenance.return_value = MW.model_construct(
             id="1234",
             start=start1.replace(microsecond=0),
-            end=end1.replace(microsecond=0),
+            end=end1,
             switches=["00:00:00:00:00:00:12:23"],
             status="running",
         )
         url = f"{self.base_endpoint}/1234/extend"
-        payload = {"minutes": 45}
+        payload = {"minutes": 45, "days": 1}
         response = await self.api.patch(url, json=payload)
         assert response.status_code == 200
         self.scheduler.get_maintenance.called_with("1234")
@@ -745,7 +745,7 @@ class TestMain:
             MW.model_construct(
                 id="1234",
                 start=start1.replace(microsecond=0),
-                end=end1.replace(microsecond=0) + timedelta(minutes=45),
+                end=end1 + timedelta(minutes=45, days=1),
                 switches=["00:00:00:00:00:00:12:23"],
                 status="running",
             )
@@ -758,18 +758,18 @@ class TestMain:
         response = await self.api.patch(url)
         assert response.status_code == 400
         current_data = response.json()
-        assert "Invalid json" in current_data["description"]
+        assert "Missing required request body" in current_data["description"]
         self.scheduler.update.assert_not_called()
 
     async def test_extend_case_3(self):
-        """Test payload without minutes."""
+        """Test payload with unknown field."""
         self.napp.controller.loop = asyncio.get_running_loop()
         url = f"{self.base_endpoint}/1234/extend"
-        payload = {"seconds": 240}
+        payload = {"unknown": 240}
         response = await self.api.patch(url, json=payload)
         assert response.status_code == 400
         current_data = response.json()
-        assert current_data["description"] == "Minutes of extension must be sent"
+        assert "'unknown' was unexpected" in current_data["description"]
         self.scheduler.update.assert_not_called()
 
     async def test_extend_case_4(self):
@@ -780,7 +780,7 @@ class TestMain:
         response = await self.api.patch(url, json=payload)
         assert response.status_code == 400
         current_data = response.json()
-        assert current_data["description"] == "Minutes of extension must be integer"
+        assert "'240' is not of type 'integer'" in current_data["description"]
         self.scheduler.update.assert_not_called()
 
     async def test_extend_case_5(self):

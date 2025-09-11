@@ -4,6 +4,7 @@ This NApp creates maintenance windows, allowing the maintenance of network
 devices (switch, link, and interface) without receiving alerts.
 """
 
+import pathlib
 from datetime import timedelta
 
 from napps.kytos.maintenance.managers import MaintenanceDeployer as Deployer
@@ -15,6 +16,7 @@ from pydantic import ValidationError
 from pymongo.errors import DuplicateKeyError
 
 from kytos.core import KytosNApp, rest
+from kytos.core.helpers import load_spec, validate_openapi
 from kytos.core.rest_api import (
     HTTPException,
     JSONResponse,
@@ -30,6 +32,8 @@ class Main(KytosNApp):
 
     This class is the entry point for this napp.
     """
+
+    spec = load_spec(pathlib.Path(__file__).parent / "openapi.yml")
 
     def setup(self):
         """Replace the '__init__' method for the KytosNApp subclass.
@@ -183,6 +187,7 @@ class Main(KytosNApp):
         return JSONResponse({"response": f"Maintenance window {mw_id} " f"finished"})
 
     @rest("/v1/{mw_id}/extend", methods=["PATCH"])
+    @validate_openapi(spec)
     def extend_mw(self, request: Request) -> JSONResponse:
         """Extend a running maintenance window."""
         mw_id: MaintenanceID = request.path_params["mw_id"]
@@ -193,8 +198,6 @@ class Main(KytosNApp):
         maintenance = self.scheduler.get_maintenance(mw_id)
         if maintenance is None:
             raise HTTPException(404, detail=f"Maintenance with id {mw_id} not found")
-        if "minutes" not in data:
-            raise HTTPException(400, detail="Minutes of extension must be sent")
         if maintenance.status == Status.PENDING:
             raise HTTPException(
                 400, detail=f"Maintenance window {mw_id} has not yet started"
@@ -203,13 +206,8 @@ class Main(KytosNApp):
             raise HTTPException(
                 400, detail=f"Maintenance window {mw_id} has already finished"
             )
-        try:
-            maintenance_end = maintenance.end + timedelta(minutes=data["minutes"])
-            new_maintenance = maintenance.copy(update={"end": maintenance_end})
-        except TypeError as exc:
-            raise HTTPException(
-                400, detail="Minutes of extension must be integer"
-            ) from exc
+        maintenance_end = maintenance.end + timedelta(**data)
+        new_maintenance = maintenance.copy(update={"end": maintenance_end})
 
         self.scheduler.update(new_maintenance)
         return JSONResponse({"response": f"Maintenance {mw_id} extended"})
