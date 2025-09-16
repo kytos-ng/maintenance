@@ -21,6 +21,8 @@ Changed
 - UI: When pressing ``Save Window``, all the assets under ``Selected`` column will be patched/added to the MW if any were added to this column after opening the details window.
 - UI: Added option to enter time period to be added to the current time instead of entering the exact date.
 - UI: Added options for more unit of times when extending a MW (seconds, hours and days).
+- UI: Added filtering options in ``k-toolbar`` for all the components.
+- UI: Format for time dates is shown as placeholder instead of ``Start Time`` or ``End Time``. The latter were moved as titles.
 
 Fixed
 =======

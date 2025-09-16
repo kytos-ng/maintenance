@@ -4,8 +4,10 @@
       <k-accordion-item title = "Create Maintenance Window" :key = "componentKey">
         <k-input placeholder = "Description" v-model:value = "description"></k-input>
         <div class="k-time-date" v-if="using_relative_date">
-            <k-input placeholder = "Start time" v-model:value = "start"></k-input>
-            <k-input placeholder = "End time" v-model:value = "end"></k-input>
+            <p class="time-period-title">Start Time</p>
+            <k-input placeholder = "yy-mm-ddThh:mm:ss+0000" v-model:value = "start"></k-input>
+            <p class="time-period-title">End time</p>
+            <k-input placeholder = "yy-mm-ddThh:mm:ss+0000" v-model:value = "end"></k-input>
         </div>
         <div class="k-time-period" v-else>
             <p class="time-period-title">Start Time</p>
@@ -26,15 +28,15 @@
         <k-checkbox title = "Time date" :action="change_time" :checked=true>
         </k-checkbox>
 
-        <k-select icon = "link" title = "List of Switches"
+        <k-select icon = "link" title = "List of Switches" :enable_filter="true"
           :options = "dpid_names" v-model:value = "switches">
         </k-select>
 
-        <k-select icon = "link" title = "List of Interfaces"
+        <k-select icon = "link" title = "List of Interfaces" :enable_filter="true"
           :options = "interface_names" v-model:value = "interfaces">
         </k-select>
 
-        <k-select icon = "link" title = "List of Links"
+        <k-select icon = "link" title = "List of Links" :enable_filter="true"
           :options = "link_names" v-model:value = "links">
         </k-select>
 
@@ -401,7 +403,7 @@
         padding-left: 0;
         padding-right: 0;
     }
-    .k-time-period .time-period-title {
+    .time-period-title {
         font-size: .7em;
         color: #b3b3b3;
         margin: 0 !important;
