@@ -6,6 +6,9 @@ All notable changes to the Maintenance NApp will be documented in this file.
 [UNRELEASED] - Under development
 ********************************
 
+[2025.2.0] - 2026-02-02
+***********************
+
 Added
 =====
 - Now seconds, hours and days are accepted as units of time to extend a maintenance window.
